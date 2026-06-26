@@ -1,4 +1,4 @@
-"""Minimal asset compiler v0 — manifest v1."""
+"""Minimal asset compiler v0 - manifest v1."""
 
 from __future__ import annotations
 

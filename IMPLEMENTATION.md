@@ -8,14 +8,14 @@ Phase 0.3 implemented (2026-06) - Milestone 3 MVP sprites.
 
 ## What was built (0.3)
 
-- **Manifest v1** — uuid, version object, display profile, hash/signature placeholders, `asset_report.json`
-- **Sprite IDs** — `body_idle_01`, `bg_office` layer-prefixed naming
-- **LittleFS** — factory nomabot pack in `firmware/data/`, `uploadfs` workflow
-- **Firmware stack** — CharacterRuntime → PackLoader → SpriteCache → AnimationGraph → Compositor → Renderer blit
-- **AssetRegistry** — firmware + desktop facade (Accessory/Font/Sound reserved)
-- **Protocol** — `load_character`, `diagnostics`
-- **CharacterService** — compile-on-demand, activate on connect; desktop does not parse manifest outside this service
-- **Emulator** — RGB565 bins from compiled pack, clip timing aligned with firmware
+- **Manifest v1** - uuid, version object, display profile, hash/signature placeholders, `asset_report.json`
+- **Sprite IDs** - `body_idle_01`, `bg_office` layer-prefixed naming
+- **LittleFS** - factory nomabot pack in `firmware/data/`, `uploadfs` workflow
+- **Firmware stack** - CharacterRuntime → PackLoader → SpriteCache → AnimationGraph → Compositor → Renderer blit
+- **AssetRegistry** - firmware + desktop facade (Accessory/Font/Sound reserved)
+- **Protocol** - `load_character`, `diagnostics`
+- **CharacterService** - compile-on-demand, activate on connect; desktop does not parse manifest outside this service
+- **Emulator** - RGB565 bins from compiled pack, clip timing aligned with firmware
 
 ## What was built (0.2)
 

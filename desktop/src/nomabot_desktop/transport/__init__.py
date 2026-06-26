@@ -45,7 +45,7 @@ class TransportAdapter:
 
 
 class EmulatorState:
-    """Shared state for emulator UI — mirrors firmware clip playback."""
+    """Shared state for emulator UI - mirrors firmware clip playback."""
 
     def __init__(self, width: int = 170, height: int = 320) -> None:
         self.width = width

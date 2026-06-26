@@ -1,4 +1,4 @@
-"""Asset registry — desktop facade over compiled packs."""
+"""Asset registry - desktop facade over compiled packs."""
 
 from __future__ import annotations
 

@@ -47,7 +47,7 @@ class AppTray:
         if icon.isNull():
             icon = app.style().standardIcon(app.style().StandardPixmap.SP_ComputerIcon)
         self._tray.setIcon(icon)
-        self._tray.setToolTip("NomaBot — starting…")
+        self._tray.setToolTip("NomaBot - starting…")
 
         self._menu = QMenu()
         self._menu.setMinimumWidth(200)
@@ -59,7 +59,7 @@ class AppTray:
         ctx.bus.subscribe("device.disconnected", self._on_disconnected)
 
     def _rebuild_menu(self) -> None:
-        """Rebuild on each open — avoids Windows tray menu clipping bugs."""
+        """Rebuild on each open - avoids Windows tray menu clipping bugs."""
         self._menu.clear()
 
         status_label = QLabel(self._status_text)
@@ -105,7 +105,7 @@ class AppTray:
 
     def _on_disconnected(self, _payload) -> None:
         self._status_text = "Status: offline"
-        self._tray.setToolTip("NomaBot — offline")
+        self._tray.setToolTip("NomaBot - offline")
 
     def _update_status(self, dev: DeviceRecord | None) -> None:
         if not dev:
@@ -120,7 +120,7 @@ class AppTray:
             if short_uuid:
                 char += f" ({short_uuid}…)"
         self._status_text = f"Status: online ({fw}, {res}{char})"
-        self._tray.setToolTip(f"NomaBot — {dev.name} — {fw} — {res}{char}")
+        self._tray.setToolTip(f"NomaBot - {dev.name} - {fw} - {res}{char}")
 
     def set_muted(self, muted: bool) -> None:
         self._muted = muted
