@@ -8,6 +8,9 @@
 struct ProtocolResponse {
   std::string line;
   bool ok = true;
+
+  ProtocolResponse() = default;
+  ProtocolResponse(std::string line_, bool ok_ = true) : line(std::move(line_)), ok(ok_) {}
 };
 
 class ProtocolHandler {

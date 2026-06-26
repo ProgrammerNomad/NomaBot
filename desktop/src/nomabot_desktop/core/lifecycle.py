@@ -5,7 +5,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import threading
+from collections.abc import Coroutine
 from pathlib import Path
+from typing import Any
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
 
@@ -19,16 +22,36 @@ from nomabot_desktop.ui.emulator import EmulatorWindow
 
 logger = logging.getLogger("noma.desktop")
 
+_bg_loop: asyncio.AbstractEventLoop | None = None
+
+
+def _bg_async_loop() -> asyncio.AbstractEventLoop:
+    """Dedicated asyncio loop for device I/O (runs off the Qt main thread)."""
+    global _bg_loop
+    if _bg_loop is None:
+        loop = asyncio.new_event_loop()
+
+        def _run() -> None:
+            asyncio.set_event_loop(loop)
+            loop.run_forever()
+
+        threading.Thread(target=_run, daemon=True, name="noma-async").start()
+        _bg_loop = loop
+    return _bg_loop
+
+
+def _schedule[T](coro: Coroutine[Any, Any, T]) -> asyncio.Future[T]:
+    return asyncio.run_coroutine_threadsafe(coro, _bg_async_loop())
+
 
 def _load_profile() -> dict:
     root = Path(__file__).resolve().parents[4]
     return json.loads((root / "profiles" / "lilygo_tdisplay_s3.json").read_text(encoding="utf-8"))
 
 
-async def run_app(*, emulator: bool = False, port: str | None = None) -> None:
-    setup_logging()
-    logger.info("NomaBot desktop 0.1.0 starting")
-
+async def _bootstrap(
+    *, emulator: bool, port: str | None
+) -> tuple[NomaRuntime, DeviceManager, dict, EmulatorState]:
     profile = _load_profile()
     dm = DeviceManager()
 
@@ -52,6 +75,14 @@ async def run_app(*, emulator: bool = False, port: str | None = None) -> None:
 
     runtime = NomaRuntime(dm)
     await dm.connect_all()
+    return runtime, dm, profile, emu_state
+
+
+def run_app(*, emulator: bool = False, port: str | None = None) -> None:
+    setup_logging()
+    logger.info("NomaBot desktop 0.1.0 starting")
+
+    runtime, dm, _, emu_state = _schedule(_bootstrap(emulator=emulator, port=port)).result()
 
     app = QApplication([])
     window = QMainWindow()
@@ -77,16 +108,9 @@ async def run_app(*, emulator: bool = False, port: str | None = None) -> None:
             )
         )
 
-    def _run(coro):
-        loop = asyncio.new_event_loop()
-        try:
-            loop.run_until_complete(coro)
-        finally:
-            loop.close()
-
-    btn_idle.clicked.connect(lambda: _run(play_idle()))
-    btn_coding.clicked.connect(lambda: _run(play_coding()))
-    btn_say.clicked.connect(lambda: _run(say_hello()))
+    btn_idle.clicked.connect(lambda: _schedule(play_idle()))
+    btn_coding.clicked.connect(lambda: _schedule(play_coding()))
+    btn_say.clicked.connect(lambda: _schedule(say_hello()))
 
     layout.addWidget(btn_idle)
     layout.addWidget(btn_coding)
@@ -101,7 +125,7 @@ async def run_app(*, emulator: bool = False, port: str | None = None) -> None:
         emu_win.show()
 
     # Demo: auto-play idle on start
-    await runtime.submit(RenderRequest(animation="idle", priority=Priority.NORMAL))
+    _schedule(runtime.submit(RenderRequest(animation="idle", priority=Priority.NORMAL)))
 
     app.exec()
-    await dm.disconnect_all()
+    _schedule(dm.disconnect_all()).result()
