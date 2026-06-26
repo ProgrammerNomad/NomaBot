@@ -8,6 +8,7 @@ from typing import Any, Protocol
 
 from nomabot.protocol.commands import (
     HelloParams,
+    LoadCharacterParams,
     PlayAnimationParams,
     SetBackgroundParams,
     SetStateParams,
@@ -100,6 +101,16 @@ class NomaClient:
 
     async def get_status(self) -> Envelope:
         return await self.send_command(build_command("get_status"))
+
+    async def load_character(self, character_id: str) -> Envelope:
+        return await self.send_command(
+            build_command("load_character", LoadCharacterParams(character_id=character_id))
+        )
+
+    async def diagnostics(self) -> Envelope:
+        from nomabot.protocol.commands import DiagnosticsParams
+
+        return await self.send_command(build_command("diagnostics", DiagnosticsParams()))
 
 
 class NomaBot:

@@ -28,7 +28,7 @@ def cmd_protocol_lint(args: argparse.Namespace) -> int:
                     print(f"FAIL {f.name}: param validation: {param_errors}", file=sys.stderr)
                     errors += 1
                     continue
-                if env.cmd not in COMMAND_MODELS and env.cmd not in ("load_character",):
+                if env.cmd not in COMMAND_MODELS:
                     print(f"WARN {f.name}: unknown command {env.cmd}")
             print(f"OK  {f.name}")
         except Exception as e:

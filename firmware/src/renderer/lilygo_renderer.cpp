@@ -74,9 +74,14 @@ bool LilygoRenderer::begin() {
   return true;
 }
 
-void LilygoRenderer::beginFrame() {}
-
 void LilygoRenderer::fillScreen(uint16_t color) { _gfx.fillScreen(color); }
+
+void LilygoRenderer::blitRGB565(const uint16_t *pixels, int x, int y, int w, int h) {
+  if (!pixels || w <= 0 || h <= 0) {
+    return;
+  }
+  _gfx.pushImage(x, y, w, h, pixels);
+}
 
 void LilygoRenderer::fillRect(int x, int y, int w, int h, uint16_t color) {
   _gfx.fillRect(x, y, w, h, color);
@@ -88,8 +93,6 @@ void LilygoRenderer::drawText(int x, int y, const char *text, uint16_t color) {
   _gfx.setCursor(x, y);
   _gfx.print(text);
 }
-
-void LilygoRenderer::endFrame() {}
 
 int LilygoRenderer::width() const { return _gfx.width(); }
 

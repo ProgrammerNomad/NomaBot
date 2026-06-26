@@ -45,5 +45,16 @@ mock:
 build-assets *ARGS:
     uv run nomabot build-assets {{ARGS}}
 
+# Generate sprites, compile pack, copy to firmware LittleFS data
+assets:
+    uv run python scripts/generate_placeholder_sprites.py
+    uv run nomabot build-assets --input assets/characters/nomabot --output compiled/nomabot --profile lilygo_tdisplay_s3
+    uv run python scripts/copy_pack_to_firmware_data.py
+
+# Flash firmware + LittleFS filesystem
+flash-all:
+    just assets
+    cd firmware && pio run -e lilygo_tdisplay_s3 -t upload && pio run -e lilygo_tdisplay_s3 -t uploadfs
+
 # Full CI check locally
 ci: lint test protocol profiles

@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from nomabot_desktop.core.asset_registry import AssetRegistry
 from nomabot_desktop.core.bus import EventBus
@@ -33,6 +34,7 @@ class AppContext:
     emu_state: EmulatorState | None = None
     log_dir: Path | None = None
     default_device_id: str | None = None
+    character_service: Any | None = None
 
 
 def create_context() -> AppContext:

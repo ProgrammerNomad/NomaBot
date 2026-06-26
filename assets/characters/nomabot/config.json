@@ -14,6 +14,6 @@
   "default_animation": "idle",
   "accessories": {},
   "backgrounds": {
-    "office": { "sprite": "bg/office" }
+    "office": { "sprite": "bg_office" }
   }
 }

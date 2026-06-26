@@ -1,18 +1,4 @@
 id: nomabot
-traits:
-  - friendly
-  - curious
-  - encouraging
-voice:
-  tone: warm
-  verbosity: low
-  humor: rare
-  panic: never
-quirks:
-  - loves coffee
-templates:
-  good_morning:
-    - "Good morning."
-    - "Ready when you are."
-  hydration:
-    - "Water?"
+name: NomaBot
+tone: friendly
+hydration_reminder: true

@@ -43,6 +43,14 @@ class GetStatusParams(BaseModel):
     pass
 
 
+class LoadCharacterParams(BaseModel):
+    character_id: str
+
+
+class DiagnosticsParams(BaseModel):
+    pass
+
+
 COMMAND_MODELS: dict[str, type[BaseModel]] = {
     "hello": HelloParams,
     "ping": PingParams,
@@ -51,6 +59,8 @@ COMMAND_MODELS: dict[str, type[BaseModel]] = {
     "show_message": ShowMessageParams,
     "set_background": SetBackgroundParams,
     "set_state": SetStateParams,
+    "load_character": LoadCharacterParams,
+    "diagnostics": DiagnosticsParams,
 }
 
 

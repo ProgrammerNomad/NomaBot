@@ -4,7 +4,18 @@ Track divergences between code and architecture docs here. Update formal docs on
 
 ## Status
 
-Phase 0.2 implemented (2026-06) - Milestone 2 desktop core.
+Phase 0.3 implemented (2026-06) - Milestone 3 MVP sprites.
+
+## What was built (0.3)
+
+- **Manifest v1** — uuid, version object, display profile, hash/signature placeholders, `asset_report.json`
+- **Sprite IDs** — `body_idle_01`, `bg_office` layer-prefixed naming
+- **LittleFS** — factory nomabot pack in `firmware/data/`, `uploadfs` workflow
+- **Firmware stack** — CharacterRuntime → PackLoader → SpriteCache → AnimationGraph → Compositor → Renderer blit
+- **AssetRegistry** — firmware + desktop facade (Accessory/Font/Sound reserved)
+- **Protocol** — `load_character`, `diagnostics`
+- **CharacterService** — compile-on-demand, activate on connect; desktop does not parse manifest outside this service
+- **Emulator** — RGB565 bins from compiled pack, clip timing aligned with firmware
 
 ## What was built (0.2)
 
@@ -31,6 +42,6 @@ Phase 0.2 implemented (2026-06) - Milestone 2 desktop core.
 
 - Python 3.14 used locally if 3.13 unavailable (requires-python >=3.13)
 - Firmware renderer uses inline LovyanGFX pin config for T-Display S3
-- Character pack loading on device: firmware uses built-in animation names; full manifest load is Milestone 3
+- Character pack loading on device via LittleFS + CharacterRuntime (Milestone 3)
 - Desktop uses background asyncio thread + Qt main thread; StateManager schedules via `run_coroutine_threadsafe`
 - T-Display S3 display uses 8-bit parallel LovyanGFX bus (not SPI)

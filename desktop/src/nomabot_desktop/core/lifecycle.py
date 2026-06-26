@@ -20,6 +20,7 @@ from nomabot_desktop.core.events import StateRequest
 from nomabot_desktop.core.logging_config import setup_logging
 from nomabot_desktop.core.state_manager import BotState, StateManager
 from nomabot_desktop.services.activity import ActivityService
+from nomabot_desktop.services.character import CharacterService
 from nomabot_desktop.services.scheduler import SchedulerService
 from nomabot_desktop.storage.service import DeviceRow
 from nomabot_desktop.transport import EmulatorState
@@ -85,6 +86,8 @@ async def _connect_device(ctx: AppContext, device_id: str) -> None:
     hello = await ctx.transport_manager.connect(device_id)
     ctx.device_manager.update_from_hello(device_id, hello)
     _persist_device(ctx, device_id, hello)
+    if ctx.character_service:
+        await ctx.character_service.activate(device_id, "nomabot")
 
 
 async def _bootstrap_hardware(
@@ -209,10 +212,11 @@ def run_app(
     no_tray: bool = False,
 ) -> None:
     log_dir = setup_logging()
-    logger.info("NomaBot desktop 0.2.0 starting")
+    logger.info("NomaBot desktop 0.3.0 starting")
 
     ctx = create_context()
     ctx.log_dir = log_dir
+    ctx.character_service = CharacterService(ctx.runtime.assets, ctx.transport_manager)
 
     state_manager = StateManager(ctx.bus, _schedule)
     state_manager.bind_runtime(ctx.runtime.submit)
@@ -230,7 +234,7 @@ def run_app(
 
     emu_win: EmulatorWindow | None = None
     if emu_state is not None:
-        emu_win = EmulatorWindow(emu_state)
+        emu_win = EmulatorWindow(emu_state, ctx.runtime.assets)
         emu_win.show()
 
     dev_window: QMainWindow | None = None
@@ -280,6 +284,9 @@ def run_app(
         dev = ctx.device_manager.get(device_id)
         if dev and dev.online:
             tray._update_status(dev)  # noqa: SLF001
+        if ctx.character_service and ctx.character_service.active_pack_id:
+            dev2 = ctx.device_manager.get(device_id)
+            tray._update_status(dev2)  # noqa: SLF001
 
     ctx.bus.publish(
         "state.request",

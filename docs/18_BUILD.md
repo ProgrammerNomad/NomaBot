@@ -33,6 +33,8 @@ just test
 | `just format` | Auto-format with Ruff |
 | `just protocol` | Lint protocol JSON fixtures |
 | `just profiles` | Validate `profiles/*.json` |
+| `just assets` | Generate sprites, compile pack, copy to `firmware/data/` |
+| `just flash-all` | Build assets + upload firmware + LittleFS (`uploadfs`) |
 | `just firmware` | Build firmware for LILYGO T-Display S3 |
 | `just desktop` | Launch desktop app |
 | `just emulator` | Launch with 170×320 emulator window |
@@ -64,17 +66,28 @@ uv run python -m nomabot_desktop --dev         # show manual control buttons
 ## Firmware
 
 ```bash
+just assets          # compile nomabot pack → firmware/data/
 cd firmware
-pio run -e lilygo_tdisplay_s3
 pio run -e lilygo_tdisplay_s3 -t upload
+pio run -e lilygo_tdisplay_s3 -t uploadfs   # required for sprites on device
 pio device monitor -b 115200
 ```
 
+Or from repo root: `just flash-all` (upload + uploadfs).
+
 Official profile: `profiles/lilygo_tdisplay_s3.json` (170×320).
+
+LittleFS layout on device:
+
+```text
+/characters/nomabot/manifest.json
+/characters/nomabot/sprites/...
+/active_character.json
+```
 
 ## Versions
 
-All components start at **0.1.0** until 1.0:
+Milestone 3 components use **0.3.0**:
 
 | Component | Location |
 |-----------|----------|

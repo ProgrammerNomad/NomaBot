@@ -22,6 +22,8 @@ class MockTransport:
         self.display_height = 320
         self.last_animation: str | None = None
         self.last_message: str | None = None
+        self.last_character_id: str | None = None
+        self.pack_uuid: str | None = "a6d1e8f0-4c2b-4f91-9c3d-8e1a2b4c6d8e"
 
     async def connect(self) -> None:
         self._connected = True
@@ -61,7 +63,14 @@ class MockTransport:
                         "height": self.display_height,
                         "fps": 20,
                     },
-                    "caps": ["play_animation", "show_message", "set_background", "set_state"],
+                    "caps": [
+                        "play_animation",
+                        "show_message",
+                        "set_background",
+                        "set_state",
+                        "load_character",
+                        "diagnostics",
+                    ],
                 },
             )
         if cmd == "ping":
@@ -86,6 +95,37 @@ class MockTransport:
             return build_response(env.id, "set_background", data={"ok": True})
         if cmd == "set_state":
             return build_response(env.id, "set_state", data={"ok": True})
+        if cmd == "load_character" and env.params:
+            self.last_character_id = env.params.get("character_id")
+            return build_response(
+                env.id,
+                "load_character",
+                data={
+                    "pack_id": self.last_character_id,
+                    "uuid": self.pack_uuid,
+                    "version": {"major": 0, "minor": 3, "patch": 0},
+                    "display": {
+                        "profile": "lilygo_tdisplay_s3",
+                        "width": self.display_width,
+                        "height": self.display_height,
+                    },
+                },
+            )
+        if cmd == "diagnostics":
+            return build_response(
+                env.id,
+                "diagnostics",
+                data={
+                    "fps": 20,
+                    "heap_free": 182304,
+                    "psram_free": 6543210,
+                    "character_id": self.last_character_id or "nomabot",
+                    "uuid": self.pack_uuid,
+                    "animation": self.last_animation or "idle",
+                    "frame": 0,
+                    "state": "idle",
+                },
+            )
         return build_response(
             env.id,
             cmd,

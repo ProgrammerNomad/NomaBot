@@ -47,11 +47,35 @@ jobs:
             --input assets/characters/nomabot \
             --output compiled/nomabot \
             --profile lilygo_tdisplay_s3
+          uv run python scripts/copy_pack_to_firmware_data.py
 
   firmware:
     runs-on: ubuntu-latest
+    needs: python
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Generate placeholder sprites
+        run: uv run python scripts/generate_placeholder_sprites.py
+
+      - name: Build assets for firmware data
+        run: |
+          uv run nomabot build-assets \
+            --input assets/characters/nomabot \
+            --output compiled/nomabot \
+            --profile lilygo_tdisplay_s3
+          uv run python scripts/copy_pack_to_firmware_data.py
 
       - name: Cache PlatformIO
         uses: actions/cache@v4

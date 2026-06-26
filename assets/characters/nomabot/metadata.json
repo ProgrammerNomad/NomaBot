@@ -1,11 +1,12 @@
 {
   "id": "nomabot",
+  "uuid": "a6d1e8f0-4c2b-4f91-9c3d-8e1a2b4c6d8e",
   "name": "NomaBot",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "author": "NomaBot Project",
   "license": "MIT",
   "description": "Default desk companion robot.",
-  "min_firmware": "0.1.0",
-  "min_desktop": "0.1.0",
+  "min_firmware": "0.3.0",
+  "min_desktop": "0.3.0",
   "hardware_profiles": ["lilygo_tdisplay_s3"]
 }

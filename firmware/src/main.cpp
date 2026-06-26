@@ -1,17 +1,69 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include "animation/engine.h"
+#include <FS.h>
+#include <LittleFS.h>
+#include "assets/pack_loader.h"
+#include "character/character_runtime.h"
 #include "protocol/handler.h"
 #include "renderer/lilygo_renderer.h"
 
 static LilygoRenderer renderer;
-static AnimationEngine animEngine;
+static PackLoader packLoader;
+static CharacterRuntime characterRuntime;
 static ProtocolHandler protocol;
 static String serialBuffer;
+static String activeCharacterId = "nomabot";
 
 static void emitLine(const std::string &line) { Serial.print(line.c_str()); }
 
+static bool loadActiveCharacter() {
+  File f = LittleFS.open("/active_character.json", "r");
+  if (!f) {
+    return false;
+  }
+  std::string text;
+  while (f.available()) {
+    text += static_cast<char>(f.read());
+  }
+  f.close();
+
+  JsonDocument doc;
+  if (deserializeJson(doc, text)) {
+    return false;
+  }
+  const char *id = doc["character_id"] | "nomabot";
+  activeCharacterId = id;
+  return true;
+}
+
+static bool persistActiveCharacter(const char *characterId, const char *uuid) {
+  JsonDocument doc;
+  doc["character_id"] = characterId;
+  if (uuid && uuid[0]) {
+    doc["uuid"] = uuid;
+  }
+  File f = LittleFS.open("/active_character.json", "w");
+  if (!f) {
+    return false;
+  }
+  serializeJson(doc, f);
+  f.close();
+  return true;
+}
+
+static bool bootCharacter() {
+  loadActiveCharacter();
+  if (!characterRuntime.loadCharacter(packLoader, activeCharacterId.c_str())) {
+    Serial.printf("Failed to load character: %s\n", activeCharacterId.c_str());
+    renderer.fillScreen(0xF800);
+    return false;
+  }
+  characterRuntime.render();
+  return true;
+}
+
 static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
+  (void)params;
   JsonDocument data;
   data["protocol"] = 1;
   data["firmware"] = NOMA_FIRMWARE_VERSION;
@@ -31,12 +83,20 @@ static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
   JsonObject display = data["display"].to<JsonObject>();
   display["width"] = renderer.width();
   display["height"] = renderer.height();
-  display["fps"] = 20;
+  display["fps"] = characterRuntime.fps() > 0 ? characterRuntime.fps() : 20;
   JsonArray caps = data["caps"].to<JsonArray>();
   caps.add("play_animation");
   caps.add("show_message");
   caps.add("set_background");
   caps.add("set_state");
+  caps.add("load_character");
+  caps.add("diagnostics");
+
+  const PackInfo *info = characterRuntime.packInfo();
+  if (info) {
+    data["character_id"] = characterRuntime.characterId();
+    data["pack_uuid"] = info->uuid;
+  }
 
   JsonDocument doc;
   doc["v"] = 1;
@@ -67,7 +127,7 @@ static ProtocolResponse handlePing(const std::string &id, JsonObject) {
 
 static ProtocolResponse handlePlayAnimation(const std::string &id, JsonObject params) {
   const char *animation = params["animation"] | "idle";
-  animEngine.setAnimation(animation);
+  characterRuntime.playAnimation(animation);
   JsonDocument data;
   data["ok"] = true;
   JsonDocument doc;
@@ -84,7 +144,7 @@ static ProtocolResponse handlePlayAnimation(const std::string &id, JsonObject pa
 
 static ProtocolResponse handleShowMessage(const std::string &id, JsonObject params) {
   const char *text = params["text"] | "";
-  animEngine.setMessage(text);
+  characterRuntime.setMessage(text);
   JsonDocument data;
   data["ok"] = true;
   JsonDocument doc;
@@ -99,11 +159,45 @@ static ProtocolResponse handleShowMessage(const std::string &id, JsonObject para
   return {out + "\n", true};
 }
 
+static ProtocolResponse handleSetState(const std::string &id, JsonObject params) {
+  const char *state = params["state"] | "idle";
+  characterRuntime.setState(state);
+  JsonDocument data;
+  data["ok"] = true;
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "set_state";
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
+}
+
+static ProtocolResponse handleSetBackground(const std::string &id, JsonObject params) {
+  const char *bg = params["background"] | "office";
+  characterRuntime.setBackground(bg);
+  JsonDocument data;
+  data["ok"] = true;
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "set_background";
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
+}
+
 static ProtocolResponse handleGetStatus(const std::string &id, JsonObject) {
   JsonDocument data;
   data["firmware_version"] = NOMA_FIRMWARE_VERSION;
-  data["active_animation"] = animEngine.currentAnimation().c_str();
-  data["fps"] = 20;
+  data["active_animation"] = characterRuntime.currentAnimation();
+  data["fps"] = characterRuntime.fps();
   JsonDocument doc;
   doc["v"] = 1;
   doc["id"] = id;
@@ -116,65 +210,104 @@ static ProtocolResponse handleGetStatus(const std::string &id, JsonObject) {
   return {out + "\n", true};
 }
 
-static void drawFrame() {
-  uint16_t bg = animEngine.blinkPhase() ? 0x1082 : 0x0000;
-  if (animEngine.currentAnimation() == "coding") {
-    bg = animEngine.blinkPhase() ? 0x04FF : 0x02A6;
+static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject params) {
+  const char *characterId = params["character_id"] | "nomabot";
+  characterRuntime.unload();
+  packLoader.unload();
+
+  JsonDocument data;
+  bool ok = characterRuntime.loadCharacter(packLoader, characterId);
+  if (ok) {
+    activeCharacterId = characterId;
+    const PackInfo *info = characterRuntime.packInfo();
+    persistActiveCharacter(characterId, info ? info->uuid.c_str() : nullptr);
+    data["pack_id"] = info ? info->packId : characterId;
+    data["uuid"] = info ? info->uuid : "";
+    if (info) {
+      JsonObject version = data["version"].to<JsonObject>();
+      version["major"] = info->version.major;
+      version["minor"] = info->version.minor;
+      version["patch"] = info->version.patch;
+      JsonObject display = data["display"].to<JsonObject>();
+      display["profile"] = info->profile;
+      display["width"] = info->displayWidth;
+      display["height"] = info->displayHeight;
+    }
+    characterRuntime.render();
+  } else {
+    data["error"] = "load_failed";
   }
-  renderer.fillScreen(bg);
 
-  int cx = renderer.width() / 2;
-  int cy = renderer.height() / 2;
-  uint16_t body = animEngine.blinkPhase() ? 0x4C5F : 0x2D3F;
-  renderer.fillRect(cx - 25, cy - 30, 50, 60, body);
-  renderer.fillRect(cx - 15, cy - 55, 30, 30, body);
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "load_character";
+  doc["ok"] = ok;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", ok};
+}
 
-  renderer.drawText(4, 8, animEngine.currentAnimation().c_str(), 0xFFFF);
+static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
+  JsonDocument data;
+  data["fps"] = characterRuntime.fps();
+#if defined(ESP32)
+  data["heap_free"] = ESP.getFreeHeap();
+  data["psram_free"] = ESP.getFreePsram();
+#else
+  data["heap_free"] = 0;
+  data["psram_free"] = 0;
+#endif
+  data["character_id"] = characterRuntime.characterId();
+  const PackInfo *info = characterRuntime.packInfo();
+  data["uuid"] = info ? info->uuid : "";
+  data["animation"] = characterRuntime.currentAnimation();
+  data["frame"] = characterRuntime.currentFrame();
+  data["state"] = characterRuntime.currentState();
 
-  if (!animEngine.message().empty()) {
-    renderer.drawText(4, renderer.height() - 20, animEngine.message().c_str(), 0xFFFF);
-  }
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "diagnostics";
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
 }
 
 void setup() {
   Serial.begin(115200);
   delay(500);
   renderer.begin();
-  animEngine.begin();
+  characterRuntime.begin(&renderer);
+
+  if (!packLoader.mountFilesystem()) {
+    renderer.fillScreen(0xF800);
+    return;
+  }
+
+  if (!bootCharacter()) {
+    return;
+  }
 
   protocol.registerCommand("hello", handleHello);
   protocol.registerCommand("ping", handlePing);
   protocol.registerCommand("play_animation", handlePlayAnimation);
   protocol.registerCommand("show_message", handleShowMessage);
   protocol.registerCommand("get_status", handleGetStatus);
-  protocol.registerCommand("set_background", [](const std::string &id, JsonObject) {
-    JsonDocument doc;
-    doc["v"] = 1;
-    doc["id"] = id;
-    doc["type"] = "response";
-    doc["cmd"] = "set_background";
-    doc["ok"] = true;
-    std::string out;
-    serializeJson(doc, out);
-    return ProtocolResponse{out + "\n", true};
-  });
-  protocol.registerCommand("set_state", [](const std::string &id, JsonObject) {
-    JsonDocument doc;
-    doc["v"] = 1;
-    doc["id"] = id;
-    doc["type"] = "response";
-    doc["cmd"] = "set_state";
-    doc["ok"] = true;
-    std::string out;
-    serializeJson(doc, out);
-    return ProtocolResponse{out + "\n", true};
-  });
-
-  drawFrame();
+  protocol.registerCommand("set_background", handleSetBackground);
+  protocol.registerCommand("set_state", handleSetState);
+  protocol.registerCommand("load_character", handleLoadCharacter);
+  protocol.registerCommand("diagnostics", handleDiagnostics);
 }
 
 void loop() {
-  animEngine.tick(millis());
+  unsigned long now = millis();
+  characterRuntime.tick(now);
 
   while (Serial.available()) {
     char c = Serial.read();
@@ -187,8 +320,8 @@ void loop() {
   }
 
   static unsigned long lastDraw = 0;
-  if (millis() - lastDraw > 100) {
-    drawFrame();
-    lastDraw = millis();
+  if (now - lastDraw > 50) {
+    characterRuntime.render();
+    lastDraw = now;
   }
 }

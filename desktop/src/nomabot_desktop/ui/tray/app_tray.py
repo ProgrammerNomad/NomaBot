@@ -112,8 +112,15 @@ class AppTray:
             return
         fw = dev.firmware_version or "?"
         res = f"{dev.display_width or '?'}×{dev.display_height or '?'}"
-        self._status_text = f"Status: online ({fw}, {res})"
-        self._tray.setToolTip(f"NomaBot — {dev.name} — {fw} — {res}")
+        char = ""
+        cs = getattr(self._ctx, "character_service", None)
+        if cs and cs.active_pack_id:
+            short_uuid = (cs.active_uuid or "")[:8]
+            char = f", {cs.active_pack_id}"
+            if short_uuid:
+                char += f" ({short_uuid}…)"
+        self._status_text = f"Status: online ({fw}, {res}{char})"
+        self._tray.setToolTip(f"NomaBot — {dev.name} — {fw} — {res}{char}")
 
     def set_muted(self, muted: bool) -> None:
         self._muted = muted

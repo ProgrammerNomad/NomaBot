@@ -26,6 +26,8 @@ firmware/.vscode/
 # Compiled assets
 compiled/
 *.nomabundle
+firmware/data/characters/
+firmware/data/active_character.json
 
 # OS
 .DS_Store

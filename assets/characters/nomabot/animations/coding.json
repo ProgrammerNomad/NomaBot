@@ -3,8 +3,7 @@
   "fps": 2,
   "loop": true,
   "frames": [
-    { "sprite": "body/coding_01", "duration_ms": 500 },
-    { "sprite": "body/coding_02", "duration_ms": 500 }
-  ],
-  "default_accessory": "laptop"
+    { "sprite": "body_coding_01", "duration_ms": 500 },
+    { "sprite": "body_coding_02", "duration_ms": 500 }
+  ]
 }

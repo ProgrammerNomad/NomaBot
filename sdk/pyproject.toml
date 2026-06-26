@@ -1,6 +1,6 @@
 [project]
 name = "nomabot"
-version = "0.1.0"
+version = "0.3.0"
 description = "NomaBot SDK - protocol, client, and developer tools"
 requires-python = ">=3.13"
 dependencies = [
