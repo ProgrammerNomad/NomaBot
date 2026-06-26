@@ -1,0 +1,1 @@
+{"v":1,"id":"test-msg-001","type":"command","cmd":"show_message","params":{"text":"Hello","style":"speech","duration_ms":5000}}

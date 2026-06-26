@@ -1,0 +1,19 @@
+{
+  "id": "nomabot",
+  "display": {
+    "width": 170,
+    "height": 320,
+    "profile": "lilygo_tdisplay_s3",
+    "default_background": "office"
+  },
+  "anchors": {
+    "hands": { "x": 85, "y": 200 },
+    "head": { "x": 85, "y": 80 },
+    "desk": { "x": 85, "y": 280 }
+  },
+  "default_animation": "idle",
+  "accessories": {},
+  "backgrounds": {
+    "office": { "sprite": "bg/office" }
+  }
+}

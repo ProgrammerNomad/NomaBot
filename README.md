@@ -8,7 +8,18 @@ Plugins / Services  →  Noma Runtime  →  Transport  →  ESP32 (170×320)
                        Asset Compiler
 ```
 
-**Status:** Architecture documented; implementation follows [roadmap](docs/10_ROADMAP.md). **Official hardware:** [LILYGO T-Display S3](docs/09_HARDWARE.md).
+**Status:** Phase 0.1 implemented — see [IMPLEMENTATION.md](IMPLEMENTATION.md) and [docs/18_BUILD.md](docs/18_BUILD.md). **Hardware:** [LILYGO T-Display S3](docs/09_HARDWARE.md).
+
+## Quick start
+
+```bash
+uv sync --all-packages
+uv run python scripts/generate_placeholder_sprites.py
+just test
+just emulator
+```
+
+USB: `uv run python -m nomabot_desktop --port COM7`
 
 ## What it is
 

@@ -1,0 +1,39 @@
+# Python / uv
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# PlatformIO
+firmware/.pio/
+firmware/.vscode/
+
+# Compiled assets
+compiled/
+*.nomabundle
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Local config
+.env

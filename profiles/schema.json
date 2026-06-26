@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NomaBot Device Profile",
+  "type": "object",
+  "required": ["id", "display", "renderer", "default_baud", "asset_budget_bytes"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "display": {
+      "type": "object",
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "renderer": { "type": "string" },
+    "default_baud": { "type": "integer", "minimum": 9600 },
+    "asset_budget_bytes": { "type": "integer", "minimum": 1 },
+    "status": { "type": "string", "enum": ["official", "experimental"] }
+  }
+}

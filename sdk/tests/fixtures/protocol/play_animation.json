@@ -1,0 +1,1 @@
+{"v":1,"id":"test-anim-001","type":"command","cmd":"play_animation","params":{"animation":"idle","loop":true}}

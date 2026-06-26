@@ -1,0 +1,11 @@
+{
+  "id": "nomabot",
+  "name": "NomaBot",
+  "version": "0.1.0",
+  "author": "NomaBot Project",
+  "license": "MIT",
+  "description": "Default desk companion robot.",
+  "min_firmware": "0.1.0",
+  "min_desktop": "0.1.0",
+  "hardware_profiles": ["lilygo_tdisplay_s3"]
+}

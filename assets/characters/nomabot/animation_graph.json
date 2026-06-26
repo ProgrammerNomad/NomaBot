@@ -1,0 +1,17 @@
+{
+  "default_state": "idle",
+  "states": {
+    "idle": {
+      "animation": "idle",
+      "transitions": [
+        { "to": "coding", "on": "event.typing", "blend_ms": 150 }
+      ]
+    },
+    "coding": {
+      "animation": "coding",
+      "transitions": [
+        { "to": "idle", "on": "event.idle", "blend_ms": 150 }
+      ]
+    }
+  }
+}

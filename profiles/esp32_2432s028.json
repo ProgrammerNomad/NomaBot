@@ -1,0 +1,8 @@
+{
+  "id": "esp32_2432s028",
+  "display": { "width": 320, "height": 240 },
+  "renderer": "ESP32_2432S028",
+  "default_baud": 115200,
+  "asset_budget_bytes": 2097152,
+  "status": "experimental"
+}
