@@ -1,4 +1,4 @@
-"""Noma Runtime — central render orchestrator."""
+"""Noma Runtime - central render orchestrator."""
 
 from __future__ import annotations
 
@@ -15,9 +15,11 @@ from nomabot.protocol.commands import (
 )
 from nomabot.protocol.envelope import Envelope
 from nomabot.types import Priority, RenderRequest
-from nomabot_desktop.core.device_manager import DeviceManager
+from nomabot_desktop.core.asset_registry import AssetRegistry
+from nomabot_desktop.core.command_dispatcher import CommandDispatcher
+from nomabot_desktop.core.priority_queue import PriorityQueue
 
-logger = logging.getLogger("noma.desktop")
+logger = logging.getLogger("noma.runtime")
 
 
 @dataclass
@@ -31,12 +33,23 @@ class _MergedState:
 
 
 class NomaRuntime:
-    """Sole path from application logic to device."""
+    """Builds protocol commands and dispatches via priority queue."""
 
-    def __init__(self, device_manager: DeviceManager) -> None:
-        self._dm = device_manager
+    def __init__(
+        self,
+        queue: PriorityQueue,
+        dispatcher: CommandDispatcher,
+        assets: AssetRegistry | None = None,
+    ) -> None:
+        self._queue = queue
+        self._dispatcher = dispatcher
+        self._assets = assets or AssetRegistry()
         self._state = _MergedState()
         self._listeners: list[Callable[[_MergedState], None]] = []
+
+    @property
+    def assets(self) -> AssetRegistry:
+        return self._assets
 
     def on_state_changed(self, callback: Callable[[_MergedState], None]) -> None:
         self._listeners.append(callback)
@@ -46,7 +59,7 @@ class NomaRuntime:
             cb(self._state)
 
     async def submit(self, request: RenderRequest) -> list[Envelope]:
-        """Merge by priority and emit protocol commands."""
+        """Merge by priority, enqueue commands, flush dispatcher."""
         commands: list[Envelope] = []
         s = self._state
 
@@ -84,7 +97,8 @@ class NomaRuntime:
         self._notify()
 
         for cmd in commands:
-            await self._dm.send_envelope(cmd, request.device_id)
-            logger.info("Runtime sent %s", cmd.cmd)
+            self._queue.enqueue(cmd, priority=request.priority, device_id=request.device_id)
+            logger.info("Runtime queued %s", cmd.cmd)
 
+        await self._dispatcher.flush()
         return commands

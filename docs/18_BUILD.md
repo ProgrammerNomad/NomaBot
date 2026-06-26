@@ -10,7 +10,7 @@
 | **uv** | Python deps & runs | `pip install uv` or [astral.sh/uv](https://docs.astral.sh/uv/) |
 | **just** | Task runner | [github.com/casey/just](https://github.com/casey/just) |
 | **PlatformIO** | Firmware | VS Code extension or `pip install platformio` |
-| **Git** | Version control | — |
+| **Git** | Version control | - |
 
 Windows: use PowerShell or Git Bash for `just` commands from repo root.
 
@@ -56,8 +56,9 @@ assets/       # Character packs (source)
 - **Ruff** is the only linter/formatter (no flake8/black/isort).
 
 ```bash
-uv run nomabot protocol lint sdk/tests/fixtures/protocol
-uv run python -m nomabot_desktop
+uv run python -m nomabot_desktop --emulator    # dev without hardware (preferred)
+uv run python -m nomabot_desktop --port COM3   # USB device
+uv run python -m nomabot_desktop --dev         # show manual control buttons
 ```
 
 ## Firmware
@@ -88,5 +89,10 @@ All components start at **0.1.0** until 1.0:
 ```text
 %APPDATA%/NomaBot/logs/
 ├── desktop.log
-└── transport.log
+├── transport.log
+├── runtime.log
+├── activity.log
+└── scheduler.log
 ```
+
+Rotating handlers: 10 MB × 3 backups each. Close serial monitor before connecting desktop (`--port COMx`) - one process per COM port.

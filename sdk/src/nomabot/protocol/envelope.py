@@ -1,4 +1,4 @@
-"""Protocol envelope — wire format for all messages."""
+"""Protocol envelope - wire format for all messages."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ class MessageType(StrEnum):
 
 
 class Envelope(BaseModel):
-    """JSON protocol envelope — every message requires v and id."""
+    """JSON protocol envelope - every message requires v and id."""
 
     v: int = 1
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

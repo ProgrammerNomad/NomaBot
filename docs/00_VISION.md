@@ -1,12 +1,12 @@
 # NomaBot Vision
 
-> **Status:** Design specification — project in early planning phase.
+> **Status:** Design specification - project in early planning phase.
 
 ## What is NomaBot?
 
 NomaBot is a **desk companion platform**: a small ESP32-powered display plus a PySide6 desktop control plane, an asset pipeline, SDKs, and an extensible plugin/character ecosystem.
 
-The desktop application is the brain. The firmware is the display. Characters, themes, and integrations are **data and plugins**—not hardcoded features.
+The desktop application is the brain. The firmware is the display. Characters, themes, and integrations are **data and plugins**-not hardcoded features.
 
 ```
 ┌─────────────────┐         ┌─────────────────┐
@@ -20,7 +20,7 @@ The desktop application is the brain. The firmware is the display. Characters, t
 
 ## Why NomaBot exists
 
-Modern work happens across dozens of tools—IDEs, chat apps, music, calendars, git, containers, home automation. Most desk gadgets show static information or require you to configure everything manually.
+Modern work happens across dozens of tools-IDEs, chat apps, music, calendars, git, containers, home automation. Most desk gadgets show static information or require you to configure everything manually.
 
 NomaBot aims to be different:
 
@@ -69,7 +69,7 @@ Invest early in the **asset compiler**, **SDKs**, **protocol versioning**, **ani
 
 ### 7. PySide6 from day one
 
-The desktop UI uses **PySide6 + Qt Designer** from the first release—no interim UI toolkit and no migration later.
+The desktop UI uses **PySide6 + Qt Designer** from the first release-no interim UI toolkit and no migration later.
 
 ### 8. Windows-first, cross-platform later
 
@@ -99,7 +99,7 @@ We will know the vision is realized when:
 1. A user can plug in a device, install the desktop app, and see meaningful activity within minutes.
 2. A third party can ship a character pack without forking firmware or the desktop core.
 3. A third party can ship a plugin (e.g. Jira, Discord) using documented SDK interfaces.
-4. Switching from USB to Wi-Fi requires no firmware rebuild—only configuration.
+4. Switching from USB to Wi-Fi requires no firmware rebuild-only configuration.
 5. A user with **three devices** can assign different characters and transports per room.
 6. `nomabot build-assets` produces device-ready packs artists validate in the **Character Editor**.
 7. The project documentation is sufficient for a new contributor to set up, build, and submit a PR without oral tradition.

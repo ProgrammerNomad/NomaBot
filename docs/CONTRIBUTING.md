@@ -1,6 +1,6 @@
 # Contributing to NomaBot
 
-Thank you for considering a contribution. NomaBot is designed as an extensible desk companion platform—contributions to core, firmware, characters, plugins, and documentation are all welcome.
+Thank you for considering a contribution. NomaBot is designed as an extensible desk companion platform-contributions to core, firmware, characters, plugins, and documentation are all welcome.
 
 > **Project phase:** Early planning. Implementation is starting; APIs and pack formats may change until milestone 1 exits. Check [Roadmap](./10_ROADMAP.md) before large PRs.
 
@@ -27,7 +27,7 @@ Not sure where to start? Look for issues labeled `good first issue` or ask in di
 1. Read [Vision](./00_VISION.md) and [Architecture](./01_ARCHITECTURE.md)
 2. Match work to a [Roadmap](./10_ROADMAP.md) milestone when possible
 3. For new features, open an issue or discussion first if it changes protocol or pack format
-4. Keep firmware **dumb**—no Git/Spotify logic on ESP32
+4. Keep firmware **dumb**-no Git/Spotify logic on ESP32
 
 ## Development setup (target)
 
@@ -43,7 +43,7 @@ python -m app
 
 # Firmware (future)
 cd firmware
-# Arduino IDE or PlatformIO — see firmware/README when added
+# Arduino IDE or PlatformIO - see firmware/README when added
 
 # Character tools (future)
 cd sdk/character
@@ -94,9 +94,9 @@ Requirements (expected):
 3. Add or update tests when applicable
 4. Ensure CI passes (when configured)
 5. Open PR with:
-   - **Summary** — what and why
-   - **Test plan** — steps you ran
-   - **Milestone** — e.g. M2 Desktop
+   - **Summary** - what and why
+   - **Test plan** - steps you ran
+   - **Milestone** - e.g. M2 Desktop
 6. Address review feedback; maintainers squash-merge unless asked otherwise
 
 ### PR size

@@ -50,9 +50,17 @@ class MockTransport:
                 env.id,
                 "hello",
                 data={
+                    "protocol": 1,
+                    "firmware": self.firmware_version,
                     "firmware_version": self.firmware_version,
+                    "board": "MOCK_BOARD",
+                    "serial": "MOCK-SERIAL-001",
                     "device_id": self.device_id,
-                    "display": {"width": self.display_width, "height": self.display_height},
+                    "display": {
+                        "width": self.display_width,
+                        "height": self.display_height,
+                        "fps": 20,
+                    },
                     "caps": ["play_animation", "show_message", "set_background", "set_state"],
                 },
             )

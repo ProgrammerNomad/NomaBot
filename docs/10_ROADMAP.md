@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Status:** Living document — milestones reflect planned delivery order, not fixed dates.
+> **Status:** Living document - milestones reflect planned delivery order, not fixed dates.
 
 ## Philosophy
 
@@ -34,7 +34,7 @@ See [Platform & Ecosystem](./13_PLATFORM.md).
 
 ---
 
-## Milestone 1 — Core
+## Milestone 1 - Core
 
 **Goal:** Layered animation + protocol v1 over serial; renderer abstraction stub.
 
@@ -57,9 +57,9 @@ See [Platform & Ecosystem](./13_PLATFORM.md).
 
 ---
 
-## Milestone 1.5 — Developer Experience
+## Milestone 1.5 - Developer Experience
 
-**Goal:** Tools that pay dividends during all later milestones—build immediately after Core.
+**Goal:** Tools that pay dividends during all later milestones-build immediately after Core.
 
 | Deliverable | Details |
 |-------------|---------|
@@ -105,13 +105,13 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 
 ---
 
-## Milestone 2 — Noma Core (Desktop)
+## Milestone 2 - Noma Core (Desktop)
 
-**Goal:** PySide6 desktop from day one—modular, not monolithic.
+**Goal:** PySide6 desktop from day one-modular, not monolithic.
 
 | Deliverable | Details |
 |-------------|---------|
-| **PySide6 only** | Tray, settings, Qt Designer—no alternate UI toolkit |
+| **PySide6 only** | Tray, settings, Qt Designer-no alternate UI toolkit |
 | `desktop/core/` | Event bus, **Noma Runtime**, lifecycle |
 | **Render queue** | Priority: Critical → Background ([ADR 0005](./adr/0005-event-priority.md)) |
 | `SchedulerService` | Central job registry + SQLite persistence |
@@ -133,7 +133,7 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 
 ---
 
-## Milestone 3 — Asset Pipeline & Characters
+## Milestone 3 - Asset Pipeline & Characters
 
 **Goal:** Compiler + Character Editor + swappable packs.
 
@@ -157,7 +157,7 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 
 ---
 
-## Milestone 4 — Plugins & Themes
+## Milestone 4 - Plugins & Themes
 
 **Goal:** Integrations and visual themes via SDK.
 
@@ -179,7 +179,7 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 
 ---
 
-## Milestone 5 — Wireless & Asset Streaming
+## Milestone 5 - Wireless & Asset Streaming
 
 **Goal:** Untether USB; resumable large pack upload.
 
@@ -200,7 +200,7 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 
 ---
 
-## Milestone 6 — AI
+## Milestone 6 - AI
 
 **Goal:** Optional providers; Scheduler + AI smart reminders.
 
@@ -220,7 +220,7 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 
 ---
 
-## Milestone 7 — Platform 1.0
+## Milestone 7 - Platform 1.0
 
 **Goal:** Ecosystem-ready; four repos; catalog-ready metadata.
 

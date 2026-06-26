@@ -1,6 +1,6 @@
 # Plugin System
 
-> **Status:** Design specification — SDK interfaces subject to stabilization in milestone 4.
+> **Status:** Design specification - SDK interfaces subject to stabilization in milestone 4.
 
 ## Overview
 
@@ -85,19 +85,19 @@ Each plugin is a directory with `manifest.json`:
 
 | Phase | Hook | Responsibility |
 |-------|------|----------------|
-| Discovery | — | PluginManager scans paths |
+| Discovery | - | PluginManager scans paths |
 | Load | `on_load()` | Import module, validate manifest |
 | Enable | `on_enable()` | Subscribe to events, init resources |
 | Settings change | `on_settings_changed()` | React to user config |
 | Disable | `on_disable()` | Unsubscribe, release handles |
 | Unload | `on_unload()` | Final cleanup |
 
-Failed `on_enable()` disables plugin for session and logs error—core must remain stable.
+Failed `on_enable()` disables plugin for session and logs error-core must remain stable.
 
 ## Plugin API (conceptual)
 
 ```python
-# sdk/plugin/base.py — conceptual, not yet implemented
+# sdk/plugin/base.py - conceptual, not yet implemented
 
 class Plugin(ABC):
     manifest: PluginManifest
@@ -165,12 +165,12 @@ Users see a human-readable permission summary in Settings → Plugins before ena
 | `notifications` | OS notifications + device `show_notification` |
 | `ai.query` | AIService completions |
 | `scheduler.register` | Register cron jobs with SchedulerService |
-| `render` | Call `context.runtime.submit()` — implicit for plugins |
+| `render` | Call `context.runtime.submit()` - implicit for plugins |
 | `default_priority` | Optional manifest default: `NORMAL`, `LOW`, etc. |
 
 Plugins without a declared permission get `PermissionError` at runtime. Bundled plugins undergo stricter review.
 
-See also [SDK — Plugin permissions](./12_SDK.md#plugin-sdk).
+See also [SDK - Plugin permissions](./12_SDK.md#plugin-sdk).
 
 ## Bundled vs user plugins
 

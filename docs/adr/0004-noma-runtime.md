@@ -5,9 +5,9 @@
 
 ## Context
 
-Plugins, services, and scheduler jobs all need to affect device output. Letting each service call `DeviceManager.send()` directly creates ordering bugs, duplicate timers, and tight coupling. Users report simultaneous events (Spotify change, build failed, meeting started)—something must arbitrate.
+Plugins, services, and scheduler jobs all need to affect device output. Letting each service call `DeviceManager.send()` directly creates ordering bugs, duplicate timers, and tight coupling. Users report simultaneous events (Spotify change, build failed, meeting started)-something must arbitrate.
 
-Unreal Engine routes gameplay through a central tick and subsystems; NomaBot needs an equivalent **internal runtime** (called **Noma Runtime**—not an OS).
+Unreal Engine routes gameplay through a central tick and subsystems; NomaBot needs an equivalent **internal runtime** (called **Noma Runtime**-not an OS).
 
 ## Decision
 
@@ -31,7 +31,7 @@ Plugins / Services / Scheduler
           ESP32
 ```
 
-Plugins **never** call transport or JSON directly—they emit events or submit `RenderRequest` to runtime.
+Plugins **never** call transport or JSON directly-they emit events or submit `RenderRequest` to runtime.
 
 ## Consequences
 
@@ -44,16 +44,16 @@ Plugins **never** call transport or JSON directly—they emit events or submit `
 
 **Negative**
 
-- Runtime becomes critical path—requires tests and clear API
+- Runtime becomes critical path-requires tests and clear API
 - Small indirection latency (negligible vs USB)
 
 ## Alternatives considered
 
-- **Services talk to DeviceManager directly** — rejected; priority conflicts inevitable
-- **Separate render microservice process** — rejected for v1 complexity
+- **Services talk to DeviceManager directly** - rejected; priority conflicts inevitable
+- **Separate render microservice process** - rejected for v1 complexity
 
 ## References
 
-- [Architecture — Noma Runtime](../01_ARCHITECTURE.md#noma-runtime)
-- [ADR 0005 — Event priority](./0005-event-priority.md)
-- [SDK — NomaBot high-level API](../12_SDK.md#high-level-developer-api)
+- [Architecture - Noma Runtime](../01_ARCHITECTURE.md#noma-runtime)
+- [ADR 0005 - Event priority](./0005-event-priority.md)
+- [SDK - NomaBot high-level API](../12_SDK.md#high-level-developer-api)

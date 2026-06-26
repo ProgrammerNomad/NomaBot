@@ -1,6 +1,6 @@
 # Hardware
 
-> **Status:** Design specification — **official prototype: LILYGO T-Display S3**.
+> **Status:** Design specification - **official prototype: LILYGO T-Display S3**.
 
 ## Overview
 
@@ -32,7 +32,7 @@ Characteristics:
 
 Experimental devices are not CI-gated until promoted to official.
 
-## LILYGO T-Display S3 — software reference
+## LILYGO T-Display S3 - software reference
 
 ### Specifications
 
@@ -47,7 +47,7 @@ Experimental devices are not CI-gated until promoted to official.
 
 ### Pin mapping
 
-Use LovyanGFX **`LilyGo T-Display-S3`** preset as source of truth—do not duplicate stale GPIO tables here. Firmware config:
+Use LovyanGFX **`LilyGo T-Display-S3`** preset as source of truth-do not duplicate stale GPIO tables here. Firmware config:
 
 ```text
 firmware/src/renderer/boards/lilygo_tdisplay_s3.hpp
@@ -108,9 +108,9 @@ Packs authored for `st7789_240_square` require re-export for official hardware.
 
 | Peripheral | LILYGO T-Display S3 |
 |------------|---------------------|
-| Onboard button | Boot/GPIO0 — map in firmware caps |
+| Onboard button | Boot/GPIO0 - map in firmware caps |
 | Touch | Not on base S3 model |
-| SD | Not onboard — use flash streaming |
+| SD | Not onboard - use flash streaming |
 
 ## Hardware profiles (software)
 
@@ -137,11 +137,11 @@ Desktop warns when pack profile mismatches connected device.
 
 ## Mechanical
 
-Enclosure STLs (future): `hardware/enclosure/lilygo_tdisplay_s3/` — portrait stand, cable relief.
+Enclosure STLs (future): `hardware/enclosure/lilygo_tdisplay_s3/` - portrait stand, cable relief.
 
 ## Related documentation
 
-- [Firmware — Renderer abstraction](./03_FIRMWARE.md)
-- [ADR 0003 — Renderer abstraction](./adr/0003-renderer-abstraction.md)
-- [Asset Pipeline — compile profiles](./11_ASSET_PIPELINE.md)
-- [Security — pairing](./17_SECURITY.md)
+- [Firmware - Renderer abstraction](./03_FIRMWARE.md)
+- [ADR 0003 - Renderer abstraction](./adr/0003-renderer-abstraction.md)
+- [Asset Pipeline - compile profiles](./11_ASSET_PIPELINE.md)
+- [Security - pairing](./17_SECURITY.md)

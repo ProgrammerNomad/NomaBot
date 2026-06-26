@@ -1,6 +1,6 @@
 # Communication
 
-> **Status:** Design specification — protocol subject to revision before v1.
+> **Status:** Design specification - protocol subject to revision before v1.
 
 ## Overview
 
@@ -16,7 +16,7 @@ Supported transports (in rollout order):
 5. TCP                       ← raw socket fallback
 ```
 
-Changing transport must **not** require firmware protocol changes—only a transport adapter that delivers bytes to the JSON parser.
+Changing transport must **not** require firmware protocol changes-only a transport adapter that delivers bytes to the JSON parser.
 
 ## Transport interface
 
@@ -64,7 +64,7 @@ Every message is a JSON object:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `v` | integer | yes | **Protocol version** — required on every message (currently `1`) |
+| `v` | integer | yes | **Protocol version** - required on every message (currently `1`) |
 | `id` | string | yes | UUID for request/response correlation |
 | `type` | string | yes | `command`, `response`, `event`, or `error` |
 | `cmd` | string | commands | Command name |

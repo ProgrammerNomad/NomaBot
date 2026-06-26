@@ -1,6 +1,6 @@
 # Animation Engine
 
-> **Status:** Design specification — shared concept for firmware and asset authoring.
+> **Status:** Design specification - shared concept for firmware and asset authoring.
 
 ## Overview
 
@@ -47,7 +47,7 @@ Example composition:
 Robot + Laptop + Coffee + Rain + Speech bubble + Drop shadow
 ```
 
-Tomorrow, replace `Robot` with `Panda` by swapping the character pack—**no engine code change**.
+Tomorrow, replace `Robot` with `Panda` by swapping the character pack-**no engine code change**.
 
 ## Core concepts
 
@@ -93,7 +93,7 @@ Sprite references resolve against the pack's `sprites/` manifest (see [Character
 
 ## Animation graph
 
-Do **not** rely on hard cuts (`idle → coding → sleep` only). Each character ships an **animation graph**: a state machine with explicit transitions—similar in spirit to Unreal Engine Animation Blueprints.
+Do **not** rely on hard cuts (`idle → coding → sleep` only). Each character ships an **animation graph**: a state machine with explicit transitions-similar in spirit to Unreal Engine Animation Blueprints.
 
 ```text
        ┌──────┐
@@ -229,8 +229,8 @@ Future: parallax layers as multiple sub-layers.
 
 Effects may be:
 
-1. **Sprite-based** — pre-rendered overlay sheets (rain frames)
-2. **Procedural** — particles, scrolling noise (limited ESP32 budget)
+1. **Sprite-based** - pre-rendered overlay sheets (rain frames)
+2. **Procedural** - particles, scrolling noise (limited ESP32 budget)
 
 ```json
 {

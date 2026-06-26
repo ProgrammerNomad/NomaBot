@@ -28,9 +28,9 @@ Use **Python 3.13 + PySide6 (Qt6) + Qt Designer** from the first desktop milesto
 
 **Neutral**
 
-- CustomTkinter and similar remain valid for other projects—not this one
+- CustomTkinter and similar remain valid for other projects-not this one
 
 ## References
 
 - [Desktop App](../02_DESKTOP_APP.md)
-- [Architecture — PySide6](../01_ARCHITECTURE.md#pyside6-from-day-one)
+- [Architecture - PySide6](../01_ARCHITECTURE.md#pyside6-from-day-one)

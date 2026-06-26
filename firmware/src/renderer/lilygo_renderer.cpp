@@ -1,7 +1,7 @@
 #include "lilygo_renderer.h"
 #include <LovyanGFX.hpp>
 
-// LILYGO T-Display S3 — ST7789 on 8-bit parallel bus (not SPI).
+// LILYGO T-Display S3 - ST7789 on 8-bit parallel bus (not SPI).
 // Pin map: https://wiki.lilygo.cc/products/t-display-series/t-display-s3/
 class LGFX : public lgfx::LGFX_Device {
   lgfx::Panel_ST7789 _panel;

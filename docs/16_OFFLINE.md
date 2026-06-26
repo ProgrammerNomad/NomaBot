@@ -1,10 +1,10 @@
 # Offline Mode
 
-> **Status:** Design specification — core product requirement, not a degraded fallback.
+> **Status:** Design specification - core product requirement, not a degraded fallback.
 
 ## Overview
 
-NomaBot must work **fully** with only USB between desktop and device. No Wi-Fi, no internet, no AI, no GitHub, no Spotify, no cloud—still a complete, satisfying experience.
+NomaBot must work **fully** with only USB between desktop and device. No Wi-Fi, no internet, no AI, no GitHub, no Spotify, no cloud-still a complete, satisfying experience.
 
 **Offline mode is a selling point**, not an error state.
 
@@ -45,8 +45,8 @@ Asset streaming     ✓                  USB compile + sync
 
 When offline:
 
-1. Tray shows **Offline OK** (neutral)—not warning yellow unless device unplugged
-2. Network plugins show "Needs internet" in Settings—disabled, not crashing
+1. Tray shows **Offline OK** (neutral)-not warning yellow unless device unplugged
+2. Network plugins show "Needs internet" in Settings-disabled, not crashing
 3. Scheduler still fires morning/evening with **template strings** from character personality
 4. AI settings hidden or greyed with "Available when online"
 
@@ -72,7 +72,7 @@ Plugins declare in manifest:
 }
 ```
 
-Core skips enable without network—or user enables knowing it stays idle.
+Core skips enable without network-or user enables knowing it stays idle.
 
 ### AI fallback chain
 
@@ -125,6 +125,6 @@ See [Testing Strategy](./14_TESTING.md).
 ## Related documentation
 
 - [UX](./15_UX.md)
-- [Architecture — Noma Runtime](./01_ARCHITECTURE.md#noma-runtime)
-- [Communication — Serial transport](./04_COMMUNICATION.md)
-- [Platform — Telemetry off by default](./13_PLATFORM.md#telemetry)
+- [Architecture - Noma Runtime](./01_ARCHITECTURE.md#noma-runtime)
+- [Communication - Serial transport](./04_COMMUNICATION.md)
+- [Platform - Telemetry off by default](./13_PLATFORM.md#telemetry)

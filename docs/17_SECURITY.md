@@ -1,10 +1,10 @@
 # Security
 
-> **Status:** Design specification — required before Wi-Fi milestone ships.
+> **Status:** Design specification - required before Wi-Fi milestone ships.
 
 ## Overview
 
-Security spans device pairing, transport authentication, OTA integrity, plugin sandboxing, and asset verification. USB-only MVP has a smaller surface; **Wi-Fi expands risk**—design controls now, implement per milestone.
+Security spans device pairing, transport authentication, OTA integrity, plugin sandboxing, and asset verification. USB-only MVP has a smaller surface; **Wi-Fi expands risk**-design controls now, implement per milestone.
 
 ## Threat model (summary)
 
@@ -64,7 +64,7 @@ See [Communication](./04_COMMUNICATION.md) for envelope extension rules (non-bre
 | MQTT | Local broker, ACL per device topic | Username/password + TLS |
 | TCP/BLE | Disabled until pairing story defined | TBD |
 
-**Never** send API keys, pairing secrets, or tokens in device-bound messages logged to `transport.log`—redact in LoggingService.
+**Never** send API keys, pairing secrets, or tokens in device-bound messages logged to `transport.log`-redact in LoggingService.
 
 ## OTA signature
 
@@ -119,15 +119,15 @@ Settings → Plugins → [Plugin] shows:
 
 ```text
 This plugin requests:
-  · Internet — contact Spotify API
-  · Notifications — show now playing on device
+  · Internet - contact Spotify API
+  · Notifications - show now playing on device
 ```
 
-User can revoke by disable—no silent re-enable.
+User can revoke by disable-no silent re-enable.
 
 ## Telemetry and privacy
 
-Anonymous telemetry is **off by default**, opt-in only. See [Platform — Telemetry](./13_PLATFORM.md#telemetry). No telemetry payload includes activity titles, git diffs, or message text.
+Anonymous telemetry is **off by default**, opt-in only. See [Platform - Telemetry](./13_PLATFORM.md#telemetry). No telemetry payload includes activity titles, git diffs, or message text.
 
 ## Security milestones
 
@@ -147,7 +147,7 @@ Security issues: **do not** file public GitHub issues for exploitable bugs. Cont
 ## Related documentation
 
 - [Communication](./04_COMMUNICATION.md)
-- [Firmware — OTA](./03_FIRMWARE.md)
+- [Firmware - OTA](./03_FIRMWARE.md)
 - [Plugin System](./07_PLUGIN_SYSTEM.md)
-- [Testing — protocol fuzz](./14_TESTING.md)
-- [ADR 0002 — JSON protocol](./adr/0002-json-protocol.md)
+- [Testing - protocol fuzz](./14_TESTING.md)
+- [ADR 0002 - JSON protocol](./adr/0002-json-protocol.md)

@@ -1,6 +1,6 @@
 # Character System
 
-> **Status:** Design specification — pack format v1 draft.
+> **Status:** Design specification - pack format v1 draft.
 
 ## Overview
 
@@ -98,7 +98,7 @@ See [Animation Engine](./05_ANIMATION_ENGINE.md) for animation file format.
 
 ## Personality
 
-Characters are not only sprites—they have **personality** metadata that drives message tone, AI system prompts, scheduler templates, and UX restraint ([UX](./15_UX.md)).
+Characters are not only sprites-they have **personality** metadata that drives message tone, AI system prompts, scheduler templates, and UX restraint ([UX](./15_UX.md)).
 
 ### `personality.yaml` (or block in `metadata.json`)
 
@@ -110,7 +110,7 @@ traits:
   - encouraging
 voice:
   tone: warm
-  verbosity: low          # low | medium — never spam
+  verbosity: low          # low | medium - never spam
   humor: rare             # rare | none | frequent
   panic: never            # never panic the user
 quirks:
@@ -223,9 +223,9 @@ Bundled packs live in `assets/characters/` in the repository; user packs live in
 
 Semantic versioning per pack:
 
-- **Patch** — sprite fixes, same ids
-- **Minor** — new animations or accessories, backward compatible
-- **Major** — renamed ids or schema break (requires desktop migration notes)
+- **Patch** - sprite fixes, same ids
+- **Minor** - new animations or accessories, backward compatible
+- **Major** - renamed ids or schema break (requires desktop migration notes)
 
 Firmware caches pack version in status; desktop can prompt when updates available.
 

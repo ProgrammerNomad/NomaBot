@@ -1,6 +1,6 @@
 # Asset Pipeline
 
-> **Status:** Design specification — build before large character catalog.
+> **Status:** Design specification - build before large character catalog.
 
 ## Overview
 
@@ -38,7 +38,7 @@ nomabot build-assets --input ./characters/nomabot --output ./compiled/nomabot --
 | **Convert** | RGB565 (or profile-specific) raw tiles |
 | **Compress** | RLE, LZ4, or profile-specific codec |
 | **Atlas** | Optional sprite sheets + UV index |
-| **Manifest** | `manifest.json` — ids, offsets, sizes, hashes |
+| **Manifest** | `manifest.json` - ids, offsets, sizes, hashes |
 | **Report** | Size budget, warnings, errors |
 
 ### Example manifest (compiled)
@@ -78,7 +78,7 @@ Compiler **fails** on budget exceed unless `--force`.
 
 ## Character Editor
 
-A **PySide6 authoring tool**—“Unity Animator, but tiny”—shipped with desktop or standalone from SDK.
+A **PySide6 authoring tool**-“Unity Animator, but tiny”-shipped with desktop or standalone from SDK.
 
 ### Features
 
@@ -112,7 +112,7 @@ Shares preview infrastructure with Character Editor. See [Platform](./13_PLATFOR
 5. Export → nomabot build-assets → install to device
 ```
 
-Artists should **never** hand-edit animation graph JSON for routine work—only for merge/conflict resolution.
+Artists should **never** hand-edit animation graph JSON for routine work-only for merge/conflict resolution.
 
 Editor shares libraries with `sdk/character/`; see [SDK](./12_SDK.md).
 

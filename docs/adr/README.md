@@ -6,10 +6,10 @@ This folder records **significant architectural decisions** so future contributo
 
 Each ADR follows:
 
-- **Status** — Proposed | Accepted | Deprecated | Superseded
-- **Context** — Problem and constraints
-- **Decision** — What we chose
-- **Consequences** — Tradeoffs
+- **Status** - Proposed | Accepted | Deprecated | Superseded
+- **Context** - Problem and constraints
+- **Decision** - What we chose
+- **Consequences** - Tradeoffs
 
 ## Index
 
@@ -21,7 +21,7 @@ Each ADR follows:
 | [0004](./0004-noma-runtime.md) | Noma Runtime as central orchestrator | Accepted |
 | [0005](./0005-event-priority.md) | Event priority and render queue | Accepted |
 
-When a decision changes, add a new ADR that supersedes the old one—do not silently rewrite history.
+When a decision changes, add a new ADR that supersedes the old one-do not silently rewrite history.
 
 ## Related
 

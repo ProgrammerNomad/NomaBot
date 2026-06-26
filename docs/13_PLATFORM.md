@@ -1,6 +1,6 @@
 # Platform & Ecosystem
 
-> **Status:** Design specification — ecosystem features roll out after core platform stabilizes.
+> **Status:** Design specification - ecosystem features roll out after core platform stabilizes.
 
 ## Overview
 
@@ -19,10 +19,10 @@ NomaBot is designed as an **extensible platform** from day one: multiple devices
 
 ### Why split?
 
-- **Independent release cycles** — ship Spotify plugin desktop update without firmware bump
-- **Focused issue trackers** — art contributors avoid firmware labels
-- **Smaller clones** — plugin dev: `git clone nomabot-sdk` + pip install desktop dep
-- **Clear boundaries** — third parties depend on SDK semver, not git subpaths
+- **Independent release cycles** - ship Spotify plugin desktop update without firmware bump
+- **Focused issue trackers** - art contributors avoid firmware labels
+- **Smaller clones** - plugin dev: `git clone nomabot-sdk` + pip install desktop dep
+- **Clear boundaries** - third parties depend on SDK semver, not git subpaths
 
 ### Monorepo bootstrap
 
@@ -41,7 +41,7 @@ CI should tag subpaths and validate cross-repo contracts as if already split.
 
 ## Multi-device product experience
 
-Users own multiple ESP32 devices. **Device Manager** (desktop UI + `DeviceManager` service) is a first-class feature—not a later addon.
+Users own multiple ESP32 devices. **Device Manager** (desktop UI + `DeviceManager` service) is a first-class feature-not a later addon.
 
 | Scenario | Configuration |
 |----------|---------------|
@@ -109,7 +109,7 @@ Compile with `nomabot build-theme` ([Asset Pipeline](./11_ASSET_PIPELINE.md)).
 
 ### Theme Editor (planned)
 
-Mirror of Character Editor for themes—**Theme Editor** (PySide6):
+Mirror of Character Editor for themes-**Theme Editor** (PySide6):
 
 - Edit palette tokens, font, bubble style visually
 - Preview notification + speech bubble on 170×320 canvas
@@ -125,7 +125,7 @@ Telemetry is **anonymous, off by default, opt-in only**.
 
 | Rule | Detail |
 |------|--------|
-| Default | **Off** — zero phone-home on first install |
+| Default | **Off** - zero phone-home on first install |
 | Opt-in | Settings → Privacy → "Send anonymous usage statistics" |
 | Transparency | In-app list of exact fields before enable |
 | No content | Never activity titles, git data, messages, or AI prompts |
@@ -144,7 +144,7 @@ Telemetry is **anonymous, off by default, opt-in only**.
 }
 ```
 
-Optional crash reports (separate toggle): stack trace hash, version, OS—no user files.
+Optional crash reports (separate toggle): stack trace hash, version, OS-no user files.
 
 ### Implementation notes
 

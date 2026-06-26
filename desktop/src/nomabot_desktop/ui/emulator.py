@@ -58,6 +58,6 @@ class EmulatorWindow(QWidget):
         super().__init__()
         self.setWindowTitle("NomaBot Emulator")
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("LILYGO T-Display S3 — 170×320"))
+        layout.addWidget(QLabel("LILYGO T-Display S3 - 170×320"))
         layout.addWidget(EmulatorCanvas(state))
         self.resize(200, 400)

@@ -1,29 +1,29 @@
 # Desktop Application
 
-> **Status:** Design specification — implementation not yet started.
+> **Status:** Design specification - implementation not yet started.
 
 ## Purpose
 
 The desktop application is NomaBot's **control plane**. It observes the user's environment, runs plugins, schedules timed messages, manages multiple devices, and sends render commands to ESP32 hardware. It is a long-running PySide6 app with system tray presence and optional settings windows.
 
-## Technology — PySide6 from day one
+## Technology - PySide6 from day one
 
 | Piece | Choice | Notes |
 |-------|--------|-------|
 | Language | Python 3.13 | |
-| UI framework | **PySide6 (Qt6)** | **Only** UI framework — no CustomTkinter, no migration path |
+| UI framework | **PySide6 (Qt6)** | **Only** UI framework - no CustomTkinter, no migration path |
 | UI design | Qt Designer | `.ui` files loaded at runtime |
 | Packaging | Nuitka | Native Windows `.exe` |
 | Config | JSON | User + defaults |
 | Database | SQLite | Devices, settings, scheduler, plugin state |
 
-There is no “v1 with a simpler UI” plan. Every surface—tray, settings, device manager, character editor, log viewer—is built on PySide6 from milestone 2 onward.
+There is no “v1 with a simpler UI” plan. Every surface-tray, settings, device manager, character editor, log viewer-is built on PySide6 from milestone 2 onward.
 
 ## Modular layout (not monolithic)
 
 ```text
 desktop/
-├── core/               # Noma Core — event bus, app bootstrap, interfaces
+├── core/               # Noma Core - event bus, app bootstrap, interfaces
 │   ├── bus.py
 │   ├── lifecycle.py
 │   └── interfaces/
@@ -62,7 +62,7 @@ desktop/
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
-│  UI — tray, settings, device manager, log viewer        │
+│  UI - tray, settings, device manager, log viewer        │
 └───────────────────────────┬─────────────────────────────┘
                             │ events only
 ┌───────────────────────────▼─────────────────────────────┐
@@ -102,7 +102,7 @@ Plugins / Scheduler / Services
 ```
 
 ```python
-# Plugin — never call device directly
+# Plugin - never call device directly
 self.context.runtime.submit(RenderRequest(
     device_id="office",
     animation="coding",
@@ -110,7 +110,7 @@ self.context.runtime.submit(RenderRequest(
 ))
 ```
 
-Priority levels: `CRITICAL`, `HIGH`, `NORMAL`, `LOW`, `BACKGROUND` — see [ADR 0005](./adr/0005-event-priority.md) and [UX](./15_UX.md).
+Priority levels: `CRITICAL`, `HIGH`, `NORMAL`, `LOW`, `BACKGROUND` - see [ADR 0005](./adr/0005-event-priority.md) and [UX](./15_UX.md).
 
 ## UI layer
 
@@ -118,10 +118,10 @@ Priority levels: `CRITICAL`, `HIGH`, `NORMAL`, `LOW`, `BACKGROUND` — see [ADR 
 
 - System tray and quick actions
 - Settings (plugins, AI, privacy, themes)
-- **Device Manager** — multi-device list, per-device character and transport
-- **Character Manager** — install packs, preview
-- **Character Editor** — authoring tool (see [Asset Pipeline](./11_ASSET_PIPELINE.md))
-- **Log Viewer** — filter `desktop.log`, `firmware.log`, `plugins.log`, `transport.log`
+- **Device Manager** - multi-device list, per-device character and transport
+- **Character Manager** - install packs, preview
+- **Character Editor** - authoring tool (see [Asset Pipeline](./11_ASSET_PIPELINE.md))
+- **Log Viewer** - filter `desktop.log`, `firmware.log`, `plugins.log`, `transport.log`
 
 ### Key surfaces
 
@@ -138,7 +138,7 @@ Priority levels: `CRITICAL`, `HIGH`, `NORMAL`, `LOW`, `BACKGROUND` — see [ADR 
 1. Design in Qt Designer → `desktop/ui/forms/*.ui`
 2. Load via `QUiLoader` or `pyside6-uic`
 3. Widgets in `desktop/ui/widgets/`; view-models subscribe to bus
-4. One `.ui` file per dialog/panel — no mega-main-window
+4. One `.ui` file per dialog/panel - no mega-main-window
 
 ## Event bus
 
@@ -187,7 +187,7 @@ Integration logic (Git, Spotify, …) lives in **plugins**, not core services, u
 **One scheduler for the entire app.** No `threading.Timer` in plugins.
 
 ```python
-# Conceptual — plugins register via event or API
+# Conceptual - plugins register via event or API
 scheduler.register(
     job_id="good-morning",
     cron="0 8 * * *",
@@ -235,7 +235,7 @@ See [Plugin System](./07_PLUGIN_SYSTEM.md). Bundled in `desktop/plugins/`; user 
 
 ## Transport layer
 
-Not hardcoded USB/Wi-Fi/MQTT — implements shared **Transport interface**:
+Not hardcoded USB/Wi-Fi/MQTT - implements shared **Transport interface**:
 
 ```python
 class Transport(Protocol):
@@ -340,7 +340,7 @@ Rotation: 5 MB × 5 files per channel (configurable).
 ## Related documentation
 
 - [Architecture](./01_ARCHITECTURE.md)
-- [Noma Runtime — ADR 0004](./adr/0004-noma-runtime.md)
+- [Noma Runtime - ADR 0004](./adr/0004-noma-runtime.md)
 - [Communication](./04_COMMUNICATION.md)
 - [Asset Pipeline](./11_ASSET_PIPELINE.md)
 - [Testing Strategy](./14_TESTING.md)

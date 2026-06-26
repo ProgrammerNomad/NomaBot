@@ -1,6 +1,6 @@
 # Architecture
 
-> **Status:** Design specification — implementation not yet started.
+> **Status:** Design specification - implementation not yet started.
 
 ## Overview
 
@@ -23,7 +23,7 @@ During early development these may live in a **monorepo**; the target end state 
 | Component | Technology | Rationale |
 |-----------|------------|-----------|
 | Desktop runtime | Python 3.13 | Large ecosystem, fast iteration |
-| Desktop UI | **PySide6 (Qt6) — from day one** | No interim UI framework; no migration debt |
+| Desktop UI | **PySide6 (Qt6) - from day one** | No interim UI framework; no migration debt |
 | UI design | Qt Designer | Visual form layout |
 | Firmware | Arduino Framework (ESP32) | Faster iteration than ESP-IDF for this scope |
 | Renderer | **Renderer abstraction** → LovyanGFX backends | ST7789 today; OLED, AMOLED, HDMI ports later |
@@ -39,7 +39,7 @@ During early development these may live in a **monorepo**; the target end state 
 
 NomaBot standardizes on **Python 3.13 + PySide6 + Qt Designer** from the first desktop milestone. There is no CustomTkinter, Tkinter, or “temporary UI” phase.
 
-Migrating UI frameworks later means rewriting every window, dialog, settings page, and custom widget. PySide6 already provides native Windows UI, dark mode, system tray, dock widgets, tables, trees, charts, SVG, and animations. The only tradeoff is a slightly larger installer—acceptable for a product-grade app.
+Migrating UI frameworks later means rewriting every window, dialog, settings page, and custom widget. PySide6 already provides native Windows UI, dark mode, system tray, dock widgets, tables, trees, charts, SVG, and animations. The only tradeoff is a slightly larger installer-acceptable for a product-grade app.
 
 ## Platform architecture
 
@@ -78,14 +78,14 @@ Migrating UI frameworks later means rewriting every window, dialog, settings pag
 
 **Golden rules:**
 
-1. Plugins and services **submit to Noma Runtime**—never to transport or JSON directly.
-2. Services **never import each other** — only the event bus and shared interfaces in `core/`.
+1. Plugins and services **submit to Noma Runtime**-never to transport or JSON directly.
+2. Services **never import each other** - only the event bus and shared interfaces in `core/`.
 3. Firmware **never** embeds domain logic (Git, Spotify, AI, …).
 4. Every JSON message includes a **protocol version** field.
 
 ## Noma Runtime
 
-**Noma Runtime** (internal name; not a separate product called "NomaOS") is the desktop **orchestration layer**—similar in role to a game engine tick routing subsystems.
+**Noma Runtime** (internal name; not a separate product called "NomaOS") is the desktop **orchestration layer**-similar in role to a game engine tick routing subsystems.
 
 ```text
 Desktop UI / Plugins / Services
@@ -197,7 +197,7 @@ flowchart TB
     SER & WS & MQTT & BLE & TCP --> RX
 ```
 
-## Noma Core — modular desktop layout
+## Noma Core - modular desktop layout
 
 The desktop app is **not monolithic**. Even within one repository, code is split so teams can work in parallel:
 
@@ -221,7 +221,7 @@ sdk/                # May live in nomabot-sdk repo; consumed as package
 | Module | Imports allowed |
 |--------|-----------------|
 | `core/` | stdlib, interfaces only |
-| `services/` | `core/`, `storage/`, `utils/` — **not other services** |
+| `services/` | `core/`, `storage/`, `utils/` - **not other services** |
 | `plugins/` | `core/`, published SDK APIs |
 | `ui/` | `core/`, view-models; **never** plugin internals |
 | `transport/` | `core/`, `utils/` |
@@ -285,7 +285,7 @@ Transport Interface
 └── TcpTransport         ← raw socket fallback
 ```
 
-Adding BLE or TCP requires a new adapter—not a protocol fork. Details: [Communication](./04_COMMUNICATION.md).
+Adding BLE or TCP requires a new adapter-not a protocol fork. Details: [Communication](./04_COMMUNICATION.md).
 
 ## Renderer abstraction (firmware)
 
@@ -303,7 +303,7 @@ The animation engine draws to an abstract framebuffer; the renderer flushes to h
 
 ## Animation graph
 
-Animations are not simple `idle → coding → sleep` chains. Each character defines an **animation graph** (state machine with transition rules)—similar in spirit to Unreal Animation Blueprints:
+Animations are not simple `idle → coding → sleep` chains. Each character defines an **animation graph** (state machine with transition rules)-similar in spirit to Unreal Animation Blueprints:
 
 ```text
                     ┌──────┐
@@ -346,7 +346,7 @@ Chunk upload / USB sync / OTA
 ESP32 filesystem
 ```
 
-Large packs use **chunked upload with verify, resume, and activate**—not a single 200 MB push. See [Asset Pipeline](./11_ASSET_PIPELINE.md).
+Large packs use **chunked upload with verify, resume, and activate**-not a single 200 MB push. See [Asset Pipeline](./11_ASSET_PIPELINE.md).
 
 ## Character Editor
 

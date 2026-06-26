@@ -13,11 +13,25 @@ static void emitLine(const std::string &line) { Serial.print(line.c_str()); }
 
 static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
   JsonDocument data;
+  data["protocol"] = 1;
+  data["firmware"] = NOMA_FIRMWARE_VERSION;
   data["firmware_version"] = NOMA_FIRMWARE_VERSION;
+  data["board"] = "LILYGO_T_DISPLAY_S3";
   data["device_id"] = "lilygo-tdisplay-s3";
+#if defined(ESP32) && defined(ESP32S3)
+  uint64_t mac = ESP.getEfuseMac();
+  char serialBuf[24];
+  snprintf(serialBuf, sizeof(serialBuf), "%02X:%02X:%02X:%02X:%02X:%02X",
+           (uint8_t)(mac >> 40), (uint8_t)(mac >> 32), (uint8_t)(mac >> 24),
+           (uint8_t)(mac >> 16), (uint8_t)(mac >> 8), (uint8_t)(mac));
+  data["serial"] = serialBuf;
+#else
+  data["serial"] = "unknown";
+#endif
   JsonObject display = data["display"].to<JsonObject>();
   display["width"] = renderer.width();
   display["height"] = renderer.height();
+  display["fps"] = 20;
   JsonArray caps = data["caps"].to<JsonArray>();
   caps.add("play_animation");
   caps.add("show_message");

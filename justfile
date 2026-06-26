@@ -1,4 +1,4 @@
-# NomaBot task runner — install: https://github.com/casey/just
+# NomaBot task runner - install: https://github.com/casey/just
 
 # Sync dependencies
 sync:

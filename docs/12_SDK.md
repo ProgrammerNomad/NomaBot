@@ -1,17 +1,17 @@
 # SDK
 
-> **Status:** Design specification — publish as `nomabot-sdk` package / repository.
+> **Status:** Design specification - publish as `nomabot-sdk` package / repository.
 
 ## Overview
 
-NomaBot is a **platform**; contributors need clear APIs—not ad hoc copies of internal modules. The SDK repository (`nomabot-sdk`) is the single source of truth for protocol schemas, CLI tools, and author libraries.
+NomaBot is a **platform**; contributors need clear APIs-not ad hoc copies of internal modules. The SDK repository (`nomabot-sdk`) is the single source of truth for protocol schemas, CLI tools, and author libraries.
 
 ```text
 nomabot-sdk/
-├── python/           # Python SDK — protocol client, types, test harness
-├── plugin/           # Plugin SDK — base class, manifest schema
-├── character/        # Character SDK — validator, compiler lib, editor backend
-├── firmware/         # Firmware SDK — parser tests, renderer mocks
+├── python/           # Python SDK - protocol client, types, test harness
+├── plugin/           # Plugin SDK - base class, manifest schema
+├── character/        # Character SDK - validator, compiler lib, editor backend
+├── firmware/         # Firmware SDK - parser tests, renderer mocks
 ├── schemas/          # JSON Schema for protocol, packs, plugins, themes
 ├── cli/              # nomabot command entry points
 └── docs/             # API reference generated from schemas
@@ -21,7 +21,7 @@ Desktop and firmware repos depend on released SDK versions (semver), not floatin
 
 ## High-level Developer API
 
-Most authors should not hand-build JSON. The SDK exposes **`NomaBot`**—a friendly facade over protocol + runtime:
+Most authors should not hand-build JSON. The SDK exposes **`NomaBot`**-a friendly facade over protocol + runtime:
 
 ```python
 from nomabot import NomaBot
@@ -114,7 +114,7 @@ nomabot character pack ./compiled/my_fox -o my_fox.nomachar
 | `AssetCompiler` | PNG → binary pipeline stages |
 | `PreviewRenderer` | Desktop software renderer (same layer rules as firmware) |
 
-Character Editor (PySide6) imports `PreviewRenderer` and `AnimationGraph`—no duplicated logic.
+Character Editor (PySide6) imports `PreviewRenderer` and `AnimationGraph`-no duplicated logic.
 
 ### Pack template
 
@@ -249,7 +249,7 @@ Breaking SDK release → major bump + migration guide in `nomabot-sdk/docs/CHANG
 | Platform | `nomabot-sdk` GitHub repo + PyPI |
 | Assets | `nomabot-assets` releases attach `.nomabundle` binaries |
 
-Third-party tools should **only** depend on published SDK—not `desktop/core/` internals.
+Third-party tools should **only** depend on published SDK-not `desktop/core/` internals.
 
 ## Related documentation
 

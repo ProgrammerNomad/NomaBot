@@ -36,4 +36,4 @@ Negotiate max supported version in `hello` / `hello_ack`.
 ## References
 
 - [Communication](../04_COMMUNICATION.md)
-- [Security — protocol hardening](../17_SECURITY.md)
+- [Security - protocol hardening](../17_SECURITY.md)

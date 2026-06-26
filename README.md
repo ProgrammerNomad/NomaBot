@@ -1,6 +1,6 @@
 # NomaBot
 
-A **desk companion platform**: PySide6 desktop control plane, ESP32 render devices, compiled character packs, plugins, and SDKs—built for an open ecosystem from day one.
+A **desk companion platform**: PySide6 desktop control plane, ESP32 render devices, compiled character packs, plugins, and SDKs-built for an open ecosystem from day one.
 
 ```
 Plugins / Services  →  Noma Runtime  →  Transport  →  ESP32 (170×320)
@@ -8,7 +8,7 @@ Plugins / Services  →  Noma Runtime  →  Transport  →  ESP32 (170×320)
                        Asset Compiler
 ```
 
-**Status:** Phase 0.1 implemented — see [IMPLEMENTATION.md](IMPLEMENTATION.md) and [docs/18_BUILD.md](docs/18_BUILD.md). **Hardware:** [LILYGO T-Display S3](docs/09_HARDWARE.md).
+**Status:** Phase 0.1 implemented - see [IMPLEMENTATION.md](IMPLEMENTATION.md) and [docs/18_BUILD.md](docs/18_BUILD.md). **Hardware:** [LILYGO T-Display S3](docs/09_HARDWARE.md).
 
 ## Quick start
 
@@ -23,7 +23,7 @@ USB: `uv run python -m nomabot_desktop --port COM7`
 
 ## What it is
 
-NomaBot reacts to your workflow—coding, music, git status, scheduled reminders—with layered sprite characters on a desk display. The ESP32 **only renders**. **Noma Runtime** on the desktop orchestrates scheduler, priority render queue, and device routing.
+NomaBot reacts to your workflow-coding, music, git status, scheduled reminders-with layered sprite characters on a desk display. The ESP32 **only renders**. **Noma Runtime** on the desktop orchestrates scheduler, priority render queue, and device routing.
 
 ## Documentation
 
@@ -64,13 +64,13 @@ NomaBot reacts to your workflow—coding, music, git status, scheduled reminders
 
 ## Design highlights
 
-- **Noma Runtime** — single orchestrator (not services → device directly)
-- **Event priority** — Critical / High / Normal / Low / Background
-- **PySide6 from day one** — no UI migration
-- **170×320 official profile** — LILYGO T-Display S3
-- **Offline-first** — USB-only is a feature, not fallback
-- **Telemetry off by default** — opt-in only
+- **Noma Runtime** - single orchestrator (not services → device directly)
+- **Event priority** - Critical / High / Normal / Low / Background
+- **PySide6 from day one** - no UI migration
+- **170×320 official profile** - LILYGO T-Display S3
+- **Offline-first** - USB-only is a feature, not fallback
+- **Telemetry off by default** - opt-in only
 
 ## License
 
-License TBD — see `LICENSE` when added.
+License TBD - see `LICENSE` when added.

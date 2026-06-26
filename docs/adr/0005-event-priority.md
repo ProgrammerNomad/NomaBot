@@ -36,10 +36,10 @@ Rules:
 
 **Negative**
 
-- Authors must choose sensible priorities—document in Plugin SDK
+- Authors must choose sensible priorities-document in Plugin SDK
 
 ## References
 
-- [Architecture — Event priority](../01_ARCHITECTURE.md#event-priority-and-render-queue)
+- [Architecture - Event priority](../01_ARCHITECTURE.md#event-priority-and-render-queue)
 - [Plugin System](../07_PLUGIN_SYSTEM.md)
-- [UX — Work session](../15_UX.md)
+- [UX - Work session](../15_UX.md)

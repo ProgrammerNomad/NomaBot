@@ -29,5 +29,5 @@ Hardware profile id (e.g. `lilygo_tdisplay_s3`) selects renderer + asset compile
 ## References
 
 - [Firmware](../03_FIRMWARE.md)
-- [Hardware — Supported devices](../09_HARDWARE.md)
-- [Testing — golden render](../14_TESTING.md)
+- [Hardware - Supported devices](../09_HARDWARE.md)
+- [Testing - golden render](../14_TESTING.md)

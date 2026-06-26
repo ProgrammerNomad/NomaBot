@@ -1,6 +1,6 @@
 # Firmware
 
-> **Status:** Design specification — implementation not yet started.
+> **Status:** Design specification - implementation not yet started.
 
 ## Purpose
 
@@ -103,7 +103,7 @@ Renderer Interface
 ```
 
 ```cpp
-// Conceptual — firmware/src/renderer/renderer.hpp
+// Conceptual - firmware/src/renderer/renderer.hpp
 class Renderer {
  public:
   virtual void beginFrame() = 0;
@@ -167,7 +167,7 @@ WifiTransport   ──├──► Ring buffer ──► JsonStreamParser ──
 MqttTransport   ──┘
 ```
 
-Switching transport is a **runtime config change** (`set_transport` command or GPIO-held boot mode)—no reflash required.
+Switching transport is a **runtime config change** (`set_transport` command or GPIO-held boot mode)-no reflash required.
 
 Default baud: **115200** USB serial. WebSocket: desktop acts as client or soft-AP portal during setup (TBD in hardware milestone).
 

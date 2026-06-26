@@ -1,10 +1,10 @@
 # Testing Strategy
 
-> **Status:** Design specification — implement alongside Milestone 1.5 (Developer Experience).
+> **Status:** Design specification - implement alongside Milestone 1.5 (Developer Experience).
 
 ## Overview
 
-Testing is not an afterthought. NomaBot spans desktop Python, ESP32 firmware, compiled binaries, JSON protocol, plugins, and visual output—each layer needs explicit test types and CI gates.
+Testing is not an afterthought. NomaBot spans desktop Python, ESP32 firmware, compiled binaries, JSON protocol, plugins, and visual output-each layer needs explicit test types and CI gates.
 
 This document is the **single source of truth** for testing. Individual docs link here instead of duplicating strategy.
 
@@ -40,7 +40,7 @@ This document is the **single source of truth** for testing. Individual docs lin
 | Config migrations | v0 → v1 settings upgrade |
 | Permission gate | Plugin denied without `internet` |
 
-**Rule:** Services tested with mocked bus—never import sibling services in tests either.
+**Rule:** Services tested with mocked bus-never import sibling services in tests either.
 
 ### SDK (`sdk/tests/`)
 
@@ -59,7 +59,7 @@ This document is the **single source of truth** for testing. Individual docs lin
 | Graph engine | State transitions, blend timing |
 | Renderer mock | Blit call sequence |
 
-Use **host-compiled** test binaries (PlatformIO `native` or Google Test) where possible—no hardware required.
+Use **host-compiled** test binaries (PlatformIO `native` or Google Test) where possible-no hardware required.
 
 ## Integration tests
 
@@ -72,7 +72,7 @@ async with MockDevice(profile="lilygo_tdisplay_s3") as dev:
     assert dev.last_command["cmd"] == "play_animation"
 ```
 
-Mock device implements Transport interface and records commands—see Milestone 1.5.
+Mock device implements Transport interface and records commands-see Milestone 1.5.
 
 ### Desktop ↔ SDK contract
 
@@ -129,7 +129,7 @@ Visual regression for animation engine:
 4. Compare SHA-256 of RGB565 buffer to committed baseline
 5. Fail CI on drift; update baselines via explicit `accept-golden` PR label
 
-Store baselines in `sdk/character/tests/golden/`—small 170×320 frames only.
+Store baselines in `sdk/character/tests/golden/`-small 170×320 frames only.
 
 Tolerance: optional per-pixel threshold for compression variants (document in PR).
 
@@ -203,8 +203,8 @@ nomabot firmware test-vectors --port COM7
 
 ## Related documentation
 
-- [Architecture — Noma Runtime](./01_ARCHITECTURE.md#noma-runtime)
-- [SDK — Testing module](./12_SDK.md)
-- [Security — verification tests](./17_SECURITY.md)
-- [Roadmap — Milestone 1.5](./10_ROADMAP.md)
+- [Architecture - Noma Runtime](./01_ARCHITECTURE.md#noma-runtime)
+- [SDK - Testing module](./12_SDK.md)
+- [Security - verification tests](./17_SECURITY.md)
+- [Roadmap - Milestone 1.5](./10_ROADMAP.md)
 - [Contributing](./CONTRIBUTING.md)
