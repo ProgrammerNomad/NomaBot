@@ -121,6 +121,5 @@ class ActivityService:
                 state=profile,
                 priority=Priority.NORMAL,
                 source="activity",
-                animation=profile if profile != "idle" else "idle",
             ),
         )

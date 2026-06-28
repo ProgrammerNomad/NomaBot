@@ -1,12 +1,13 @@
 [project]
 name = "nomabot"
-version = "0.3.0"
+version = "0.3.1"
 description = "NomaBot SDK - protocol, client, and developer tools"
 requires-python = ">=3.13"
 dependencies = [
     "pydantic>=2.10",
     "pillow>=11.0",
     "pyserial>=3.5",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]

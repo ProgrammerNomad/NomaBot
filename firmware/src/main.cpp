@@ -14,6 +14,7 @@ static ProtocolHandler protocol;
 static String serialBuffer;
 static String activeCharacterId = "nomabot";
 static bool bootOk = false;
+static bool textModeBoot = false;
 static const char *bootFsStatus = "FAIL";
 static const char *bootPackStatus = "FAIL";
 
@@ -27,6 +28,13 @@ static void showBootError(const char *label) {
 }
 
 static void printBootBanner() {
+  if (textModeBoot) {
+    Serial.printf(
+        "NomaBot FW %s | Mode: TEXT | Life: %s | Activity: %s | Emotion: %s | Behavior: %s\n",
+        NOMA_FIRMWARE_VERSION, characterRuntime.lifeMode(), characterRuntime.currentActivity(),
+        characterRuntime.currentEmotion(), characterRuntime.currentBehavior());
+    return;
+  }
   Serial.printf(
       "NomaBot FW %s | FS: %s | Pack: %s | Character: %s\n", NOMA_FIRMWARE_VERSION,
       bootFsStatus, bootPackStatus, bootOk ? activeCharacterId.c_str() : "none");
@@ -71,16 +79,22 @@ static bool bootCharacter() {
   loadActiveCharacter();
   if (!characterRuntime.loadCharacter(packLoader, activeCharacterId.c_str())) {
     const char *label = packLoadErrorLabel(packLoader.lastError());
-    Serial.printf("Failed to load character: %s (%s)\n", activeCharacterId.c_str(), label);
+    Serial.printf("Pack load failed: %s (%s) — falling back to text mode\n",
+                  activeCharacterId.c_str(), label);
     bootPackStatus = "FAIL";
-    showBootError(label);
-    packLoader.listDirectory(std::string("/characters/") + activeCharacterId.c_str());
     return false;
   }
   bootPackStatus = "OK";
-  bootOk = true;
-  characterRuntime.render();
   return true;
+}
+
+static void startTextModeBoot() {
+  textModeBoot = true;
+  bootOk = true;
+  characterRuntime.useBehaviorDefaults();
+  characterRuntime.setLifeMode("work");
+  characterRuntime.setActivity("idle");
+  characterRuntime.render();
 }
 
 static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
@@ -110,6 +124,9 @@ static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
   caps.add("show_message");
   caps.add("set_background");
   caps.add("set_state");
+  caps.add("set_activity");
+  caps.add("set_emotion");
+  caps.add("set_life_mode");
   caps.add("load_character");
   caps.add("diagnostics");
 
@@ -117,7 +134,10 @@ static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
   if (info) {
     data["character_id"] = characterRuntime.characterId();
     data["pack_uuid"] = info->uuid;
+  } else {
+    data["character_id"] = "nomabot";
   }
+  data["render_mode"] = textModeBoot ? "text" : renderModeName(characterRuntime.renderMode());
 
   JsonDocument doc;
   doc["v"] = 1;
@@ -182,7 +202,7 @@ static ProtocolResponse handleShowMessage(const std::string &id, JsonObject para
 
 static ProtocolResponse handleSetState(const std::string &id, JsonObject params) {
   const char *state = params["state"] | "idle";
-  characterRuntime.setState(state);
+  characterRuntime.setActivity(state);
   JsonDocument data;
   data["ok"] = true;
   JsonDocument doc;
@@ -190,6 +210,60 @@ static ProtocolResponse handleSetState(const std::string &id, JsonObject params)
   doc["id"] = id;
   doc["type"] = "response";
   doc["cmd"] = "set_state";
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
+}
+
+static ProtocolResponse handleSetActivity(const std::string &id, JsonObject params) {
+  const char *activity = params["activity"] | "idle";
+  characterRuntime.setActivity(activity);
+  JsonDocument data;
+  data["ok"] = true;
+  data["activity"] = activity;
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "set_activity";
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
+}
+
+static ProtocolResponse handleSetEmotion(const std::string &id, JsonObject params) {
+  const char *emotion = params["emotion"] | "neutral";
+  characterRuntime.setEmotion(emotion);
+  JsonDocument data;
+  data["ok"] = true;
+  data["emotion"] = emotion;
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "set_emotion";
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
+}
+
+static ProtocolResponse handleSetLifeMode(const std::string &id, JsonObject params) {
+  const char *mode = params["mode"] | "work";
+  characterRuntime.setLifeMode(mode);
+  JsonDocument data;
+  data["ok"] = true;
+  data["mode"] = mode;
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "set_life_mode";
   doc["ok"] = true;
   doc["data"] = data;
   std::string out;
@@ -218,6 +292,8 @@ static ProtocolResponse handleGetStatus(const std::string &id, JsonObject) {
   JsonDocument data;
   data["firmware_version"] = NOMA_FIRMWARE_VERSION;
   data["active_animation"] = characterRuntime.currentAnimation();
+  data["activity"] = characterRuntime.currentActivity();
+  data["behavior"] = characterRuntime.currentBehavior();
   data["fps"] = characterRuntime.fps();
   JsonDocument doc;
   doc["v"] = 1;
@@ -237,10 +313,12 @@ static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject pa
   packLoader.unload();
 
   JsonDocument data;
-  bool ok = characterRuntime.loadCharacter(packLoader, characterId);
-  if (ok) {
+  bool ok = false;
+  if (packLoader.mountFilesystem() && characterRuntime.loadCharacter(packLoader, characterId)) {
+    ok = true;
     activeCharacterId = characterId;
     bootOk = true;
+    textModeBoot = false;
     bootPackStatus = "OK";
     const PackInfo *info = characterRuntime.packInfo();
     persistActiveCharacter(characterId, info ? info->uuid.c_str() : nullptr);
@@ -258,11 +336,13 @@ static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject pa
     }
     characterRuntime.render();
   } else {
-    bootOk = false;
+    bootOk = true;
+    textModeBoot = true;
     bootPackStatus = "FAIL";
+    characterRuntime.useBehaviorDefaults();
     data["error"] = packLoadErrorLabel(packLoader.lastError());
-    showBootError(packLoadErrorLabel(packLoader.lastError()));
-    packLoader.listDirectory(std::string("/characters/") + characterId);
+    data["render_mode"] = "text";
+    characterRuntime.render();
   }
 
   JsonDocument doc;
@@ -274,10 +354,11 @@ static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject pa
   doc["data"] = data;
   std::string out;
   serializeJson(doc, out);
-  return {out + "\n", ok};
+  return {out + "\n", true};
 }
 
 static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
+  unsigned long now = millis();
   JsonDocument data;
   data["fps"] = characterRuntime.fps();
 #if defined(ESP32)
@@ -290,9 +371,16 @@ static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
   data["character_id"] = characterRuntime.characterId();
   const PackInfo *info = characterRuntime.packInfo();
   data["uuid"] = info ? info->uuid : "";
+  data["life_mode"] = characterRuntime.lifeMode();
+  data["activity"] = characterRuntime.currentActivity();
+  data["emotion"] = characterRuntime.currentEmotion();
+  data["behavior"] = characterRuntime.currentBehavior();
+  data["render_mode"] = textModeBoot ? "text" : renderModeName(characterRuntime.renderMode());
+  data["time_in_behavior_sec"] = characterRuntime.timeInBehaviorSec(now);
+  data["next_behavior"] = characterRuntime.nextBehavior();
   data["animation"] = characterRuntime.currentAnimation();
   data["frame"] = characterRuntime.currentFrame();
-  data["state"] = characterRuntime.currentState();
+  data["state"] = characterRuntime.currentActivity();
 
   JsonDocument doc;
   doc["v"] = 1;
@@ -314,6 +402,9 @@ static void registerProtocolHandlers() {
   protocol.registerCommand("get_status", handleGetStatus);
   protocol.registerCommand("set_background", handleSetBackground);
   protocol.registerCommand("set_state", handleSetState);
+  protocol.registerCommand("set_activity", handleSetActivity);
+  protocol.registerCommand("set_emotion", handleSetEmotion);
+  protocol.registerCommand("set_life_mode", handleSetLifeMode);
   protocol.registerCommand("load_character", handleLoadCharacter);
   protocol.registerCommand("diagnostics", handleDiagnostics);
 }
@@ -325,17 +416,20 @@ void setup() {
   characterRuntime.begin(&renderer);
   registerProtocolHandlers();
 
-  if (!packLoader.mountFilesystem()) {
-    Serial.println("LittleFS mount failed");
-    showBootError("FS FAIL");
-    printBootBanner();
-    return;
-  }
-  bootFsStatus = "OK";
-
-  if (!bootCharacter()) {
-    printBootBanner();
-    return;
+  bool fsMounted = packLoader.mountFilesystem();
+  if (fsMounted) {
+    bootFsStatus = "OK";
+    if (bootCharacter()) {
+      bootOk = true;
+      characterRuntime.setLifeMode("work");
+      characterRuntime.setActivity("idle");
+      characterRuntime.render();
+    } else {
+      startTextModeBoot();
+    }
+  } else {
+    Serial.println("LittleFS mount failed — text mode boot");
+    startTextModeBoot();
   }
 
   printBootBanner();

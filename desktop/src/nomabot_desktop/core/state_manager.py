@@ -10,6 +10,7 @@ from typing import Any
 from nomabot.types import MessageSpec, Priority, RenderRequest
 from nomabot_desktop.core.bus import EventBus
 from nomabot_desktop.core.events import SchedulerFire, StateRequest
+from nomabot_desktop.core.runtime import ACTIVITY_STATES
 
 logger = logging.getLogger("noma.runtime")
 
@@ -17,7 +18,10 @@ logger = logging.getLogger("noma.runtime")
 @dataclass
 class BotState:
     name: str = "idle"
-    animation: str | None = "idle"
+    activity: str = "idle"
+    emotion: str | None = None
+    life_mode: str | None = "work"
+    animation: str | None = None
     message_text: str | None = None
     active_priority: Priority = Priority.BACKGROUND
 
@@ -99,16 +103,27 @@ class StateManager:
     def _apply(self, req: StateRequest) -> bool:
         self._state.name = req.state
         self._held_priority = req.priority
+
+        if req.emotion is not None:
+            self._state.emotion = req.emotion
+        if req.life_mode is not None:
+            self._state.life_mode = req.life_mode
+
+        if req.state in ACTIVITY_STATES:
+            self._state.activity = req.state
+        elif req.activity:
+            self._state.activity = req.activity
+
         if req.animation:
             self._state.animation = req.animation
-        elif req.state in ("idle", "coding", "gaming"):
-            self._state.animation = req.state
+
         if req.message_text is not None:
             self._state.message_text = req.message_text
 
         logger.info(
-            "State -> %s (priority %s, source %s)",
+            "State -> %s activity=%s (priority %s, source %s)",
             req.state,
+            self._state.activity,
             req.priority.name,
             req.source,
         )
@@ -117,18 +132,16 @@ class StateManager:
         if not self._runtime_submit:
             return True
 
+        request = RenderRequest(
+            device_id=req.device_id,
+            priority=req.priority,
+            activity=self._state.activity if req.state in ACTIVITY_STATES or req.activity else None,
+            emotion=req.emotion,
+            life_mode=req.life_mode,
+            animation=req.animation,
+        )
         if req.message_text:
-            request = RenderRequest(
-                device_id=req.device_id,
-                animation=self._state.animation,
-                message=MessageSpec(text=req.message_text),
-                priority=req.priority,
-            )
-        else:
-            request = RenderRequest(
-                device_id=req.device_id,
-                animation=self._state.animation,
-                priority=req.priority,
-            )
+            request.message = MessageSpec(text=req.message_text)
+
         self._schedule(self._runtime_submit(request))
         return True

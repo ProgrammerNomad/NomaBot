@@ -1,6 +1,9 @@
 #include "character_runtime.h"
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
+#include <FS.h>
+#include <LittleFS.h>
 
 const char *characterLoadErrorLabel(CharacterLoadError err) {
   switch (err) {
@@ -15,6 +18,22 @@ const char *characterLoadErrorLabel(CharacterLoadError err) {
 
 void CharacterRuntime::begin(IRenderer *renderer) {
   _renderer = renderer;
+  _behavior.useDefaults();
+  PersonalityTraits traits;
+  _behavior.setPersonality(traits);
+  _behavior.setLifeMode("work");
+  _behavior.setActivity("idle");
+}
+
+void CharacterRuntime::useBehaviorDefaults() {
+  _behavior.useDefaults();
+  _behavior.setLifeMode("work");
+  _behavior.setActivity("idle");
+  _renderMode = RenderMode::Text;
+}
+
+bool CharacterRuntime::textModeActive() const {
+  return _renderMode == RenderMode::Text || _loader == nullptr;
 }
 
 bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId) {
@@ -42,19 +61,42 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
   }
 
   _backgroundSprite = loader.defaultBackgroundSprite();
-  applyClip(_graph.currentAnimation());
+  _renderMode = RenderMode::Text;
+
+  std::string behaviorPath = loader.rootPath() + "/behavior.json";
+  File behaviorFile = LittleFS.open(behaviorPath.c_str(), "r");
+  if (!behaviorFile && behaviorPath.size() > 0 && behaviorPath[0] == '/') {
+    behaviorFile = LittleFS.open(behaviorPath.c_str() + 1, "r");
+  }
+  if (behaviorFile) {
+    std::string behaviorText;
+    while (behaviorFile.available()) {
+      behaviorText += static_cast<char>(behaviorFile.read());
+    }
+    behaviorFile.close();
+    StaticJsonDocument<256> behaviorDoc;
+    if (!deserializeJson(behaviorDoc, behaviorText)) {
+      const char *mode = behaviorDoc["render_mode"] | "text";
+      if (strcmp(mode, "sprite") == 0) {
+        _renderMode = RenderMode::Sprite;
+      }
+    }
+  }
+
+  syncClipFromBehavior();
   return true;
 }
 
 void CharacterRuntime::unload() {
   _cache.clear();
-  _characterId.clear();
+  _characterId = "nomabot";
   _message.clear();
   _activeClipId.clear();
   _loader = nullptr;
   _assets.bind(nullptr);
   _accessories.clear();
   _lastLoadError = CharacterLoadError::None;
+  _overrideAnimation = false;
 }
 
 const PackInfo *CharacterRuntime::packInfo() const {
@@ -73,13 +115,42 @@ void CharacterRuntime::applyClip(const char *animationId) {
   _activeClipId = clip ? clip->id : "";
 }
 
+void CharacterRuntime::syncClipFromBehavior() {
+  if (_overrideAnimation || textModeActive()) {
+    return;
+  }
+  applyClip(_behavior.clipForBehavior());
+}
+
+void CharacterRuntime::setLifeMode(const char *mode) {
+  _behavior.setLifeMode(mode);
+}
+
+void CharacterRuntime::setActivity(const char *activity) {
+  _overrideAnimation = false;
+  _behavior.setActivity(activity);
+  syncClipFromBehavior();
+}
+
+void CharacterRuntime::setEmotion(const char *emotion) {
+  _behavior.setEmotion(emotion);
+  syncClipFromBehavior();
+}
+
 void CharacterRuntime::playAnimation(const char *animationId) {
+  _overrideAnimation = true;
   applyClip(animationId);
 }
 
 void CharacterRuntime::setState(const char *state) {
-  _graph.setState(state);
-  applyClip(_graph.currentAnimation());
+  setActivity(state);
+}
+
+const char *CharacterRuntime::currentAnimation() const {
+  if (_overrideAnimation && !_activeClipId.empty()) {
+    return _activeClipId.c_str();
+  }
+  return _behavior.behaviorId();
 }
 
 void CharacterRuntime::setMessage(const char *text) {
@@ -98,7 +169,15 @@ void CharacterRuntime::setBackground(const char *backgroundKey) {
 }
 
 void CharacterRuntime::tick(unsigned long nowMs) {
-  _clipPlayer.tick(nowMs);
+  if (!_overrideAnimation) {
+    _behavior.update(nowMs);
+    if (!textModeActive()) {
+      syncClipFromBehavior();
+    }
+  }
+  if (_loader && !textModeActive()) {
+    _clipPlayer.tick(nowMs);
+  }
   updateFps(nowMs);
 }
 
@@ -116,11 +195,24 @@ void CharacterRuntime::updateFps(unsigned long nowMs) {
 }
 
 void CharacterRuntime::render() {
-  if (!_renderer || !_loader) {
+  if (!_renderer) {
     return;
   }
+
+  if (textModeActive()) {
+    _textRenderer.render(*_renderer, _behavior.lifeMode(), _behavior.activity(),
+                         _behavior.emotion(), _behavior.behaviorLabel(), _message.c_str());
+    return;
+  }
+
+  if (!_loader) {
+    _textRenderer.render(*_renderer, _behavior.lifeMode(), _behavior.activity(),
+                         _behavior.emotion(), _behavior.behaviorLabel(), _message.c_str());
+    return;
+  }
+
   const char *bodySprite = _clipPlayer.currentSpriteId();
   _compositor.render(*_renderer, *_loader, _cache, _assets, _backgroundSprite.c_str(), bodySprite,
                      _loader->anchorX(), _loader->anchorY(), _message.c_str(),
-                     _activeClipId.c_str());
+                     _behavior.behaviorLabel());
 }

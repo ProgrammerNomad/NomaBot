@@ -30,4 +30,7 @@ class RenderRequest(BaseModel):
     background: str | None = None
     message: MessageSpec | None = None
     state: str | None = None
+    activity: str | None = None
+    emotion: str | None = None
+    life_mode: str | None = None
     priority: Priority = Priority.NORMAL

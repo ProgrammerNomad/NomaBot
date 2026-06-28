@@ -220,6 +220,41 @@ Use `"accessory": null` to clear.
 }
 ```
 
+#### `set_activity`
+
+Primary command for world context. Firmware picks moment-to-moment behaviors autonomously.
+
+```json
+{
+  "cmd": "set_activity",
+  "params": { "activity": "coding" }
+}
+```
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `activity` | string | `idle`, `coding`, `sleep`, `travel`, … |
+
+#### `set_emotion`
+
+```json
+{
+  "cmd": "set_emotion",
+  "params": { "emotion": "frustrated" }
+}
+```
+
+#### `set_life_mode`
+
+```json
+{
+  "cmd": "set_life_mode",
+  "params": { "mode": "work" }
+}
+```
+
+Modes: `work`, `relax`, `travel`, `night`.
+
 #### `set_effect`
 
 ```json

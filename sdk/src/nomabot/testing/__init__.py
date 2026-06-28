@@ -16,13 +16,19 @@ class MockTransport:
         self.sent_envelopes: list[Envelope] = []
         self._callback: Callable[[bytes], None] | None = None
         self._connected = False
-        self.firmware_version = "0.1.0"
+        self.firmware_version = "0.3.1"
         self.device_id = "mock-esp32"
         self.display_width = 170
         self.display_height = 320
         self.last_animation: str | None = None
         self.last_message: str | None = None
         self.last_character_id: str | None = None
+        self.last_activity: str | None = "idle"
+        self.last_emotion: str | None = "neutral"
+        self.last_life_mode: str | None = "work"
+        self.last_behavior: str | None = "breathing"
+        self.next_behavior: str | None = "blink"
+        self.render_mode: str = "text"
         self.pack_uuid: str | None = "a6d1e8f0-4c2b-4f91-9c3d-8e1a2b4c6d8e"
 
     async def connect(self) -> None:
@@ -68,9 +74,13 @@ class MockTransport:
                         "show_message",
                         "set_background",
                         "set_state",
+                        "set_activity",
+                        "set_emotion",
+                        "set_life_mode",
                         "load_character",
                         "diagnostics",
                     ],
+                    "render_mode": self.render_mode,
                 },
             )
         if cmd == "ping":
@@ -81,20 +91,33 @@ class MockTransport:
                 "get_status",
                 data={
                     "firmware_version": self.firmware_version,
-                    "active_animation": self.last_animation,
+                    "active_animation": self.last_behavior,
+                    "activity": self.last_activity,
+                    "behavior": self.last_behavior,
                     "fps": 20,
                 },
             )
         if cmd == "play_animation" and env.params:
             self.last_animation = env.params.get("animation")
+            self.last_behavior = self.last_animation
             return build_response(env.id, "play_animation", data={"ok": True})
         if cmd == "show_message" and env.params:
             self.last_message = env.params.get("text")
             return build_response(env.id, "show_message", data={"ok": True})
         if cmd == "set_background":
             return build_response(env.id, "set_background", data={"ok": True})
-        if cmd == "set_state":
+        if cmd == "set_state" and env.params:
+            self.last_activity = env.params.get("state")
             return build_response(env.id, "set_state", data={"ok": True})
+        if cmd == "set_activity" and env.params:
+            self.last_activity = env.params.get("activity")
+            return build_response(env.id, "set_activity", data={"ok": True, "activity": self.last_activity})
+        if cmd == "set_emotion" and env.params:
+            self.last_emotion = env.params.get("emotion")
+            return build_response(env.id, "set_emotion", data={"ok": True, "emotion": self.last_emotion})
+        if cmd == "set_life_mode" and env.params:
+            self.last_life_mode = env.params.get("mode")
+            return build_response(env.id, "set_life_mode", data={"ok": True, "mode": self.last_life_mode})
         if cmd == "load_character" and env.params:
             self.last_character_id = env.params.get("character_id")
             return build_response(
@@ -103,7 +126,7 @@ class MockTransport:
                 data={
                     "pack_id": self.last_character_id,
                     "uuid": self.pack_uuid,
-                    "version": {"major": 0, "minor": 3, "patch": 0},
+                    "version": {"major": 0, "minor": 3, "patch": 1},
                     "display": {
                         "profile": "lilygo_tdisplay_s3",
                         "width": self.display_width,
@@ -121,9 +144,16 @@ class MockTransport:
                     "psram_free": 6543210,
                     "character_id": self.last_character_id or "nomabot",
                     "uuid": self.pack_uuid,
-                    "animation": self.last_animation or "idle",
+                    "life_mode": self.last_life_mode,
+                    "activity": self.last_activity,
+                    "emotion": self.last_emotion,
+                    "behavior": self.last_behavior,
+                    "render_mode": self.render_mode,
+                    "time_in_behavior_sec": 8,
+                    "next_behavior": self.next_behavior,
+                    "animation": self.last_behavior,
                     "frame": 0,
-                    "state": "idle",
+                    "state": self.last_activity,
                 },
             )
         return build_response(

@@ -2,3 +2,12 @@ id: nomabot
 name: NomaBot
 tone: friendly
 hydration_reminder: true
+
+personality:
+  energy: 80
+  coffee_love: 90
+  curiosity: 70
+  sleepiness: 20
+  optimism: 90
+  patience: 40
+  playfulness: 60

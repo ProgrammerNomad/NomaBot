@@ -35,6 +35,18 @@ class SetStateParams(BaseModel):
     state: str
 
 
+class SetActivityParams(BaseModel):
+    activity: str
+
+
+class SetEmotionParams(BaseModel):
+    emotion: str
+
+
+class SetLifeModeParams(BaseModel):
+    mode: str
+
+
 class PingParams(BaseModel):
     pass
 
@@ -59,6 +71,9 @@ COMMAND_MODELS: dict[str, type[BaseModel]] = {
     "show_message": ShowMessageParams,
     "set_background": SetBackgroundParams,
     "set_state": SetStateParams,
+    "set_activity": SetActivityParams,
+    "set_emotion": SetEmotionParams,
+    "set_life_mode": SetLifeModeParams,
     "load_character": LoadCharacterParams,
     "diagnostics": DiagnosticsParams,
 }

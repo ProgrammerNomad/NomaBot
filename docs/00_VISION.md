@@ -6,16 +6,16 @@
 
 NomaBot is a **desk companion platform**: a small ESP32-powered display plus a PySide6 desktop control plane, an asset pipeline, SDKs, and an extensible plugin/character ecosystem.
 
-The desktop application is the brain. The firmware is the display. Characters, themes, and integrations are **data and plugins**-not hardcoded features.
+The desktop application detects **world context** (activity, emotions, life mode). The firmware runs an **autonomous character brain** that picks behaviors, animations, and display output.
 
 ```
-┌─────────────────┐         ┌─────────────────┐
-│  Desktop App    │  JSON   │  ESP32 Device   │
-│  (Python/Qt)    │ ──────► │  (Display only) │
-│                 │  USB /  │                 │
-│  Activity, AI,  │  Wi-Fi  │  Animations,    │
-│  Plugins        │         │  Sprites, UI    │
-└─────────────────┘         └─────────────────┘
+┌─────────────────┐         ┌─────────────────────────┐
+│  Desktop App    │  JSON   │  ESP32 Device           │
+│  (Python/Qt)    │ ──────► │  BehaviorEngine + UI  │
+│                 │  USB /  │                         │
+│  Activity, AI,  │  Wi-Fi  │  Life, emotion, clips │
+│  Plugins        │         │                         │
+└─────────────────┘         └─────────────────────────┘
 ```
 
 ## Why NomaBot exists
@@ -29,7 +29,7 @@ NomaBot aims to be different:
 | Static desk toys | Live, layered animations tied to real activity |
 | Vendor lock-in | Open character packs and plugin ecosystem |
 | Cloud-only AI | Pluggable providers: cloud **or** fully local |
-| Fragile firmware | Dumb device: firmware renders; desktop decides |
+| Fragile firmware | Domain-agnostic device; autonomous character behavior on ESP32 |
 | One-size-fits-all character | Data-driven characters, swappable like themes |
 
 ## Design principles

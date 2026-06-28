@@ -182,6 +182,9 @@ async def _bootstrap_hardware(
 def _sync_emulator_state(ctx: AppContext, state: BotState) -> None:
     if ctx.emu_state is None:
         return
+    ctx.emu_state.activity = state.activity
+    ctx.emu_state.emotion = state.emotion
+    ctx.emu_state.life_mode = state.life_mode
     ctx.emu_state.animation = state.animation
     ctx.emu_state.message = state.message_text
 
@@ -198,18 +201,27 @@ def _build_dev_window(ctx: AppContext) -> QMainWindow:
             StateRequest(state=state, priority=Priority.NORMAL, source="dev", **kwargs),
         )
 
-    btn_idle = QPushButton("Play idle")
-    btn_idle.clicked.connect(lambda: req("idle", animation="idle"))
-    btn_coding = QPushButton("Play coding")
-    btn_coding.clicked.connect(lambda: req("coding", animation="coding"))
+    btn_idle = QPushButton("Activity: idle")
+    btn_idle.clicked.connect(lambda: req("idle"))
+    btn_coding = QPushButton("Activity: coding")
+    btn_coding.clicked.connect(lambda: req("coding"))
+    btn_sleep = QPushButton("Activity: sleep")
+    btn_sleep.clicked.connect(lambda: req("sleep"))
+    btn_happy = QPushButton("Emotion: happy")
+    btn_happy.clicked.connect(lambda: req("idle", emotion="happy"))
+    btn_frustrated = QPushButton("Emotion: frustrated")
+    btn_frustrated.clicked.connect(lambda: req("coding", emotion="frustrated"))
     btn_say = QPushButton('Say "Hello"')
     btn_say.clicked.connect(lambda: req("message_active", message_text="Hello"))
 
     layout.addWidget(btn_idle)
     layout.addWidget(btn_coding)
+    layout.addWidget(btn_sleep)
+    layout.addWidget(btn_happy)
+    layout.addWidget(btn_frustrated)
     layout.addWidget(btn_say)
     window.setCentralWidget(central)
-    window.resize(300, 200)
+    window.resize(320, 280)
     return window
 
 
@@ -222,7 +234,7 @@ def run_app(
     no_tray: bool = False,
 ) -> None:
     log_dir = setup_logging()
-    logger.info("NomaBot desktop 0.3.0 starting")
+    logger.info("NomaBot desktop 0.3.1 starting")
 
     ctx = create_context()
     ctx.log_dir = log_dir

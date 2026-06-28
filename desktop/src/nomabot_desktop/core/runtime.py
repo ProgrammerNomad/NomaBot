@@ -8,8 +8,10 @@ from dataclasses import dataclass
 
 from nomabot.protocol.commands import (
     PlayAnimationParams,
+    SetActivityParams,
     SetBackgroundParams,
-    SetStateParams,
+    SetEmotionParams,
+    SetLifeModeParams,
     ShowMessageParams,
     build_command,
 )
@@ -21,6 +23,8 @@ from nomabot_desktop.core.priority_queue import PriorityQueue
 
 logger = logging.getLogger("noma.runtime")
 
+ACTIVITY_STATES = frozenset({"idle", "coding", "sleep", "gaming", "travel"})
+
 
 @dataclass
 class _MergedState:
@@ -28,7 +32,9 @@ class _MergedState:
     background: str | None = None
     message_text: str | None = None
     message_style: str = "speech"
-    state: str | None = None
+    activity: str | None = None
+    emotion: str | None = None
+    life_mode: str | None = None
     priority: Priority = Priority.BACKGROUND
 
 
@@ -63,6 +69,20 @@ class NomaRuntime:
         commands: list[Envelope] = []
         s = self._state
 
+        activity = request.activity or request.state
+        if activity and request.priority >= s.priority:
+            s.activity = activity
+            s.priority = request.priority
+            commands.append(build_command("set_activity", SetActivityParams(activity=activity)))
+
+        if request.emotion and request.priority >= s.priority:
+            s.emotion = request.emotion
+            commands.append(build_command("set_emotion", SetEmotionParams(emotion=request.emotion)))
+
+        if request.life_mode and request.priority >= s.priority:
+            s.life_mode = request.life_mode
+            commands.append(build_command("set_life_mode", SetLifeModeParams(mode=request.life_mode)))
+
         if request.animation and request.priority >= s.priority:
             s.animation = request.animation
             s.priority = request.priority
@@ -89,10 +109,6 @@ class NomaRuntime:
                     ),
                 )
             )
-
-        if request.state:
-            s.state = request.state
-            commands.append(build_command("set_state", SetStateParams(state=request.state)))
 
         self._notify()
 

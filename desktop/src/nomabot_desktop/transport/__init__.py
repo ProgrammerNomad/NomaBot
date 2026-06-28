@@ -45,12 +45,17 @@ class TransportAdapter:
 
 
 class EmulatorState:
-    """Shared state for emulator UI - mirrors firmware clip playback."""
+    """Shared state for emulator UI - mirrors firmware behavior display."""
 
     def __init__(self, width: int = 170, height: int = 320) -> None:
         self.width = width
         self.height = height
         self.character_id = "nomabot"
+        self.life_mode = "work"
+        self.activity = "idle"
+        self.emotion = "neutral"
+        self.behavior = "breathing"
+        self.behavior_label = "Breathing..."
         self.animation: str | None = "idle"
         self.message: str | None = None
         self.background = "#1a1a2e"
@@ -58,6 +63,7 @@ class EmulatorState:
         self.body_sprite_id = "body_idle_01"
         self.anchor_x = 85
         self.anchor_y = 80
+        self.render_mode = "text"
         self._frame_index = 0
         self._frame_start_ms = 0.0
 
@@ -100,6 +106,7 @@ class EmulatorTransport(MockDevice):
             env = parse_line(line)
             if env.cmd == "play_animation" and env.params:
                 self.state.animation = env.params.get("animation")
+                self.state.render_mode = "sprite"
                 self.state.reset_clip()
             elif env.cmd == "show_message" and env.params:
                 self.state.message = env.params.get("text")
@@ -110,12 +117,18 @@ class EmulatorTransport(MockDevice):
                 else:
                     self.state.background_sprite_id = bg
             elif env.cmd == "set_state" and env.params:
-                state = env.params.get("state")
-                if state == "coding":
-                    self.state.animation = "coding"
-                elif state == "idle":
-                    self.state.animation = "idle"
-                self.state.reset_clip()
+                activity = env.params.get("state")
+                if activity:
+                    self.state.activity = activity
+            elif env.cmd == "set_activity" and env.params:
+                activity = env.params.get("activity")
+                if activity:
+                    self.state.activity = activity
+                    self.state.render_mode = "text"
+            elif env.cmd == "set_emotion" and env.params:
+                self.state.emotion = env.params.get("emotion", "neutral")
+            elif env.cmd == "set_life_mode" and env.params:
+                self.state.life_mode = env.params.get("mode", "work")
             elif env.cmd == "load_character" and env.params:
                 self.state.character_id = env.params.get("character_id", "nomabot")
                 self.state.reset_clip()

@@ -10,7 +10,10 @@ from nomabot.protocol.commands import (
     HelloParams,
     LoadCharacterParams,
     PlayAnimationParams,
+    SetActivityParams,
     SetBackgroundParams,
+    SetEmotionParams,
+    SetLifeModeParams,
     SetStateParams,
     ShowMessageParams,
     build_command,
@@ -99,6 +102,21 @@ class NomaClient:
             build_command("set_state", SetStateParams(state=state))
         )
 
+    async def set_activity(self, activity: str) -> Envelope:
+        return await self.send_command(
+            build_command("set_activity", SetActivityParams(activity=activity))
+        )
+
+    async def set_emotion(self, emotion: str) -> Envelope:
+        return await self.send_command(
+            build_command("set_emotion", SetEmotionParams(emotion=emotion))
+        )
+
+    async def set_life_mode(self, mode: str) -> Envelope:
+        return await self.send_command(
+            build_command("set_life_mode", SetLifeModeParams(mode=mode))
+        )
+
     async def get_status(self) -> Envelope:
         return await self.send_command(build_command("get_status"))
 
@@ -143,6 +161,15 @@ class NomaBot:
 
     async def set_state(self, state: str) -> Envelope:
         return await self._client.set_state(state)
+
+    async def set_activity(self, activity: str) -> Envelope:
+        return await self._client.set_activity(activity)
+
+    async def set_emotion(self, emotion: str) -> Envelope:
+        return await self._client.set_emotion(emotion)
+
+    async def set_life_mode(self, mode: str) -> Envelope:
+        return await self._client.set_life_mode(mode)
 
     async def ping(self) -> Envelope:
         return await self._client.ping()
