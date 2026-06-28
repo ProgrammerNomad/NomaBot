@@ -40,5 +40,6 @@ def test_dirty_full_all_visible_nodes() -> None:
     scene = SceneBuilder.build(state, dirty=DirtyFlags.FULL)
     assert scene.background.dirty
     assert scene.character.dirty
+    assert scene.expression.dirty
     assert scene.hud.dirty
     assert scene.speech_bubble.dirty

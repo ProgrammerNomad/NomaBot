@@ -1,0 +1,10 @@
+{
+  "id": "think",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "body_think",
+      "duration_ms": 450
+    }
+  ]
+}

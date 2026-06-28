@@ -1,4 +1,4 @@
-# Architecture Freeze (v0.5.0)
+# Architecture Freeze (v0.5.1)
 
 > After this release, **ship features — do not redesign subsystems** unless fixing a fundamental flaw (requires ADR in `docs/adr/`).
 

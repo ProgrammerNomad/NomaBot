@@ -1,9 +1,14 @@
 {
   "id": "idle",
-  "fps": 2,
   "loop": true,
   "frames": [
-    { "sprite": "body_idle_01", "duration_ms": 500 },
-    { "sprite": "body_idle_02", "duration_ms": 500 }
+    {
+      "sprite": "body_idle_01",
+      "duration_ms": 450
+    },
+    {
+      "sprite": "body_idle_02",
+      "duration_ms": 450
+    }
   ]
 }

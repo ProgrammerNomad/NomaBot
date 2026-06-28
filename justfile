@@ -47,7 +47,7 @@ build-assets *ARGS:
 
 # Generate sprites, compile pack, copy to firmware LittleFS data
 assets:
-    uv run python scripts/generate_placeholder_sprites.py
+    uv run python scripts/generate_living_nomabot_art.py
     uv run nomabot build-assets --input assets/characters/nomabot --output compiled/nomabot --profile lilygo_tdisplay_s3
     uv run python scripts/copy_pack_to_firmware_data.py
 

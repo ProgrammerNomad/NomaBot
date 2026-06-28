@@ -6,7 +6,9 @@
 
 #include "brain.h"
 
-bool brainLoadFromJson(Brain &brain, const char *jsonPath) {
+namespace {
+
+bool readJsonFile(const char *jsonPath, std::string &text) {
   if (!jsonPath) {
     return false;
   }
@@ -17,13 +19,23 @@ bool brainLoadFromJson(Brain &brain, const char *jsonPath) {
   if (!f) {
     return false;
   }
-  std::string text;
+  text.clear();
   while (f.available()) {
     text += static_cast<char>(f.read());
   }
   f.close();
+  return !text.empty();
+}
 
-  StaticJsonDocument<2048> doc;
+}  // namespace
+
+bool brainLoadFromJson(Brain &brain, const char *jsonPath) {
+  std::string text;
+  if (!readJsonFile(jsonPath, text)) {
+    return false;
+  }
+
+  DynamicJsonDocument doc(12288);
   if (deserializeJson(doc, text)) {
     return false;
   }
@@ -40,5 +52,7 @@ bool brainLoadFromJson(Brain &brain, const char *jsonPath) {
     traits.playfulness = personality["playfulness"] | traits.playfulness;
     brain.setPersonality(traits);
   }
+
+  brain.loadClipMapFromJsonText(text);
   return true;
 }

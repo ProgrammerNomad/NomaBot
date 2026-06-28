@@ -1,0 +1,10 @@
+{
+  "id": "wave",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "body_wave",
+      "duration_ms": 450
+    }
+  ]
+}

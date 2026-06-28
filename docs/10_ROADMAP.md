@@ -198,13 +198,25 @@ Pipeline: `RenderScheduler → SceneBuilder → CharacterRenderer → SpriteCach
 
 ---
 
+## Milestone 5.1 - First Living Character
+
+**Goal:** Make NomaBot feel alive on the 170×320 LCD — Prototype Pack v0 first, Character Bible after on-device validation. **Brain frozen.**
+
+See [READABILITY.md](./READABILITY.md), [STYLE_GUIDE.md](./STYLE_GUIDE.md), [LORE.md](./LORE.md), [LIVING_NOMA_SPEC.md](./LIVING_NOMA_SPEC.md).
+
+**Target version:** `0.5.2` (clip wiring + Prototype v0)
+
+---
+
 ## Milestone 6 - Character Packs
 
 **Target version:** `0.6.0`
 
 ---
 
-## Milestone 7 - Animation Studio
+## Milestone 7 - Animation Studio / Tiny Worlds
+
+Animation tooling plus travel, night, rain worlds — **after** Character Packs (M6).
 
 **Target version:** `0.7.0`
 

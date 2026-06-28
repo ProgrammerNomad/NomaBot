@@ -3,19 +3,63 @@
 namespace {
 
 constexpr int kHudBandHeight = 18;
-constexpr int kBubbleBandHeight = 24;
 constexpr uint16_t kHudClearColor = 0x0000;
 constexpr uint16_t kTextColor = 0xFFFF;
+constexpr uint16_t kBubbleFill = 0xEF5D;
+constexpr uint16_t kBubbleBorder = 0x4A49;
+constexpr int kBubblePadX = 8;
+constexpr int kBubblePadY = 6;
+constexpr int kBubbleRadius = 6;
 
-bool captureCharacterFootprint(PackLoader &loader, SpriteCache &cache, BackgroundCache &bgCache,
-                               const SceneNode &character, const char *bgSpriteId) {
-  if (!character.visible || !character.spriteId || !bgSpriteId || !bgSpriteId[0]) {
+int textWidthEstimate(const char *text) {
+  if (!text) {
+    return 0;
+  }
+  int len = 0;
+  while (text[len]) {
+    len++;
+  }
+  return len * 6;
+}
+
+void fillRoundedRect(IRenderer &renderer, int x, int y, int w, int h, int r, uint16_t color) {
+  if (w <= 0 || h <= 0) {
+    return;
+  }
+  if (r < 1) {
+    renderer.fillRect(x, y, w, h, color);
+    return;
+  }
+  renderer.fillRect(x + r, y, w - 2 * r, h, color);
+  renderer.fillRect(x, y + r, w, h - 2 * r, color);
+  renderer.fillRect(x, y, r, r, color);
+  renderer.fillRect(x + w - r, y, r, r, color);
+  renderer.fillRect(x, y + h - r, r, r, color);
+  renderer.fillRect(x + w - r, y + h - r, r, r, color);
+}
+
+void strokeRoundedRect(IRenderer &renderer, int x, int y, int w, int h, int r, uint16_t color) {
+  renderer.fillRect(x + r, y, w - 2 * r, 1, color);
+  renderer.fillRect(x + r, y + h - 1, w - 2 * r, 1, color);
+  renderer.fillRect(x, y + r, 1, h - 2 * r, color);
+  renderer.fillRect(x + w - 1, y + r, 1, h - 2 * r, color);
+}
+
+void drawBubbleTail(IRenderer &renderer, int centerX, int topY) {
+  renderer.fillRect(centerX - 1, topY, 3, 4, kBubbleFill);
+  renderer.fillRect(centerX - 2, topY + 4, 5, 2, kBubbleBorder);
+}
+
+bool captureFootprint(PackLoader &loader, SpriteCache &cache, BackgroundCache &bgCache,
+                      const char *bgSpriteId, int anchorX, int anchorY, const char *bodySpriteId,
+                      const char *faceSpriteId) {
+  if (!bgSpriteId || !bgSpriteId[0] || !bodySpriteId || !bodySpriteId[0]) {
     bgCache.reset();
     return false;
   }
 
   const SpriteMeta *bgMeta = loader.findSprite(bgSpriteId);
-  const SpriteMeta *bodyMeta = loader.findSprite(character.spriteId);
+  const SpriteMeta *bodyMeta = loader.findSprite(bodySpriteId);
   if (!bgMeta || !bodyMeta) {
     bgCache.reset();
     return false;
@@ -27,15 +71,35 @@ bool captureCharacterFootprint(PackLoader &loader, SpriteCache &cache, Backgroun
     return false;
   }
 
-  int drawX = character.x - bodyMeta->width / 2;
-  int drawY = character.y;
-  return bgCache.captureFromBackground(bgPixels, bgMeta->width, bgMeta->height, drawX, drawY,
-                                       bodyMeta->width, bodyMeta->height);
+  int drawX = anchorX - bodyMeta->width / 2;
+  int drawY = anchorY;
+  int patchW = bodyMeta->width;
+  int patchH = bodyMeta->height;
+
+  if (faceSpriteId && faceSpriteId[0]) {
+    const SpriteMeta *faceMeta = loader.findSprite(faceSpriteId);
+    if (faceMeta) {
+      int fx = anchorX - faceMeta->width / 2;
+      int fy = anchorY - 8;
+      int minX = drawX < fx ? drawX : fx;
+      int minY = drawY < fy ? drawY : fy;
+      int maxX = (drawX + patchW) > (fx + faceMeta->width) ? (drawX + patchW) : (fx + faceMeta->width);
+      int maxY =
+          (drawY + patchH) > (fy + faceMeta->height) ? (drawY + patchH) : (fy + faceMeta->height);
+      drawX = minX;
+      drawY = minY;
+      patchW = maxX - minX;
+      patchH = maxY - minY;
+    }
+  }
+
+  return bgCache.captureFromBackground(bgPixels, bgMeta->width, bgMeta->height, drawX, drawY, patchW,
+                                       patchH);
 }
 
 void drawBackgroundNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
-                        Compositor &compositor, BackgroundCache &bgCache,
-                        const SceneNode &node, const SceneNode &character) {
+                        Compositor &compositor, BackgroundCache &bgCache, const SceneNode &node,
+                        const Scene &scene) {
   if (!node.visible || !node.spriteId || !node.spriteId[0]) {
     renderer.fillScreen(kHudClearColor);
     bgCache.reset();
@@ -57,17 +121,22 @@ void drawBackgroundNode(IRenderer &renderer, PackLoader &loader, SpriteCache &ca
   }
 
   renderer.blitRGB565(bgPixels, 0, 0, bgMeta->width, bgMeta->height);
-  captureCharacterFootprint(loader, cache, bgCache, character, node.spriteId);
+  captureFootprint(loader, cache, bgCache, node.spriteId, scene.character.x, scene.character.y,
+                   scene.character.spriteId, scene.expression.spriteId);
 }
 
 void drawCharacterNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
-                       Compositor &compositor, BackgroundCache &bgCache, const SceneNode &node,
-                       bool restoreBackground) {
+                       Compositor &compositor, const SceneNode &node) {
   if (!node.visible || !node.spriteId || !node.spriteId[0]) {
     return;
   }
-  if (restoreBackground) {
-    bgCache.restore(renderer);
+  compositor.blitSprite(renderer, loader, cache, node.spriteId, node.x, node.y);
+}
+
+void drawExpressionNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
+                        Compositor &compositor, const SceneNode &node) {
+  if (!node.visible || !node.spriteId || !node.spriteId[0]) {
+    return;
   }
   compositor.blitSprite(renderer, loader, cache, node.spriteId, node.x, node.y);
 }
@@ -80,29 +149,19 @@ void drawHudNode(IRenderer &renderer, const SceneNode &node) {
   renderer.drawText(node.x, node.y, node.text, kTextColor);
 }
 
-void drawSpeechBubbleNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
-                          const char *bgSpriteId, const SceneNode &node) {
-  int bandY = renderer.height() - kBubbleBandHeight;
-  if (node.text && node.text[0]) {
-    renderer.fillRect(0, bandY, renderer.width(), kBubbleBandHeight, kHudClearColor);
-    renderer.drawText(node.x, renderer.height() - 12, node.text, kTextColor);
-    return;
-  }
-
+void restoreBubbleBand(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
+                       const char *bgSpriteId, int bandY, int bandH) {
   if (!bgSpriteId || !bgSpriteId[0]) {
-    renderer.fillRect(0, bandY, renderer.width(), kBubbleBandHeight, kHudClearColor);
+    renderer.fillRect(0, bandY, renderer.width(), bandH, kHudClearColor);
     return;
   }
-
   const SpriteMeta *bgMeta = loader.findSprite(bgSpriteId);
-  const uint16_t *bgPixels =
-      bgMeta ? cache.get(bgSpriteId, loader, bgMeta) : nullptr;
+  const uint16_t *bgPixels = bgMeta ? cache.get(bgSpriteId, loader, bgMeta) : nullptr;
   if (!bgMeta || !bgPixels || bandY >= bgMeta->height) {
-    renderer.fillRect(0, bandY, renderer.width(), kBubbleBandHeight, kHudClearColor);
+    renderer.fillRect(0, bandY, renderer.width(), bandH, kHudClearColor);
     return;
   }
-
-  int copyH = kBubbleBandHeight;
+  int copyH = bandH;
   if (bandY + copyH > bgMeta->height) {
     copyH = bgMeta->height - bandY;
   }
@@ -111,15 +170,47 @@ void drawSpeechBubbleNode(IRenderer &renderer, PackLoader &loader, SpriteCache &
   }
 }
 
+void drawSpeechBubbleNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
+                          const char *bgSpriteId, const SceneNode &node) {
+  int bandY = renderer.height() - 56;
+  int bandH = 56;
+  if (!node.text || !node.text[0]) {
+    restoreBubbleBand(renderer, loader, cache, bgSpriteId, bandY, bandH);
+    return;
+  }
+
+  restoreBubbleBand(renderer, loader, cache, bgSpriteId, bandY, bandH);
+
+  int tw = textWidthEstimate(node.text);
+  if (tw > renderer.width() - 24) {
+    tw = renderer.width() - 24;
+  }
+  int bw = tw + kBubblePadX * 2;
+  int bh = 22 + kBubblePadY * 2;
+  int bx = node.x;
+  if (bx + bw > renderer.width() - 4) {
+    bx = renderer.width() - bw - 4;
+  }
+  if (bx < 4) {
+    bx = 4;
+  }
+  int by = renderer.height() - bh - 16;
+
+  fillRoundedRect(renderer, bx, by, bw, bh, kBubbleRadius, kBubbleFill);
+  strokeRoundedRect(renderer, bx, by, bw, bh, kBubbleRadius, kBubbleBorder);
+  drawBubbleTail(renderer, bx + bw / 2, by + bh);
+  renderer.drawText(bx + kBubblePadX, by + kBubblePadY + 8, node.text, kBubbleBorder);
+}
+
 }  // namespace
 
 void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, DirtyFlags dirty,
                                   PackLoader &loader, SpriteCache &cache, Compositor &compositor,
                                   BackgroundCache &bgCache) {
   if (dirty == DirtyFull) {
-    drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background,
-                     scene.character);
-    drawCharacterNode(renderer, loader, cache, compositor, bgCache, scene.character, false);
+    drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background, scene);
+    drawCharacterNode(renderer, loader, cache, compositor, scene.character);
+    drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
     if (scene.hud.visible) {
       drawHudNode(renderer, scene.hud);
     }
@@ -130,13 +221,19 @@ void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, Dirty
   }
 
   if (scene.background.dirty) {
-    drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background,
-                     scene.character);
+    drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background, scene);
   }
 
-  if (scene.character.dirty) {
-    const bool restorePatch = !scene.background.dirty;
-    drawCharacterNode(renderer, loader, cache, compositor, bgCache, scene.character, restorePatch);
+  if (scene.character.dirty || scene.expression.dirty) {
+    if (!scene.background.dirty) {
+      bgCache.restore(renderer);
+    }
+    if (scene.character.dirty) {
+      drawCharacterNode(renderer, loader, cache, compositor, scene.character);
+    }
+    if (scene.expression.dirty) {
+      drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
+    }
   }
 
   if (scene.hud.dirty) {

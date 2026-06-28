@@ -95,6 +95,8 @@ class DirtyTracker:
             or state.goal_progress != last.goal_progress
         ):
             dirty |= DirtyFlags.META
+            if state.emotion != last.emotion:
+                dirty |= DirtyFlags.CHARACTER
         if state.display_energy != last.display_energy:
             dirty |= DirtyFlags.ENERGY
         if (
@@ -103,6 +105,8 @@ class DirtyTracker:
             or state.curiosity != last.curiosity
         ):
             dirty |= DirtyFlags.BEHAVIOR
+            if state.behavior_id != last.behavior_id:
+                dirty |= DirtyFlags.CHARACTER
         if state.overlay_text != last.overlay_text:
             dirty |= DirtyFlags.MESSAGE
         if state.background_sprite_id != last.background_sprite_id:

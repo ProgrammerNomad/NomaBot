@@ -1,0 +1,10 @@
+{
+  "id": "sleep",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "body_sleep",
+      "duration_ms": 450
+    }
+  ]
+}

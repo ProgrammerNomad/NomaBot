@@ -455,6 +455,8 @@ static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
   data["activity"] = characterRuntime.currentActivity();
   data["emotion"] = characterRuntime.currentEmotion();
   data["behavior"] = characterRuntime.currentBehavior();
+  data["behavior_label"] = characterRuntime.brain().behaviorLabel();
+  data["clip"] = characterRuntime.brain().clipForBehavior();
   data["render_mode"] = textModeBoot ? "text" : renderModeName(characterRuntime.renderMode());
   data["time_in_behavior_sec"] = characterRuntime.timeInBehaviorSec(now);
   data["next_behavior"] = characterRuntime.nextBehavior();

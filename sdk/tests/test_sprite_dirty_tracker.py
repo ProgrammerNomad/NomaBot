@@ -12,6 +12,16 @@ def test_character_dirty_on_body_sprite_change() -> None:
     assert DirtyFlags.CHARACTER in dirty
 
 
+def test_sprite_dirty_on_emotion_change() -> None:
+    tracker = DirtyTracker()
+    before = RenderState(emotion="neutral")
+    after = RenderState(emotion="happy")
+    tracker.commit_rendered(before)
+    dirty = tracker.collect_dirty_flags(after)
+    assert DirtyFlags.CHARACTER in dirty
+    assert DirtyFlags.META in dirty
+
+
 def test_background_dirty_on_sprite_change() -> None:
     tracker = DirtyTracker()
     before = RenderState(background_sprite_id="bg_office")

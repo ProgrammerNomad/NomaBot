@@ -167,11 +167,11 @@ void CharacterRuntime::applyActivityCommand(const char *activity, const char *so
   if (strcmp(activity, _brain.activity()) == 0) {
     _brain.forceBehaviorPick();
     syncClipFromBehavior();
-    _dirtyTracker.forceDirty(DirtyBehavior | DirtyMeta);
+    _dirtyTracker.forceDirty(DirtyBehavior | DirtyMeta | DirtyCharacter);
   } else {
     _brain.setActivity(activity);
     syncClipFromBehavior();
-    _dirtyTracker.forceDirty(DirtyHeader | DirtyMeta | DirtyBehavior);
+    _dirtyTracker.forceDirty(DirtyHeader | DirtyMeta | DirtyBehavior | DirtyCharacter);
   }
 }
 
@@ -179,7 +179,7 @@ void CharacterRuntime::setEmotion(const char *emotion) {
   noteCommandSource("protocol");
   _brain.setEmotion(emotion);
   syncClipFromBehavior();
-  _dirtyTracker.forceDirty(DirtyMeta | DirtyBehavior);
+  _dirtyTracker.forceDirty(DirtyMeta | DirtyBehavior | DirtyCharacter);
 }
 
 void CharacterRuntime::setSeason(const char *season) {
@@ -192,7 +192,7 @@ void CharacterRuntime::triggerHabit(const char *habitId) {
   noteCommandSource("protocol");
   _brain.triggerHabit(habitId);
   syncClipFromBehavior();
-  _dirtyTracker.forceDirty(DirtyBehavior | DirtyMeta | DirtyHeader);
+  _dirtyTracker.forceDirty(DirtyBehavior | DirtyMeta | DirtyHeader | DirtyCharacter);
 }
 
 void CharacterRuntime::playAnimation(const char *animationId) {

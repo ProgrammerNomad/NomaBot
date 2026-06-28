@@ -1,0 +1,14 @@
+{
+  "id": "snore",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "body_sleep",
+      "duration_ms": 450
+    },
+    {
+      "sprite": "body_idle_01",
+      "duration_ms": 450
+    }
+  ]
+}

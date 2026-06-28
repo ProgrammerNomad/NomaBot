@@ -19,27 +19,33 @@ activities:
       - id: look_around
         label: "Look around"
         weight: 30
+        clip: look_left
         likes: [travel, rain]
         duration: { min: 4, max: 12 }
       - id: blink
         label: "Blink"
         weight: 25
+        clip: blink
         duration: { min: 2, max: 5 }
       - id: breathing
         label: "Breathing..."
         weight: 25
+        clip: idle
         duration: { min: 5, max: 15 }
       - id: wave
         label: "Wave"
         weight: 10
+        clip: wave
         duration: { min: 2, max: 4 }
       - id: smile
         label: "Smile"
         weight: 10
+        clip: hello
         duration: { min: 2, max: 4 }
       - id: read
         label: "Reading..."
         weight: 8
+        clip: think
         likes: [tea]
         duration: { min: 6, max: 14 }
 
@@ -62,15 +68,18 @@ activities:
       - id: think
         label: "Thinking..."
         weight: 10
+        clip: think
         goal_boost: focus
         duration: { min: 4, max: 10 }
       - id: stretch
         label: "Stretch"
         weight: 5
+        clip: stretch
         duration: { min: 2, max: 5 }
       - id: smile
         label: "Smile"
         weight: 5
+        clip: celebrate
         duration: { min: 2, max: 4 }
 
   sleep:
@@ -79,10 +88,12 @@ activities:
       - id: yawn
         label: "Yawn..."
         weight: 30
+        clip: yawn
         duration: { min: 3, max: 6 }
       - id: blink_slow
         label: "Blink slowly..."
         weight: 25
+        clip: blink
         duration: { min: 4, max: 8 }
       - id: sleep
         label: "Sleep"
@@ -92,6 +103,7 @@ activities:
       - id: dream
         label: "Dream..."
         weight: 15
+        clip: sleep
         duration: { min: 8, max: 20 }
 
 emotion_meta:
@@ -115,23 +127,29 @@ emotions:
         - id: wave
           label: "Wave"
           weight: 30
+          clip: wave
         - id: look_around
           label: "Look around"
           weight: 30
+          clip: look_left
         - id: smile
           label: "Smile"
           weight: 40
+          clip: hello
     coding:
       behaviors:
         - id: typing
           label: "Typing..."
           weight: 50
+          clip: coding
         - id: smile
           label: "Smile"
           weight: 25
+          clip: hello
         - id: coffee
           label: "Coffee"
           weight: 25
+          clip: coffee
 
   frustrated:
     coding:
@@ -139,15 +157,19 @@ emotions:
         - id: think
           label: "Thinking..."
           weight: 30
+          clip: think
         - id: sigh
           label: "Sigh..."
           weight: 25
+          clip: think
         - id: coffee
           label: "Coffee"
           weight: 20
+          clip: coffee
         - id: typing_slow
           label: "Typing slowly..."
           weight: 25
+          clip: coding
 
   sleepy:
     idle:
@@ -155,12 +177,15 @@ emotions:
         - id: yawn
           label: "Yawn..."
           weight: 40
+          clip: yawn
         - id: blink_slow
           label: "Blink slowly..."
           weight: 30
+          clip: blink
         - id: sleep
           label: "Sleep"
           weight: 30
+          clip: sleep
 
   excited:
     idle:
@@ -168,12 +193,15 @@ emotions:
         - id: celebrate
           label: "Celebrate!"
           weight: 40
+          clip: celebrate
         - id: wave
           label: "Wave"
           weight: 30
+          clip: wave
         - id: smile
           label: "Smile"
           weight: 30
+          clip: hello
 
 goals:
   focus:
@@ -219,12 +247,23 @@ conditions:
     requires: { idle_minutes_gt: 10 }
 
 behavior_clips:
+  breathing: idle
+  blink: blink
+  look_around: look_left
+  read: think
+  wave: wave
+  smile: hello
   typing: coding
   typing_slow: coding
+  think: think
+  sigh: think
+  stretch: stretch
   coffee: coffee
   sleep: sleep
+  dream: sleep
   celebrate: celebrate
-  breathing: idle
-  blink: idle
+  yawn: yawn
+  blink_slow: blink
   travel: idle
   bike: idle
+  mountains: think

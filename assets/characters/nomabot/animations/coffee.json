@@ -1,0 +1,10 @@
+{
+  "id": "coffee",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "body_coffee",
+      "duration_ms": 450
+    }
+  ]
+}

@@ -22,6 +22,7 @@ void applyDirtyFlags(Scene &scene, DirtyFlags dirty) {
   if (dirty == DirtyFull) {
     markNodeDirty(scene.background, true);
     markNodeDirty(scene.character, true);
+    markNodeDirty(scene.expression, true);
     markNodeDirty(scene.hud, true);
     markNodeDirty(scene.speechBubble, true);
     return;
@@ -29,6 +30,7 @@ void applyDirtyFlags(Scene &scene, DirtyFlags dirty) {
 
   markNodeDirty(scene.background, hasDirty(dirty, DirtyBackground));
   markNodeDirty(scene.character, hasDirty(dirty, DirtyCharacter));
+  markNodeDirty(scene.expression, hasDirty(dirty, DirtyCharacter));
   markNodeDirty(scene.hud, hasDirty(dirty, DirtyBehavior));
   markNodeDirty(scene.speechBubble, hasDirty(dirty, DirtyMessage));
   if (hasDirty(dirty, DirtyMessage)) {
@@ -37,6 +39,10 @@ void applyDirtyFlags(Scene &scene, DirtyFlags dirty) {
 
   if (hasDirty(dirty, DirtyBackground) && scene.character.visible) {
     scene.character.dirty = true;
+    scene.expression.dirty = scene.expression.visible;
+  }
+  if (hasDirty(dirty, DirtyCharacter) && scene.expression.visible) {
+    scene.expression.dirty = true;
   }
 }
 
@@ -69,6 +75,15 @@ Scene SceneBuilder::build(const RenderState &state, PackLoader &loader, DirtyFla
   scene.character.y = loader.anchorY();
   scene.character.z = kSceneZCharacter;
   scene.character.visible = bodySprite && bodySprite[0];
+
+  const char *emotion = state.emotion ? state.emotion : "neutral";
+  const char *faceSprite = loader.expressionForEmotion(emotion);
+  scene.expression.id = faceSprite;
+  scene.expression.spriteId = faceSprite;
+  scene.expression.x = loader.anchorX();
+  scene.expression.y = loader.anchorY() - 8;
+  scene.expression.z = kSceneZExpression;
+  scene.expression.visible = faceSprite && faceSprite[0];
 
   const char *label = state.behaviorLabel ? state.behaviorLabel : "";
   scene.hud.id = "hud";

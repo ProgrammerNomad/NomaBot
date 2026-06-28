@@ -25,6 +25,16 @@ def test_behavior_dirty_on_label_change() -> None:
     assert DirtyFlags.BEHAVIOR in dirty
 
 
+def test_character_dirty_on_behavior_id_change() -> None:
+    tracker = DirtyTracker()
+    before = RenderState(behavior_id="breathing", behavior_label="Breathing...")
+    after = RenderState(behavior_id="typing", behavior_label="Typing...")
+    tracker.commit_rendered(before)
+    dirty = tracker.collect_dirty_flags(after)
+    assert DirtyFlags.BEHAVIOR in dirty
+    assert DirtyFlags.CHARACTER in dirty
+
+
 def test_energy_not_dirty_within_bucket() -> None:
     tracker = DirtyTracker()
     before = RenderState(energy=81)

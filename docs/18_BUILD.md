@@ -33,7 +33,7 @@ just test
 | `just format` | Auto-format with Ruff |
 | `just protocol` | Lint protocol JSON fixtures |
 | `just profiles` | Validate `profiles/*.json` |
-| `just assets` | Generate sprites, compile pack, copy to `firmware/data/` |
+| `just assets` | Generate Living NomaBot art, compile pack, copy to `firmware/data/` |
 | `just flash-all` | Build assets + upload firmware + LittleFS (`uploadfs`) |
 | `just firmware` | Build firmware for LILYGO T-Display S3 |
 | `just desktop` | Launch desktop app |
@@ -70,16 +70,39 @@ uv run python -m nomabot_desktop --dev         # show manual control buttons
 Always flash **both** after asset or firmware changes:
 
 ```bash
-just assets          # compile nomabot pack → firmware/data/
+cd NomaBot
+uv run python scripts/generate_living_nomabot_art.py
+uv run nomabot build-assets --input assets/characters/nomabot --output compiled/nomabot --profile lilygo_tdisplay_s3
+uv run python scripts/copy_pack_to_firmware_data.py
 cd firmware
-pio run -e lilygo_tdisplay_s3 -t upload      # firmware binary
-pio run -e lilygo_tdisplay_s3 -t uploadfs    # LittleFS — required for sprites
-pio device monitor -b 115200                 # expect: LittleFS mounted OK, Pack: OK
+pio run -e lilygo_tdisplay_s3 -t upload
+pio run -e lilygo_tdisplay_s3 -t uploadfs
 ```
 
 Or from repo root: `just flash-all` (assets + upload + uploadfs in one command).
 
-After flash, press **RESET** if the LCD does not update. Close serial monitor before starting desktop (`--port COM3`) — one process per COM port.
+### Device iteration loop (M5.1)
+
+After **every** sprite change, flash LittleFS and check the **physical LCD** (not the monitor):
+
+```powershell
+uv run python scripts/generate_living_nomabot_art.py          # Prototype v0 (default)
+uv run python scripts/generate_living_nomabot_art.py --full   # Apartment v1 + expanded clips
+uv run nomabot build-assets --input assets/characters/nomabot --output compiled/nomabot --profile lilygo_tdisplay_s3
+uv run python scripts/copy_pack_to_firmware_data.py
+cd firmware
+pio run -e lilygo_tdisplay_s3 -t uploadfs
+```
+
+Verify behavior → clip → sprite on device:
+
+```json
+{"v":1,"id":"1","type":"command","cmd":"diagnostics"}
+```
+
+Watch `behavior`, `clip`, `body_sprite_id`, and `dirty_last` (should include `Character` when pose changes). See [READABILITY.md](./READABILITY.md).
+
+After clip wiring changes, also run `pio run -e lilygo_tdisplay_s3 -t upload` once. Close serial monitor before starting desktop (`--port COM3`) — one process per COM port.
 
 Official profile: `profiles/lilygo_tdisplay_s3.json` (170×320).
 

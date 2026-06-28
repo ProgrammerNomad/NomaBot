@@ -24,6 +24,9 @@ DirtyFlags DirtyTracker::computeDiff(const RenderState &next) const {
   if (strChanged(next.emotion, _last.emotion) || strChanged(next.goal, _last.goal) ||
       next.goalProgress != _last.goalProgress) {
     dirty = dirty | DirtyMeta;
+    if (strChanged(next.emotion, _last.emotion)) {
+      dirty = dirty | DirtyCharacter;
+    }
   }
   if (next.displayEnergy != _last.displayEnergy) {
     dirty = dirty | DirtyEnergy;
@@ -31,6 +34,9 @@ DirtyFlags DirtyTracker::computeDiff(const RenderState &next) const {
   if (strChanged(next.behaviorId, _last.behaviorId) ||
       strChanged(next.behaviorLabel, _last.behaviorLabel) || next.curiosity != _last.curiosity) {
     dirty = dirty | DirtyBehavior;
+    if (strChanged(next.behaviorId, _last.behaviorId)) {
+      dirty = dirty | DirtyCharacter;
+    }
   }
   if (strChanged(next.overlayText, _last.overlayText)) {
     dirty = dirty | DirtyMessage;

@@ -12,7 +12,7 @@ def test_sprite_scene_node_count_with_overlay() -> None:
         body_sprite_id="body_idle_01",
     )
     scene = SceneBuilder.build(state, dirty=DirtyFlags.FULL)
-    assert scene.node_count == 4
+    assert scene.node_count == 5
     assert scene.background.z < scene.character.z < scene.hud.z < scene.speech_bubble.z
 
 

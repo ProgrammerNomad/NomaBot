@@ -1,0 +1,10 @@
+{
+  "id": "thumbs_up",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "body_celebrate",
+      "duration_ms": 450
+    }
+  ]
+}

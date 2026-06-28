@@ -1,0 +1,14 @@
+{
+  "id": "hello",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "body_wave",
+      "duration_ms": 450
+    },
+    {
+      "sprite": "body_stand",
+      "duration_ms": 450
+    }
+  ]
+}

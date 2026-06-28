@@ -188,7 +188,45 @@ bool PackLoader::loadConfig() {
     _anchorX = doc["anchors"]["head"]["x"] | 85;
     _anchorY = doc["anchors"]["head"]["y"] | 80;
   }
+
+  _expressions.clear();
+  _defaultExpressionSprite = "face_neutral";
+  JsonObject exprMap = doc["expressions"].as<JsonObject>();
+  if (!exprMap.isNull()) {
+    for (JsonPair kv : exprMap) {
+      const char *sprite = kv.value().as<const char *>();
+      if (sprite && sprite[0]) {
+        _expressions.emplace_back(kv.key().c_str(), sprite);
+      }
+    }
+  }
   return true;
+}
+
+const char *PackLoader::expressionForEmotion(const char *emotion) const {
+  if (!emotion || !emotion[0]) {
+    return _defaultExpressionSprite.c_str();
+  }
+  for (const auto &pair : _expressions) {
+    if (pair.first == emotion) {
+      return pair.second.c_str();
+    }
+  }
+  if (strcmp(emotion, "excited") == 0) {
+    for (const auto &pair : _expressions) {
+      if (pair.first == "happy") {
+        return pair.second.c_str();
+      }
+    }
+  }
+  if (strcmp(emotion, "curious") == 0) {
+    for (const auto &pair : _expressions) {
+      if (pair.first == "thinking") {
+        return pair.second.c_str();
+      }
+    }
+  }
+  return _defaultExpressionSprite.c_str();
 }
 
 bool PackLoader::parseAnimationJson(const std::string &text, const char *fallbackId) {
@@ -259,8 +297,40 @@ bool PackLoader::loadAnimations() {
     }
   }
 
+  std::string animDir = _root + "/animations";
+  File dir = LittleFS.open(animDir.c_str(), "r");
+  if (!dir || !dir.isDirectory()) {
+    dir = LittleFS.open((animDir + "/").c_str(), "r");
+  }
+  if (dir && dir.isDirectory()) {
+    File entry = dir.openNextFile();
+    while (entry) {
+      std::string name = entry.name();
+      if (name.length() >= 5 && name.compare(name.length() - 5, 5, ".json") == 0) {
+        std::string fullPath = (name.length() > 0 && name[0] == '/') ? name : (animDir + "/" + name);
+        std::string text = readTextFile(fullPath);
+        if (!text.empty()) {
+          std::string stem = name;
+          if (stem[0] == '/') {
+            size_t slash = stem.find_last_of('/');
+            if (slash != std::string::npos) {
+              stem = stem.substr(slash + 1);
+            }
+          }
+          if (stem.length() > 5) {
+            stem = stem.substr(0, stem.length() - 5);
+          }
+          parseAnimationJson(text, stem.c_str());
+        }
+      }
+      entry.close();
+      entry = dir.openNextFile();
+    }
+    dir.close();
+  }
+
   if (!_animations.empty()) {
-    Serial.printf("animations: %u clips (graph)\n", static_cast<unsigned>(_animations.size()));
+    Serial.printf("animations: %u clips\n", static_cast<unsigned>(_animations.size()));
     return true;
   }
 
@@ -271,42 +341,8 @@ bool PackLoader::loadAnimations() {
     return true;
   }
 
-  std::string animDir = _root + "/animations";
-  File dir = LittleFS.open(animDir.c_str(), "r");
-  if (!dir || !dir.isDirectory()) {
-    dir = LittleFS.open((animDir + "/").c_str(), "r");
-  }
-  if (!dir || !dir.isDirectory()) {
-    Serial.printf("Missing animations dir: %s\n", animDir.c_str());
-    return false;
-  }
-
-  File entry = dir.openNextFile();
-  while (entry) {
-    std::string name = entry.name();
-    if (name.length() >= 5 && name.compare(name.length() - 5, 5, ".json") == 0) {
-      std::string fullPath = (name.length() > 0 && name[0] == '/') ? name : (animDir + "/" + name);
-      std::string text = readTextFile(fullPath);
-      if (!text.empty()) {
-        std::string stem = name;
-        if (stem[0] == '/') {
-          size_t slash = stem.find_last_of('/');
-          if (slash != std::string::npos) {
-            stem = stem.substr(slash + 1);
-          }
-        }
-        if (stem.length() > 5) {
-          stem = stem.substr(0, stem.length() - 5);
-        }
-        parseAnimationJson(text, stem.c_str());
-      }
-    }
-    entry.close();
-    entry = dir.openNextFile();
-  }
-  dir.close();
-  Serial.printf("animations: %u clips (scan)\n", static_cast<unsigned>(_animations.size()));
-  return !_animations.empty();
+  Serial.printf("Missing animations under: %s\n", animDir.c_str());
+  return false;
 }
 
 const SpriteMeta *PackLoader::findSprite(const char *id) const {

@@ -65,6 +65,7 @@ public:
   const AnimationClip *findAnimation(const char *id) const;
 
   const char *defaultBackgroundSprite() const { return _defaultBgSprite.c_str(); }
+  const char *expressionForEmotion(const char *emotion) const;
   int anchorX() const { return _anchorX; }
   int anchorY() const { return _anchorY; }
 
@@ -80,6 +81,8 @@ private:
   std::string _defaultBgSprite;
   int _anchorX = 85;
   int _anchorY = 80;
+  std::string _defaultExpressionSprite;
+  std::vector<std::pair<std::string, std::string>> _expressions;
   std::vector<SpriteMeta> _sprites;
   std::vector<AnimationClip> _animations;
 

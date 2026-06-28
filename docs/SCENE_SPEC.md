@@ -21,10 +21,13 @@ Animation stays upstream: `Behavior → Animation → Frame → RenderState.body
 |------|---|------------|--------|
 | `BackgroundNode` | 0 | Full-screen bg sprite (`bg_office`) | office, travel, night, rain layers |
 | `CharacterNode` | 10 | Single body sprite at pack anchor | Body, eyes, accessories, shadow |
+| `ExpressionNode` | 11 | Face overlay from `RenderState.emotion` (M5.1) | 12 expressions from pack |
 | `HudNode` | 30 | Behavior label strip (top) | Energy, mode indicators |
-| `SpeechBubbleNode` | 40 | Overlay text (bottom) | Styled bubble, multi-line |
+| `SpeechBubbleNode` | 40 | Styled overlay bubble (M5.1) | Multi-line, tail |
 
-Reserved (M6+): `PropNode` (z=20), `WeatherNode` (z=5, behind character props).
+Reserved (M6+): `PropNode` (z=20, baked into apartment bg in M5.1), `WeatherNode` (z=5).
+
+Art direction: [STYLE_GUIDE.md](./STYLE_GUIDE.md), [LORE.md](./LORE.md), [LIVING_NOMA_SPEC.md](./LIVING_NOMA_SPEC.md).
 
 ## Node fields
 

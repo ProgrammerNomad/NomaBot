@@ -2,11 +2,12 @@
 
 #include "render_state.h"
 
-static constexpr int kSceneMaxNodes = 4;
+static constexpr int kSceneMaxNodes = 5;
 
 static constexpr int kSceneZBackground = 0;
 static constexpr int kSceneZCharacter = 10;
-static constexpr int kSceneZProp = 20;  // reserved M6+
+static constexpr int kSceneZExpression = 11;
+static constexpr int kSceneZProp = 20;  // reserved — baked into bg in M5.1
 static constexpr int kSceneZHud = 30;
 static constexpr int kSceneZSpeechBubble = 40;
 
@@ -25,6 +26,7 @@ struct Scene {
   const char *sceneId = "office";
   SceneNode background;
   SceneNode character;
+  SceneNode expression;
   SceneNode hud;
   SceneNode speechBubble;
   int nodeCount = 0;
@@ -46,6 +48,9 @@ inline int sceneVisibleNodeCount(const Scene &scene) {
   if (scene.character.visible) {
     count++;
   }
+  if (scene.expression.visible) {
+    count++;
+  }
   if (scene.hud.visible) {
     count++;
   }
@@ -59,7 +64,8 @@ inline SceneDiagnostics sceneToDiagnostics(const Scene &scene) {
   SceneDiagnostics diag;
   diag.scene = scene.sceneId ? scene.sceneId : "office";
   diag.body = scene.character.visible && scene.character.id ? scene.character.id : "";
-  diag.eyes = "";
+  diag.eyes =
+      scene.expression.visible && scene.expression.id ? scene.expression.id : "";
   diag.overlay =
       scene.speechBubble.visible && scene.speechBubble.text ? scene.speechBubble.text : "";
   diag.renderObjects = sceneVisibleNodeCount(scene);

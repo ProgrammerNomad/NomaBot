@@ -1,9 +1,18 @@
 {
   "id": "coding",
-  "fps": 2,
   "loop": true,
   "frames": [
-    { "sprite": "body_coding_01", "duration_ms": 500 },
-    { "sprite": "body_coding_02", "duration_ms": 500 }
+    {
+      "sprite": "body_typing_01",
+      "duration_ms": 450
+    },
+    {
+      "sprite": "body_typing_02",
+      "duration_ms": 450
+    },
+    {
+      "sprite": "body_typing_01",
+      "duration_ms": 450
+    }
   ]
 }

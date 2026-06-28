@@ -40,6 +40,8 @@ def _sprite_id(rel: Path) -> str:
         return f"bg_{stem}"
     if len(parts) >= 2 and parts[0] == "body":
         return stem
+    if len(parts) >= 2 and parts[0] == "face":
+        return stem if stem.startswith("face_") else f"face_{stem}"
     return str(rel.with_suffix("")).replace("\\", "/")
 
 

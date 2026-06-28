@@ -427,12 +427,23 @@ void Brain::update(unsigned long nowMs) {
   updateGoal(nowMs);
 }
 
-const char *Brain::clipForBehavior() const {
-  const BehaviorDef *def = BehaviorDefaults::findBehaviorClip(_behaviorId.c_str());
+bool Brain::loadClipMapFromJsonText(const std::string &text) {
+  return _clipMap.loadFromJsonText(text);
+}
+
+const char *Brain::clipForBehaviorId(const char *behaviorId) const {
+  if (const char *packClip = _clipMap.clipForBehavior(behaviorId)) {
+    return packClip;
+  }
+  const BehaviorDef *def = BehaviorDefaults::findBehaviorClip(behaviorId);
   if (def && def->clip) {
     return def->clip;
   }
   return "idle";
+}
+
+const char *Brain::clipForBehavior() const {
+  return clipForBehaviorId(_behaviorId.c_str());
 }
 
 int Brain::timeInBehaviorSec(unsigned long nowMs) const {

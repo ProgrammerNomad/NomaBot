@@ -15,5 +15,14 @@
   "accessories": {},
   "backgrounds": {
     "office": { "sprite": "bg_office" }
+  },
+  "expressions": {
+    "neutral": "face_neutral",
+    "happy": "face_happy",
+    "excited": "face_happy",
+    "frustrated": "face_angry",
+    "sleepy": "face_sleepy",
+    "curious": "face_thinking",
+    "surprised": "face_surprised"
   }
 }

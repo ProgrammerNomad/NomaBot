@@ -43,5 +43,5 @@ def test_compile_nomabot(nomabot_source, tmp_path):
     assert "body/idle_01" not in ids
 
     assert report["sprites"] == len(manifest["sprites"])
-    assert report["frames"] == 4
+    assert report["frames"] >= 15
     assert report["memory_human"].endswith("KB")

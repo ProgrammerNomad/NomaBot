@@ -1,0 +1,10 @@
+{
+  "id": "look_right",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "body_look_right",
+      "duration_ms": 450
+    }
+  ]
+}

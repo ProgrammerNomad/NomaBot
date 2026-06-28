@@ -5,6 +5,7 @@
 #include "behavior/behavior_defaults.h"
 #include "behavior/condition_eval.h"
 #include "behavior/emotion_state.h"
+#include "behavior/pack_clip_map.h"
 
 enum class BrainPickMode { Weighted, Sequence };
 
@@ -37,6 +38,8 @@ public:
   const char *behaviorLabel() const { return _behaviorLabel.c_str(); }
   const char *nextBehaviorId() const { return _nextBehaviorId.c_str(); }
   const char *clipForBehavior() const;
+  const char *clipForBehaviorId(const char *behaviorId) const;
+  bool loadClipMapFromJsonText(const std::string &text);
   int timeInBehaviorSec(unsigned long nowMs) const;
   int lastCoffeeMinAgo(unsigned long nowMs) const;
 
@@ -52,6 +55,7 @@ private:
   EmotionState _emotion;
   PersonalityTraits _personality;
   RuntimeContext _runtime;
+  PackClipMap _clipMap;
 
   int _energy = 80;
   int _boredom = 0;
