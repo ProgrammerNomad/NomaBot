@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor, QFont, QImage, QPainter
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from nomabot.brain import Brain
+from nomabot.render import DirtyFlags, DirtyTracker, RenderState, quantize_energy
 from nomabot_desktop.core.asset_registry import AssetRegistry
 from nomabot_desktop.transport import EmulatorState
 
@@ -52,7 +53,11 @@ class EmulatorCanvas(QWidget):
         self._brain.set_life_mode(state.life_mode)
         self._brain.set_activity(state.activity)
         self._brain.set_emotion(state.emotion or "neutral")
+        self._tracker = DirtyTracker()
+        self._dirty = DirtyFlags.FULL
+        self._render_state = RenderState()
         self.setFixedSize(state.width, state.height)
+        self.setAutoFillBackground(True)
 
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._on_tick)
@@ -68,6 +73,22 @@ class EmulatorCanvas(QWidget):
         if self._state.season:
             self._brain.set_season(self._state.season)
 
+    def _build_render_state(self) -> RenderState:
+        energy = self._brain.energy
+        return RenderState(
+            life_mode=self._state.life_mode or "work",
+            activity=self._state.activity or "idle",
+            emotion=self._state.emotion or "neutral",
+            goal=self._brain.goal,
+            goal_progress=self._brain.goal_progress,
+            behavior_id=self._brain.behavior_id,
+            behavior_label=self._brain.behavior_label,
+            energy=energy,
+            display_energy=quantize_energy(energy),
+            curiosity=self._brain.curiosity_active,
+            overlay_text=self._state.message or "",
+        )
+
     def _on_tick(self) -> None:
         self._sync_from_state()
         self._brain.tick()
@@ -79,51 +100,74 @@ class EmulatorCanvas(QWidget):
         self._state.curiosity_active = self._brain.curiosity_active
         if self._state.render_mode != "text":
             self._state.advance_frame(self._assets)
-        self.update()
+
+        render_state = self._build_render_state()
+        dirty = self._tracker.collect_dirty_flags(render_state)
+        if dirty != DirtyFlags.NONE:
+            self._render_state = render_state
+            self._dirty = dirty
+            self.update()
 
     def paintEvent(self, event) -> None:  # noqa: N802
         painter = QPainter(self)
         if self._state.render_mode == "text" or not self._assets.get_sprite(
             self._state.character_id, self._state.body_sprite_id
         ):
-            self._paint_text_mode(painter)
+            self._paint_text_mode(painter, self._render_state, self._dirty)
         else:
             self._paint_sprite_mode(painter)
+        if self._dirty != DirtyFlags.NONE:
+            self._tracker.commit_rendered(self._render_state)
+            self._dirty = DirtyFlags.NONE
         painter.end()
 
-    def _paint_text_mode(self, painter: QPainter) -> None:
-        painter.fillRect(self.rect(), QColor("#000000"))
-        painter.setPen(Qt.GlobalColor.white)
+    @staticmethod
+    def _clear_band(painter: QPainter, y: int, h: int, width: int) -> None:
+        painter.fillRect(0, y, width, h, QColor("#000000"))
+
+    def _paint_text_mode(self, painter: QPainter, state: RenderState, dirty: DirtyFlags) -> None:
+        w = self.width()
+        if dirty == DirtyFlags.FULL:
+            painter.fillRect(self.rect(), QColor("#000000"))
+
         painter.setFont(QFont("Segoe UI", 8))
-        header = f"{self._state.life_mode or 'work'} · {self._state.activity or 'idle'}"
-        painter.drawText(4, 14, header)
 
-        goal = self._state.goal or self._brain.goal
-        progress = self._state.goal_progress
-        emotion = self._state.emotion or "neutral"
-        if goal and goal != "none":
-            meta = f"{emotion} · {goal} · {progress}%"
-            painter.setPen(QColor("#AD55AD"))
-            painter.drawText(4, 30, meta)
-        elif emotion != "neutral":
-            painter.setPen(QColor("#AD55AD"))
-            painter.drawText(4, 30, emotion)
-
-        energy = self._state.energy if self._state.energy else self._brain.energy
-        painter.setPen(QColor("#7BEF7B"))
-        painter.drawText(4, 46, f"Energy: {energy}")
-
-        painter.setPen(Qt.GlobalColor.white)
-        if self._state.curiosity_active or self._brain.curiosity_active:
-            painter.setPen(QColor("#FD20FD"))
-            painter.drawText(4, 62, "I wonder...")
-        else:
-            label = self._state.behavior_label or self._brain.behavior_label
-            painter.drawText(4, 62, label)
-
-        if self._state.message:
+        if dirty == DirtyFlags.FULL or DirtyFlags.HEADER in dirty:
+            self._clear_band(painter, 0, 18, w)
             painter.setPen(Qt.GlobalColor.white)
-            painter.drawText(4, self.height() - 12, self._state.message[:36])
+            header = f"{state.life_mode} · {state.activity}"
+            painter.drawText(4, 14, header)
+
+        if dirty == DirtyFlags.FULL or DirtyFlags.META in dirty:
+            self._clear_band(painter, 18, 18, w)
+            if state.goal and state.goal != "none":
+                meta = f"{state.emotion} · {state.goal} · {state.goal_progress}%"
+                painter.setPen(QColor("#AD55AD"))
+                painter.drawText(4, 30, meta)
+            elif state.emotion != "neutral":
+                painter.setPen(QColor("#AD55AD"))
+                painter.drawText(4, 30, state.emotion)
+
+        if dirty == DirtyFlags.FULL or DirtyFlags.ENERGY in dirty:
+            self._clear_band(painter, 34, 18, w)
+            painter.setPen(QColor("#7BEF7B"))
+            painter.drawText(4, 46, f"Energy: {state.display_energy}")
+
+        if dirty == DirtyFlags.FULL or DirtyFlags.BEHAVIOR in dirty:
+            self._clear_band(painter, 50, 18, w)
+            if state.curiosity:
+                painter.setPen(QColor("#FD20FD"))
+                painter.drawText(4, 62, "I wonder...")
+            else:
+                painter.setPen(Qt.GlobalColor.white)
+                painter.drawText(4, 62, state.behavior_label)
+
+        if dirty == DirtyFlags.FULL or DirtyFlags.MESSAGE in dirty:
+            overlay_y = self.height() - 28
+            self._clear_band(painter, overlay_y, 28, w)
+            if state.overlay_text:
+                painter.setPen(Qt.GlobalColor.white)
+                painter.drawText(4, self.height() - 12, state.overlay_text[:36])
 
     def _paint_sprite_mode(self, painter: QPainter) -> None:
         pack = self._state.character_id

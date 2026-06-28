@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from nomabot.types import Priority
 from nomabot_desktop.core.bus import EventBus
+from nomabot_desktop.core.command_source import CommandSource
 from nomabot_desktop.core.events import StateRequest
 
 logger = logging.getLogger("noma.build_events")
@@ -31,7 +32,7 @@ class BuildEventService:
                 StateRequest(
                     state="coding",
                     priority=Priority.HIGH,
-                    source="build",
+                    source=CommandSource.SYSTEM,
                     emotion="excited",
                     message_text=payload.message or "Build OK",
                 ),
@@ -43,7 +44,7 @@ class BuildEventService:
                 StateRequest(
                     state="coding",
                     priority=Priority.HIGH,
-                    source="build",
+                    source=CommandSource.SYSTEM,
                     emotion="frustrated",
                     message_text=payload.message or "Build failed",
                 ),

@@ -9,6 +9,7 @@ from PySide6.QtCore import QTimer
 
 from nomabot.types import Priority
 from nomabot_desktop.core.bus import EventBus
+from nomabot_desktop.core.command_source import CommandSource
 from nomabot_desktop.core.events import StateRequest
 
 logger = logging.getLogger("noma.season")
@@ -52,7 +53,7 @@ class SeasonService:
             StateRequest(
                 state="idle",
                 priority=Priority.LOW,
-                source="season",
+                source=CommandSource.SYSTEM,
                 season=season,
             ),
         )

@@ -18,11 +18,13 @@ const char *characterLoadErrorLabel(CharacterLoadError err) {
 
 void CharacterRuntime::begin(IRenderer *renderer) {
   _renderer = renderer;
+  _scheduler.begin(renderer);
   _brain.useDefaults();
   PersonalityTraits traits;
   _brain.setPersonality(traits);
   _brain.setLifeMode("work");
   _brain.setActivity("idle");
+  invalidateRender(DirtyFull);
 }
 
 void CharacterRuntime::useBehaviorDefaults() {
@@ -30,10 +32,19 @@ void CharacterRuntime::useBehaviorDefaults() {
   _brain.setLifeMode("work");
   _brain.setActivity("idle");
   _renderMode = RenderMode::Text;
+  invalidateRender(DirtyFull);
+}
+
+void CharacterRuntime::invalidateRender(DirtyFlags flags) {
+  _dirtyTracker.invalidate(flags);
 }
 
 bool CharacterRuntime::textModeActive() const {
   return _renderMode == RenderMode::Text || _loader == nullptr;
+}
+
+void CharacterRuntime::syncSpriteContext() {
+  _scheduler.setSpriteContext(_loader, &_cache, &_assets, &_compositor);
 }
 
 bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId) {
@@ -83,8 +94,9 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
     }
   }
   _brain.loadFromPackPath(loader.rootPath().c_str());
-
+  syncSpriteContext();
   syncClipFromBehavior();
+  invalidateRender(DirtyFull);
   return true;
 }
 
@@ -92,11 +104,15 @@ void CharacterRuntime::unload() {
   _cache.clear();
   _characterId = "nomabot";
   _activeClipId.clear();
+  _bodySpriteId.clear();
   _loader = nullptr;
   _assets.bind(nullptr);
   _accessories.clear();
   _lastLoadError = CharacterLoadError::None;
   _overrideAnimation = false;
+  _lastClipFrame = -1;
+  syncSpriteContext();
+  invalidateRender(DirtyFull);
 }
 
 const PackInfo *CharacterRuntime::packInfo() const {
@@ -120,28 +136,70 @@ void CharacterRuntime::syncClipFromBehavior() {
     return;
   }
   applyClip(_brain.clipForBehavior());
+  const char *sprite = _clipPlayer.currentSpriteId();
+  if (sprite) {
+    _bodySpriteId = sprite;
+  }
 }
 
-void CharacterRuntime::setLifeMode(const char *mode) { _brain.setLifeMode(mode); }
+void CharacterRuntime::noteCommandSource(const char *source) {
+  if (source && source[0]) {
+    _lastCommandSource = source;
+  }
+}
+
+void CharacterRuntime::setLifeMode(const char *mode) {
+  noteCommandSource("protocol");
+  _brain.setLifeMode(mode);
+  _dirtyTracker.forceDirty(DirtyHeader);
+}
 
 void CharacterRuntime::setActivity(const char *activity) {
+  applyActivityCommand(activity, "protocol");
+}
+
+void CharacterRuntime::applyActivityCommand(const char *activity, const char *source) {
+  if (!activity || !activity[0]) {
+    return;
+  }
+  noteCommandSource(source ? source : "protocol");
   _overrideAnimation = false;
-  _brain.setActivity(activity);
-  syncClipFromBehavior();
+  if (strcmp(activity, _brain.activity()) == 0) {
+    _brain.forceBehaviorPick();
+    syncClipFromBehavior();
+    _dirtyTracker.forceDirty(DirtyBehavior | DirtyMeta);
+  } else {
+    _brain.setActivity(activity);
+    syncClipFromBehavior();
+    _dirtyTracker.forceDirty(DirtyHeader | DirtyMeta | DirtyBehavior);
+  }
 }
 
 void CharacterRuntime::setEmotion(const char *emotion) {
+  noteCommandSource("protocol");
   _brain.setEmotion(emotion);
   syncClipFromBehavior();
+  _dirtyTracker.forceDirty(DirtyMeta | DirtyBehavior);
 }
 
-void CharacterRuntime::setSeason(const char *season) { _brain.setSeason(season); }
+void CharacterRuntime::setSeason(const char *season) {
+  noteCommandSource("protocol");
+  _brain.setSeason(season);
+  _dirtyTracker.forceDirty(DirtyMeta);
+}
 
-void CharacterRuntime::triggerHabit(const char *habitId) { _brain.triggerHabit(habitId); }
+void CharacterRuntime::triggerHabit(const char *habitId) {
+  noteCommandSource("protocol");
+  _brain.triggerHabit(habitId);
+  syncClipFromBehavior();
+  _dirtyTracker.forceDirty(DirtyBehavior | DirtyMeta | DirtyHeader);
+}
 
 void CharacterRuntime::playAnimation(const char *animationId) {
+  noteCommandSource("protocol");
   _overrideAnimation = true;
   applyClip(animationId);
+  _dirtyTracker.forceDirty(DirtyCharacter | DirtyBehavior);
 }
 
 void CharacterRuntime::setState(const char *state) { setActivity(state); }
@@ -154,22 +212,81 @@ const char *CharacterRuntime::currentAnimation() const {
 }
 
 void CharacterRuntime::setMessage(const char *text, unsigned long durationMs) {
-  _messages.push(text, 1, durationMs, millis());
+  noteCommandSource("protocol");
+  _overlays.push(text, 1, durationMs, millis());
+  _dirtyTracker.forceDirty(DirtyMessage);
 }
 
 void CharacterRuntime::setBackground(const char *backgroundKey) {
   if (!backgroundKey) {
     return;
   }
+  noteCommandSource("protocol");
   if (strcmp(backgroundKey, "office") == 0 && _loader) {
     _backgroundSprite = _loader->defaultBackgroundSprite();
   } else {
     _backgroundSprite = backgroundKey;
   }
+  _dirtyTracker.forceDirty(DirtyBackground);
+}
+
+RenderState CharacterRuntime::buildRenderState() const {
+  RenderState state;
+  state.lifeMode = _brain.lifeMode();
+  state.activity = _brain.activity();
+  state.emotion = _brain.emotion();
+  state.goal = _brain.goal();
+  state.goalProgress = _brain.goalProgress();
+  state.behaviorId = _brain.behaviorId();
+  state.behaviorLabel = _brain.behaviorLabel();
+  state.energy = _brain.energy();
+  state.displayEnergy = quantizeEnergy(state.energy);
+  state.curiosity = _brain.curiosityActive();
+  state.overlayText = _overlays.activeText();
+  state.backgroundSpriteId =
+      _backgroundSprite.empty() ? nullptr : _backgroundSprite.c_str();
+  state.bodySpriteId = _bodySpriteId.empty() ? nullptr : _bodySpriteId.c_str();
+  state.clipFrameIndex = _clipPlayer.currentFrameIndex();
+  return state;
+}
+
+DirtyFlags CharacterRuntime::collectDirtyFlags() {
+  RenderState state = buildRenderState();
+  DirtyFlags dirty = _dirtyTracker.collectDirtyFlags(state);
+  if (!textModeActive() && _lastClipFrame >= 0 &&
+      state.clipFrameIndex != _lastClipFrame) {
+    dirty = dirty | DirtyCharacter;
+  }
+  return dirty;
+}
+
+void CharacterRuntime::render(DirtyFlags dirty) {
+  if (!anyDirty(dirty) || !_renderer) {
+    return;
+  }
+
+  unsigned long renderStart = millis();
+  RenderState state = buildRenderState();
+  _scheduler.render(state, dirty, textModeActive());
+  _dirtyTracker.commitRendered(state);
+  _lastClipFrame = state.clipFrameIndex;
+  _lastDirtyFlags = dirty;
+  _renderCount++;
+  _lastRenderMs = millis() - renderStart;
+  updateFps(millis());
+}
+
+void CharacterRuntime::present() {
+  DirtyFlags dirty = collectDirtyFlags();
+  if (anyDirty(dirty)) {
+    render(dirty);
+  }
 }
 
 void CharacterRuntime::tick(unsigned long nowMs) {
-  _messages.tick(nowMs);
+  if (_overlays.tick(nowMs)) {
+    _dirtyTracker.notePending(DirtyMessage);
+  }
   if (!_overrideAnimation) {
     _brain.update(nowMs);
     if (!textModeActive()) {
@@ -178,6 +295,10 @@ void CharacterRuntime::tick(unsigned long nowMs) {
   }
   if (_loader && !textModeActive()) {
     _clipPlayer.tick(nowMs);
+    const char *sprite = _clipPlayer.currentSpriteId();
+    if (sprite) {
+      _bodySpriteId = sprite;
+    }
   }
   updateFps(nowMs);
 }
@@ -193,23 +314,4 @@ void CharacterRuntime::updateFps(unsigned long nowMs) {
     _frameCount = 0;
     _lastFpsMs = nowMs;
   }
-}
-
-void CharacterRuntime::render() {
-  if (!_renderer) {
-    return;
-  }
-
-  const char *msg = _messages.activeText();
-
-  if (textModeActive() || !_loader) {
-    _textRenderer.render(*_renderer, _brain.lifeMode(), _brain.activity(), _brain.emotion(),
-                         _brain.goal(), _brain.goalProgress(), _brain.energy(),
-                         _brain.curiosityActive(), _brain.behaviorLabel(), msg);
-    return;
-  }
-
-  const char *bodySprite = _clipPlayer.currentSpriteId();
-  _compositor.render(*_renderer, *_loader, _cache, _assets, _backgroundSprite.c_str(), bodySprite,
-                     _loader->anchorX(), _loader->anchorY(), msg, _brain.behaviorLabel());
 }

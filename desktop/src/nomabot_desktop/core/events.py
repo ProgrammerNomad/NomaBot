@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from nomabot.types import Priority
+from nomabot_desktop.core.command_source import CommandSource
 
 
 @dataclass(frozen=True)
@@ -14,7 +15,7 @@ class StateRequest:
 
     state: str
     priority: Priority = Priority.NORMAL
-    source: str = "unknown"
+    source: CommandSource | str = CommandSource.BRAIN
     animation: str | None = None
     activity: str | None = None
     emotion: str | None = None

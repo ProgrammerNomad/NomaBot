@@ -10,8 +10,11 @@
 #include "assets/pack_loader.h"
 #include "assets/sprite_cache.h"
 #include "brain/brain.h"
-#include "render/message_queue.h"
+#include "render/dirty_tracker.h"
+#include "render/overlay_manager.h"
 #include "render/render_mode.h"
+#include "render/render_scheduler.h"
+#include "render/render_state.h"
 #include "render/text_scene_renderer.h"
 #include "renderer/renderer.hpp"
 
@@ -31,13 +34,24 @@ public:
   void useBehaviorDefaults();
 
   void tick(unsigned long nowMs);
-  void render();
+  RenderState buildRenderState() const;
+  DirtyFlags collectDirtyFlags();
+  void render(DirtyFlags dirty);
+  void present();
+  void invalidateRender(DirtyFlags flags = DirtyFull);
 
   void setLifeMode(const char *mode);
   void setActivity(const char *activity);
+  void applyActivityCommand(const char *activity, const char *source = "protocol");
   void setEmotion(const char *emotion);
   void setSeason(const char *season);
   void triggerHabit(const char *habitId);
+
+  void noteCommandSource(const char *source);
+  const char *lastCommandSource() const { return _lastCommandSource.c_str(); }
+  unsigned long renderCount() const { return _renderCount; }
+  unsigned long lastRenderMs() const { return _lastRenderMs; }
+  DirtyFlags lastDirtyFlags() const { return _lastDirtyFlags; }
 
   void playAnimation(const char *animationId);
   void setState(const char *state);
@@ -80,7 +94,9 @@ private:
   AccessoryManager _accessories;
   Compositor _compositor;
   TextSceneRenderer _textRenderer;
-  MessageQueue _messages;
+  OverlayManager _overlays;
+  DirtyTracker _dirtyTracker;
+  RenderScheduler _scheduler;
   Brain _brain;
 
   CharacterLoadError _lastLoadError = CharacterLoadError::None;
@@ -89,10 +105,17 @@ private:
   std::string _characterId = "nomabot";
   std::string _backgroundSprite;
   std::string _activeClipId;
+  std::string _bodySpriteId;
   unsigned long _lastFpsMs = 0;
   int _frameCount = 0;
   int _fps = 0;
+  int _lastClipFrame = -1;
+  std::string _lastCommandSource = "brain";
+  unsigned long _renderCount = 0;
+  unsigned long _lastRenderMs = 0;
+  DirtyFlags _lastDirtyFlags = DirtyNone;
 
   void applyClip(const char *animationId);
   void syncClipFromBehavior();
+  void syncSpriteContext();
 };

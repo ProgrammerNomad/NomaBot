@@ -16,6 +16,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayou
 from serial.serialutil import SerialException
 
 from nomabot.types import Priority
+from nomabot_desktop.core.command_source import CommandSource
 from nomabot_desktop.core.app_context import AppContext, create_context
 from nomabot_desktop.core.device_manager import DeviceRecord
 from nomabot_desktop.core.events import StateRequest
@@ -212,7 +213,12 @@ def _build_dev_window(ctx: AppContext) -> QMainWindow:
     def req(state: str, **kwargs):
         ctx.bus.publish(
             "state.request",
-            StateRequest(state=state, priority=Priority.NORMAL, source="dev", **kwargs),
+            StateRequest(
+                state=state,
+                priority=Priority.NORMAL,
+                source=CommandSource.DEV_PANEL,
+                **kwargs,
+            ),
         )
 
     btn_idle = QPushButton("Activity: idle")
@@ -366,7 +372,12 @@ def run_app(
 
     ctx.bus.publish(
         "state.request",
-        StateRequest(state="idle", priority=Priority.NORMAL, source="startup", animation="idle"),
+        StateRequest(
+            state="idle",
+            priority=Priority.NORMAL,
+            source=CommandSource.SYSTEM,
+            animation="idle",
+        ),
     )
 
     app.exec()

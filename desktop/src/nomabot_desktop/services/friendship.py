@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from nomabot.types import Priority
 from nomabot_desktop.core.bus import EventBus
+from nomabot_desktop.core.command_source import CommandSource
 from nomabot_desktop.core.events import DeviceConnected, StateRequest
 from nomabot_desktop.storage.service import StorageService
 
@@ -62,7 +63,7 @@ class FriendshipService:
             StateRequest(
                 state="idle",
                 priority=Priority.NORMAL,
-                source="friendship",
+                source=CommandSource.USER,
                 emotion="happy",
                 message_text=text,
             ),

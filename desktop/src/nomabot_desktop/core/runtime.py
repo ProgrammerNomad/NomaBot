@@ -69,28 +69,27 @@ class NomaRuntime:
             cb(self._state)
 
     async def submit(self, request: RenderRequest) -> list[Envelope]:
-        """Merge by priority, enqueue commands, flush dispatcher."""
+        """Build commands for accepted context; arbitrator already filtered sources."""
         commands: list[Envelope] = []
         s = self._state
 
         activity = request.activity or request.state
-        if activity and request.priority >= s.priority:
+        if activity:
             s.activity = activity
-            s.priority = request.priority
             commands.append(build_command("set_activity", SetActivityParams(activity=activity)))
 
-        if request.emotion and request.priority >= s.priority:
+        if request.emotion:
             s.emotion = request.emotion
             commands.append(build_command("set_emotion", SetEmotionParams(emotion=request.emotion)))
 
-        if request.life_mode and request.priority >= s.priority:
+        if request.life_mode:
             s.life_mode = request.life_mode
             commands.append(build_command("set_life_mode", SetLifeModeParams(mode=request.life_mode)))
 
-        if request.habit and request.priority >= s.priority:
+        if request.habit:
             commands.append(build_command("trigger_habit", TriggerHabitParams(habit=request.habit)))
 
-        if request.season and request.priority >= s.priority:
+        if request.season:
             commands.append(build_command("set_season", SetSeasonParams(season=request.season)))
 
         if request.animation and request.priority >= s.priority:
@@ -109,6 +108,7 @@ class NomaRuntime:
         if request.message and request.priority >= s.priority:
             s.message_text = request.message.text
             s.message_style = request.message.style
+            s.priority = request.priority
             commands.append(
                 build_command(
                     "show_message",

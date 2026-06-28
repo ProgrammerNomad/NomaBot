@@ -9,6 +9,7 @@ from PySide6.QtCore import QTimer
 
 from nomabot.types import Priority
 from nomabot_desktop.core.bus import EventBus
+from nomabot_desktop.core.command_source import CommandSource
 from nomabot_desktop.core.events import StateRequest
 
 logger = logging.getLogger("noma.daily_routine")
@@ -56,7 +57,7 @@ class DailyRoutineService:
             StateRequest(
                 state=params.get("activity", "idle"),
                 priority=Priority.NORMAL,
-                source=f"routine:{job_id}",
+                source=CommandSource.ROUTINE,
                 activity=params.get("activity"),
                 life_mode=params.get("life_mode"),
                 habit=params.get("habit"),

@@ -9,6 +9,7 @@ from PySide6.QtCore import QTimer
 
 from nomabot.types import Priority
 from nomabot_desktop.core.bus import EventBus
+from nomabot_desktop.core.command_source import CommandSource
 from nomabot_desktop.core.events import StateRequest
 
 logger = logging.getLogger("noma.life_mode")
@@ -56,7 +57,7 @@ class LifeModeService:
             StateRequest(
                 state="idle" if mode in {"night", "vacation"} else self._current,
                 priority=Priority.LOW,
-                source="life_mode",
+                source=CommandSource.LIFE_MODE,
                 life_mode=mode,
                 activity="sleep" if mode == "night" else None,
             ),

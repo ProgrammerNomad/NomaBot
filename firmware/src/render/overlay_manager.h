@@ -2,19 +2,19 @@
 
 #include <string>
 
-struct QueuedMessage {
+struct QueuedOverlay {
   std::string text;
   int priority = 0;
   unsigned long expiresAtMs = 0;
 };
 
-class MessageQueue {
+class OverlayManager {
 public:
   void push(const char *text, int priority, unsigned long durationMs, unsigned long nowMs);
-  void tick(unsigned long nowMs);
+  bool tick(unsigned long nowMs);
   const char *activeText() const;
 
 private:
-  QueuedMessage _active;
+  QueuedOverlay _active;
   bool _hasActive = false;
 };

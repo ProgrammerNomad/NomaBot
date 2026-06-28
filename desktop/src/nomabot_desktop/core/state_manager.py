@@ -9,6 +9,8 @@ from typing import Any
 
 from nomabot.types import MessageSpec, Priority, RenderRequest
 from nomabot_desktop.core.bus import EventBus
+from nomabot_desktop.core.command_source import CommandSource
+from nomabot_desktop.core.context_arbitrator import ContextArbitrator
 from nomabot_desktop.core.events import SchedulerFire, StateRequest
 from nomabot_desktop.core.runtime import ACTIVITY_STATES
 
@@ -38,11 +40,16 @@ class StateManager:
         self._schedule = schedule
         self._runtime_submit: Callable[[RenderRequest], Coroutine[Any, Any, Any]] | None = None
         self._state = BotState()
+        self._arbitrator = ContextArbitrator()
         self._muted = False
         self._held_priority = Priority.BACKGROUND
 
         bus.subscribe("state.request", self._on_state_request)
         bus.subscribe("scheduler.fire", self._on_scheduler_fire)
+
+    @property
+    def arbitrator(self) -> ContextArbitrator:
+        return self._arbitrator
 
     def bind_runtime(self, submit_fn: Callable[[RenderRequest], Coroutine[Any, Any, Any]]) -> None:
         self._runtime_submit = submit_fn
@@ -69,7 +76,11 @@ class StateManager:
                 self._held_priority,
             )
             return False
-        return self._apply(req)
+        filtered = self._arbitrator.accept(req)
+        if filtered is None:
+            logger.debug("Arbitrator rejected %s from %s", req.state, req.source)
+            return False
+        return self._apply(filtered)
 
     def _on_state_request(self, payload: StateRequest) -> None:
         self.request(payload)
@@ -81,51 +92,51 @@ class StateManager:
             return
         if payload.action == "ShowMessage":
             text = payload.parameters.get("text", "")
-            self._apply(
+            self.request(
                 StateRequest(
                     state="message_active",
                     priority=payload.priority,
-                    source=f"scheduler:{payload.job_id}",
+                    source=CommandSource.SCHEDULER,
                     message_text=text,
                 )
             )
         elif payload.action == "PlayAnimation":
             anim = payload.parameters.get("animation", "idle")
-            self._apply(
+            self.request(
                 StateRequest(
                     state=anim,
                     priority=payload.priority,
-                    source=f"scheduler:{payload.job_id}",
+                    source=CommandSource.SCHEDULER,
                     animation=anim,
                 )
             )
         elif payload.action == "SetEmotion":
             emotion = payload.parameters.get("emotion", "neutral")
-            self._apply(
+            self.request(
                 StateRequest(
                     state=self._state.activity,
                     priority=payload.priority,
-                    source=f"scheduler:{payload.job_id}",
+                    source=CommandSource.SCHEDULER,
                     emotion=emotion,
                 )
             )
         elif payload.action == "SetLifeMode":
             mode = payload.parameters.get("mode", "work")
-            self._apply(
+            self.request(
                 StateRequest(
                     state=self._state.activity,
                     priority=payload.priority,
-                    source=f"scheduler:{payload.job_id}",
+                    source=CommandSource.SCHEDULER,
                     life_mode=mode,
                 )
             )
         elif payload.action == "TriggerHabit":
             habit = payload.parameters.get("habit", "")
-            self._apply(
+            self.request(
                 StateRequest(
                     state=self._state.activity,
                     priority=payload.priority,
-                    source=f"scheduler:{payload.job_id}",
+                    source=CommandSource.SCHEDULER,
                     habit=habit,
                 )
             )

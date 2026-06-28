@@ -94,7 +94,7 @@ static void startTextModeBoot() {
   characterRuntime.useBehaviorDefaults();
   characterRuntime.setLifeMode("work");
   characterRuntime.setActivity("idle");
-  characterRuntime.render();
+  characterRuntime.present();
 }
 
 static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
@@ -205,7 +205,7 @@ static ProtocolResponse handleShowMessage(const std::string &id, JsonObject para
 
 static ProtocolResponse handleSetState(const std::string &id, JsonObject params) {
   const char *state = params["state"] | "idle";
-  characterRuntime.setActivity(state);
+  characterRuntime.applyActivityCommand(state);
   JsonDocument data;
   data["ok"] = true;
   JsonDocument doc;
@@ -222,7 +222,7 @@ static ProtocolResponse handleSetState(const std::string &id, JsonObject params)
 
 static ProtocolResponse handleSetActivity(const std::string &id, JsonObject params) {
   const char *activity = params["activity"] | "idle";
-  characterRuntime.setActivity(activity);
+  characterRuntime.applyActivityCommand(activity);
   JsonDocument data;
   data["ok"] = true;
   data["activity"] = activity;
@@ -373,7 +373,7 @@ static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject pa
       display["width"] = info->displayWidth;
       display["height"] = info->displayHeight;
     }
-    characterRuntime.render();
+    characterRuntime.present();
   } else {
     bootOk = true;
     textModeBoot = true;
@@ -381,7 +381,7 @@ static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject pa
     characterRuntime.useBehaviorDefaults();
     data["error"] = packLoadErrorLabel(packLoader.lastError());
     data["render_mode"] = "text";
-    characterRuntime.render();
+    characterRuntime.present();
   }
 
   JsonDocument doc;
@@ -394,6 +394,33 @@ static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject pa
   std::string out;
   serializeJson(doc, out);
   return {out + "\n", true};
+}
+
+static void appendDirtyLast(JsonArray arr, DirtyFlags flags) {
+  if (hasDirty(flags, DirtyHeader)) {
+    arr.add("Header");
+  }
+  if (hasDirty(flags, DirtyMeta)) {
+    arr.add("Meta");
+  }
+  if (hasDirty(flags, DirtyEnergy)) {
+    arr.add("Energy");
+  }
+  if (hasDirty(flags, DirtyBehavior)) {
+    arr.add("Behavior");
+  }
+  if (hasDirty(flags, DirtyMessage)) {
+    arr.add("Message");
+  }
+  if (hasDirty(flags, DirtyCharacter)) {
+    arr.add("Character");
+  }
+  if (hasDirty(flags, DirtyBackground)) {
+    arr.add("Background");
+  }
+  if (flags == DirtyFull) {
+    arr.add("Full");
+  }
 }
 
 static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
@@ -429,6 +456,11 @@ static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
   if (coffeeAgo >= 0) {
     shortMem["last_coffee_min_ago"] = coffeeAgo;
   }
+  data["last_command_source"] = characterRuntime.lastCommandSource();
+  data["render_count"] = characterRuntime.renderCount();
+  data["last_render_ms"] = characterRuntime.lastRenderMs();
+  JsonArray dirtyLast = data["dirty_last"].to<JsonArray>();
+  appendDirtyLast(dirtyLast, characterRuntime.lastDirtyFlags());
 
   JsonDocument doc;
   doc["v"] = 1;
@@ -473,7 +505,7 @@ void setup() {
       bootOk = true;
       characterRuntime.setLifeMode("work");
       characterRuntime.setActivity("idle");
-      characterRuntime.render();
+      characterRuntime.present();
     } else {
       startTextModeBoot();
     }
@@ -487,9 +519,6 @@ void setup() {
 
 void loop() {
   unsigned long now = millis();
-  if (bootOk) {
-    characterRuntime.tick(now);
-  }
 
   while (Serial.available()) {
     char c = Serial.read();
@@ -501,13 +530,9 @@ void loop() {
     }
   }
 
-  if (!bootOk) {
-    return;
-  }
-
-  static unsigned long lastDraw = 0;
-  if (now - lastDraw > 50) {
-    characterRuntime.render();
-    lastDraw = now;
+  if (bootOk) {
+    characterRuntime.tick(now);
+    characterRuntime.present();
+    delay(1);
   }
 }

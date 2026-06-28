@@ -86,6 +86,8 @@ void Brain::setActivity(const char *activity) {
   }
 }
 
+void Brain::forceBehaviorPick() { pickBehavior(millis(), true); }
+
 void Brain::setEmotion(const char *emotion) {
   _emotion.setEmotion(emotion);
   if (emotion && strcmp(emotion, "frustrated") == 0) {

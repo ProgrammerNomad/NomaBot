@@ -1,9 +1,9 @@
-#include "message_queue.h"
+#include "overlay_manager.h"
 
 #include <string.h>
 
-void MessageQueue::push(const char *text, int priority, unsigned long durationMs,
-                        unsigned long nowMs) {
+void OverlayManager::push(const char *text, int priority, unsigned long durationMs,
+                          unsigned long nowMs) {
   if (!text || !text[0]) {
     return;
   }
@@ -16,19 +16,21 @@ void MessageQueue::push(const char *text, int priority, unsigned long durationMs
   _hasActive = true;
 }
 
-void MessageQueue::tick(unsigned long nowMs) {
+bool OverlayManager::tick(unsigned long nowMs) {
   if (!_hasActive) {
-    return;
+    return false;
   }
   if (_active.expiresAtMs > 0 && nowMs >= _active.expiresAtMs) {
     _hasActive = false;
     _active.text.clear();
     _active.priority = 0;
     _active.expiresAtMs = 0;
+    return true;
   }
+  return false;
 }
 
-const char *MessageQueue::activeText() const {
+const char *OverlayManager::activeText() const {
   if (!_hasActive || _active.text.empty()) {
     return "";
   }

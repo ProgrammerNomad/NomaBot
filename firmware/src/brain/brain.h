@@ -16,6 +16,7 @@ public:
 
   void setLifeMode(const char *mode);
   void setActivity(const char *activity);
+  void forceBehaviorPick();
   void setEmotion(const char *emotion);
   void setSeason(const char *season);
   void triggerHabit(const char *habitId);
@@ -70,8 +71,6 @@ private:
   unsigned long _lastCuriosityMs = 0;
   unsigned long _dayStartMs = 0;
 
-  const BehaviorDef *activeTable(size_t *count) const;
-  int scaledWeight(const BehaviorDef &def) const;
   void pickBehavior(unsigned long nowMs, bool force);
   void pickNextPreview();
   void enterSequence(const char **steps, size_t len, const char *goalName);
@@ -84,4 +83,6 @@ private:
   void applyBehaviorId(const char *id, unsigned long nowMs);
   const char *labelForId(const char *id) const;
   void recordShortMemory(unsigned long nowMs);
+  const BehaviorDef *activeTable(size_t *count) const;
+  int scaledWeight(const BehaviorDef &def) const;
 };

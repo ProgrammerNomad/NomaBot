@@ -12,6 +12,7 @@ from PySide6.QtCore import QTimer
 
 from nomabot.types import Priority
 from nomabot_desktop.core.bus import EventBus
+from nomabot_desktop.core.command_source import CommandSource
 from nomabot_desktop.core.events import ActivityChanged, StateRequest
 from nomabot_desktop.services.config import ConfigService
 
@@ -120,6 +121,6 @@ class ActivityService:
             StateRequest(
                 state=profile,
                 priority=Priority.NORMAL,
-                source="activity",
+                source=CommandSource.ACTIVITY,
             ),
         )
