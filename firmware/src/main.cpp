@@ -13,8 +13,24 @@ static CharacterRuntime characterRuntime;
 static ProtocolHandler protocol;
 static String serialBuffer;
 static String activeCharacterId = "nomabot";
+static bool bootOk = false;
+static const char *bootFsStatus = "FAIL";
+static const char *bootPackStatus = "FAIL";
 
 static void emitLine(const std::string &line) { Serial.print(line.c_str()); }
+
+static void showBootError(const char *label) {
+  renderer.fillScreen(0xF800);
+  renderer.drawText(4, 20, label, 0xFFFF);
+  renderer.drawText(4, 36, "Reset or load_character", 0xFFFF);
+  renderer.drawText(4, 52, "via desktop USB", 0xFFFF);
+}
+
+static void printBootBanner() {
+  Serial.printf(
+      "NomaBot FW %s | FS: %s | Pack: %s | Character: %s\n", NOMA_FIRMWARE_VERSION,
+      bootFsStatus, bootPackStatus, bootOk ? activeCharacterId.c_str() : "none");
+}
 
 static bool loadActiveCharacter() {
   File f = LittleFS.open("/active_character.json", "r");
@@ -54,10 +70,15 @@ static bool persistActiveCharacter(const char *characterId, const char *uuid) {
 static bool bootCharacter() {
   loadActiveCharacter();
   if (!characterRuntime.loadCharacter(packLoader, activeCharacterId.c_str())) {
-    Serial.printf("Failed to load character: %s\n", activeCharacterId.c_str());
-    renderer.fillScreen(0xF800);
+    const char *label = packLoadErrorLabel(packLoader.lastError());
+    Serial.printf("Failed to load character: %s (%s)\n", activeCharacterId.c_str(), label);
+    bootPackStatus = "FAIL";
+    showBootError(label);
+    packLoader.listDirectory(std::string("/characters/") + activeCharacterId.c_str());
     return false;
   }
+  bootPackStatus = "OK";
+  bootOk = true;
   characterRuntime.render();
   return true;
 }
@@ -219,6 +240,8 @@ static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject pa
   bool ok = characterRuntime.loadCharacter(packLoader, characterId);
   if (ok) {
     activeCharacterId = characterId;
+    bootOk = true;
+    bootPackStatus = "OK";
     const PackInfo *info = characterRuntime.packInfo();
     persistActiveCharacter(characterId, info ? info->uuid.c_str() : nullptr);
     data["pack_id"] = info ? info->packId : characterId;
@@ -235,7 +258,11 @@ static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject pa
     }
     characterRuntime.render();
   } else {
-    data["error"] = "load_failed";
+    bootOk = false;
+    bootPackStatus = "FAIL";
+    data["error"] = packLoadErrorLabel(packLoader.lastError());
+    showBootError(packLoadErrorLabel(packLoader.lastError()));
+    packLoader.listDirectory(std::string("/characters/") + characterId);
   }
 
   JsonDocument doc;
@@ -279,21 +306,7 @@ static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
   return {out + "\n", true};
 }
 
-void setup() {
-  Serial.begin(115200);
-  delay(500);
-  renderer.begin();
-  characterRuntime.begin(&renderer);
-
-  if (!packLoader.mountFilesystem()) {
-    renderer.fillScreen(0xF800);
-    return;
-  }
-
-  if (!bootCharacter()) {
-    return;
-  }
-
+static void registerProtocolHandlers() {
   protocol.registerCommand("hello", handleHello);
   protocol.registerCommand("ping", handlePing);
   protocol.registerCommand("play_animation", handlePlayAnimation);
@@ -305,9 +318,34 @@ void setup() {
   protocol.registerCommand("diagnostics", handleDiagnostics);
 }
 
+void setup() {
+  Serial.begin(115200);
+  delay(500);
+  renderer.begin();
+  characterRuntime.begin(&renderer);
+  registerProtocolHandlers();
+
+  if (!packLoader.mountFilesystem()) {
+    Serial.println("LittleFS mount failed");
+    showBootError("FS FAIL");
+    printBootBanner();
+    return;
+  }
+  bootFsStatus = "OK";
+
+  if (!bootCharacter()) {
+    printBootBanner();
+    return;
+  }
+
+  printBootBanner();
+}
+
 void loop() {
   unsigned long now = millis();
-  characterRuntime.tick(now);
+  if (bootOk) {
+    characterRuntime.tick(now);
+  }
 
   while (Serial.available()) {
     char c = Serial.read();
@@ -317,6 +355,10 @@ void loop() {
     } else {
       serialBuffer += c;
     }
+  }
+
+  if (!bootOk) {
+    return;
   }
 
   static unsigned long lastDraw = 0;

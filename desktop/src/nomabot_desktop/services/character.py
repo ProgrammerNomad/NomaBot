@@ -94,7 +94,8 @@ class CharacterService:
             build_command("load_character", LoadCharacterParams(character_id=pack_id))
         )
         if not resp.ok:
-            logger.error("load_character failed: %s", resp.error)
+            detail = resp.error or (resp.data or {}).get("error", "unknown")
+            logger.error("load_character failed: %s", detail)
             return None
 
         data = resp.data or {}

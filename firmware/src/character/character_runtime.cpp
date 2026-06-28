@@ -2,22 +2,43 @@
 
 #include <Arduino.h>
 
+const char *characterLoadErrorLabel(CharacterLoadError err) {
+  switch (err) {
+  case CharacterLoadError::Graph:
+    return "GRAPH FAIL";
+  case CharacterLoadError::Pack:
+    return "PACK FAIL";
+  default:
+    return "PACK FAIL";
+  }
+}
+
 void CharacterRuntime::begin(IRenderer *renderer) {
   _renderer = renderer;
 }
 
 bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId) {
   unload();
+  _lastLoadError = CharacterLoadError::None;
+
   if (!loader.load(characterId)) {
+    _lastLoadError = CharacterLoadError::Pack;
     return false;
   }
   _loader = &loader;
   _assets.bind(&loader);
   _characterId = characterId;
 
-  if (!_graph.loadFromPack(loader.rootPath())) {
-    Serial.println("Animation graph load failed");
-    return false;
+  bool graphOk = false;
+  if (!loader.graphText().empty()) {
+    graphOk = _graph.loadFromText(loader.graphText());
+  } else {
+    graphOk = _graph.loadFromPack(loader.rootPath());
+  }
+
+  if (!graphOk) {
+    Serial.println("Animation graph load failed — using idle/coding defaults");
+    _graph.applyDefaults();
   }
 
   _backgroundSprite = loader.defaultBackgroundSprite();
@@ -33,6 +54,7 @@ void CharacterRuntime::unload() {
   _loader = nullptr;
   _assets.bind(nullptr);
   _accessories.clear();
+  _lastLoadError = CharacterLoadError::None;
 }
 
 const PackInfo *CharacterRuntime::packInfo() const {

@@ -23,6 +23,12 @@ def make_sprite(name: str, color: tuple[int, int, int]) -> None:
 
 
 def main() -> None:
+    for legacy in ("idle_01", "idle_02", "coding_01", "coding_02"):
+        legacy_path = BODY / f"{legacy}.png"
+        if legacy_path.exists():
+            legacy_path.unlink()
+            print(f"Removed legacy {legacy_path}")
+
     make_sprite("body_idle_01", (67, 97, 238))
     make_sprite("body_idle_02", (76, 201, 240))
     make_sprite("body_coding_01", (247, 37, 133))

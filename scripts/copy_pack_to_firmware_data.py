@@ -30,12 +30,15 @@ def main() -> int:
     compiled = (root / args.compiled).resolve()
     dest = (root / args.dest).resolve()
     data_root = dest.parents[1]  # firmware/data
+    characters_root = data_root / "characters"
 
     if not compiled.exists():
         raise SystemExit(f"Compiled pack not found: {compiled}")
 
-    if dest.exists():
-        shutil.rmtree(dest)
+    if characters_root.exists():
+        shutil.rmtree(characters_root)
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(compiled, dest)
 
     manifest = json.loads((compiled / "manifest.json").read_text(encoding="utf-8"))

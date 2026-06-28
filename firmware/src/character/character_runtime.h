@@ -11,6 +11,14 @@
 #include "assets/sprite_cache.h"
 #include "renderer/renderer.hpp"
 
+enum class CharacterLoadError {
+  None,
+  Pack,
+  Graph,
+};
+
+const char *characterLoadErrorLabel(CharacterLoadError err);
+
 class CharacterRuntime {
 public:
   void begin(IRenderer *renderer);
@@ -25,6 +33,7 @@ public:
   void setMessage(const char *text);
   void setBackground(const char *backgroundKey);
 
+  CharacterLoadError lastLoadError() const { return _lastLoadError; }
   const PackInfo *packInfo() const;
   const char *characterId() const { return _characterId.c_str(); }
   const char *currentAnimation() const { return _clipPlayer.clipId(); }
@@ -43,6 +52,7 @@ private:
   AccessoryManager _accessories;
   Compositor _compositor;
 
+  CharacterLoadError _lastLoadError = CharacterLoadError::None;
   std::string _characterId;
   std::string _backgroundSprite;
   std::string _message;

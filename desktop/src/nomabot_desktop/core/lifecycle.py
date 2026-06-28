@@ -13,6 +13,8 @@ from typing import Any
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
 
+from serial.serialutil import SerialException
+
 from nomabot.types import Priority
 from nomabot_desktop.core.app_context import AppContext, create_context
 from nomabot_desktop.core.device_manager import DeviceRecord
@@ -21,6 +23,7 @@ from nomabot_desktop.core.logging_config import setup_logging
 from nomabot_desktop.core.state_manager import BotState, StateManager
 from nomabot_desktop.services.activity import ActivityService
 from nomabot_desktop.services.character import CharacterService
+from nomabot_desktop.services.firmware_compat import log_firmware_issues
 from nomabot_desktop.services.scheduler import SchedulerService
 from nomabot_desktop.storage.service import DeviceRow
 from nomabot_desktop.transport import EmulatorState
@@ -86,8 +89,15 @@ async def _connect_device(ctx: AppContext, device_id: str) -> None:
     hello = await ctx.transport_manager.connect(device_id)
     ctx.device_manager.update_from_hello(device_id, hello)
     _persist_device(ctx, device_id, hello)
-    if ctx.character_service:
+    fw_ok = log_firmware_issues(hello)
+    if ctx.character_service and fw_ok:
         await ctx.character_service.activate(device_id, "nomabot")
+    elif ctx.character_service and not fw_ok:
+        logger.error(
+            "Skipping load_character until firmware is 0.3.0+ with load_character cap. "
+            "Run: cd firmware && pio run -e lilygo_tdisplay_s3 -t upload && "
+            "pio run -e lilygo_tdisplay_s3 -t uploadfs — then RESET the board."
+        )
 
 
 async def _bootstrap_hardware(
@@ -225,9 +235,21 @@ def run_app(
 
     ctx.bus.subscribe("state.changed", lambda s: _sync_emulator_state(ctx, s))
 
-    device_id, emu_state = _schedule(
-        _bootstrap_hardware(ctx, emulator=emulator, port=port)
-    ).result()
+    try:
+        device_id, emu_state = _schedule(
+            _bootstrap_hardware(ctx, emulator=emulator, port=port)
+        ).result()
+    except SerialException as exc:
+        if port:
+            logger.error(
+                "Cannot open %s (%s). Close PlatformIO serial monitor, "
+                "any other NomaBot instance, and Arduino IDE serial — then retry.",
+                port,
+                exc,
+            )
+        else:
+            logger.error("Serial connect failed: %s", exc)
+        raise SystemExit(1) from exc
 
     app = QApplication([])
     app.setQuitOnLastWindowClosed(False)

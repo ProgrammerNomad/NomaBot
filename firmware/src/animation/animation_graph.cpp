@@ -5,21 +5,10 @@
 #include <FS.h>
 #include <LittleFS.h>
 
-bool AnimationGraph::loadFromPack(const std::string &rootPath, const char *graphFile) {
+bool AnimationGraph::parseGraphJson(const std::string &text) {
   _states.clear();
-  std::string path = rootPath + "/" + graphFile;
-  File f = LittleFS.open(path.c_str(), "r");
-  if (!f) {
-    return false;
-  }
 
-  std::string text;
-  while (f.available()) {
-    text += static_cast<char>(f.read());
-  }
-  f.close();
-
-  JsonDocument doc;
+  StaticJsonDocument<4096> doc;
   if (deserializeJson(doc, text)) {
     return false;
   }
@@ -33,7 +22,9 @@ bool AnimationGraph::loadFromPack(const std::string &rootPath, const char *graph
     gs.name = kv.key().c_str();
     JsonObject stateObj = kv.value().as<JsonObject>();
     gs.animation = stateObj["animation"] | gs.name.c_str();
-    for (JsonObject tr : stateObj["transitions"].as<JsonArray>()) {
+    JsonArray transitions = stateObj["transitions"].as<JsonArray>();
+    for (JsonVariant tv : transitions) {
+      JsonObject tr = tv.as<JsonObject>();
       GraphTransition gt;
       gt.toState = tr["to"] | "";
       gt.onEvent = tr["on"] | "";
@@ -45,6 +36,42 @@ bool AnimationGraph::loadFromPack(const std::string &rootPath, const char *graph
     _states.push_back(gs);
   }
   return !_states.empty();
+}
+
+bool AnimationGraph::loadFromText(const std::string &text) {
+  return parseGraphJson(text);
+}
+
+bool AnimationGraph::loadFromPack(const std::string &rootPath, const char *graphFile) {
+  std::string path = rootPath + "/" + graphFile;
+  File f = LittleFS.open(path.c_str(), "r");
+  if (!f && !path.empty() && path[0] == '/') {
+    f = LittleFS.open(path.c_str() + 1, "r");
+  }
+  if (!f) {
+    return false;
+  }
+
+  std::string text;
+  while (f.available()) {
+    text += static_cast<char>(f.read());
+  }
+  f.close();
+  return parseGraphJson(text);
+}
+
+void AnimationGraph::applyDefaults() {
+  _states.clear();
+  _defaultState = "idle";
+  _currentState = "idle";
+  GraphState idle;
+  idle.name = "idle";
+  idle.animation = "idle";
+  GraphState coding;
+  coding.name = "coding";
+  coding.animation = "coding";
+  _states.push_back(idle);
+  _states.push_back(coding);
 }
 
 void AnimationGraph::setState(const char *state) {

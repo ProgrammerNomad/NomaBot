@@ -65,17 +65,25 @@ uv run python -m nomabot_desktop --dev         # show manual control buttons
 
 ## Firmware
 
+**Important:** `pio run -t upload` only flashes the **app** (code at 0x10000). Character sprites live in **LittleFS** (0x410000). Running upload alone will leave FS FAIL or MANIFEST FAIL on the device.
+
+Always flash **both** after asset or firmware changes:
+
 ```bash
 just assets          # compile nomabot pack → firmware/data/
 cd firmware
-pio run -e lilygo_tdisplay_s3 -t upload
-pio run -e lilygo_tdisplay_s3 -t uploadfs   # required for sprites on device
-pio device monitor -b 115200
+pio run -e lilygo_tdisplay_s3 -t upload      # firmware binary
+pio run -e lilygo_tdisplay_s3 -t uploadfs    # LittleFS — required for sprites
+pio device monitor -b 115200                 # expect: LittleFS mounted OK, Pack: OK
 ```
 
-Or from repo root: `just flash-all` (upload + uploadfs).
+Or from repo root: `just flash-all` (assets + upload + uploadfs in one command).
+
+After flash, press **RESET** if the LCD does not update. Close serial monitor before starting desktop (`--port COM3`) — one process per COM port.
 
 Official profile: `profiles/lilygo_tdisplay_s3.json` (170×320).
+
+LittleFS partition is named `littlefs` in [`firmware/partitions.csv`](firmware/partitions.csv); firmware mounts it explicitly in `pack_loader.cpp`.
 
 LittleFS layout on device:
 
