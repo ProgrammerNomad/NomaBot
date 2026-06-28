@@ -16,37 +16,20 @@ activities:
   idle:
     life_modes: [work, home, travel, vacation]
     behaviors:
-      - id: look_around
-        label: "Look around"
-        weight: 30
-        clip: look_left
-        likes: [travel, rain]
-        duration: { min: 4, max: 12 }
-      - id: blink
-        label: "Blink"
-        weight: 25
-        clip: blink
-        duration: { min: 2, max: 5 }
       - id: breathing
         label: "Breathing..."
-        weight: 25
+        weight: 50
         clip: idle
         duration: { min: 5, max: 15 }
-      - id: wave
-        label: "Wave"
-        weight: 10
-        clip: wave
-        duration: { min: 2, max: 4 }
-      - id: smile
-        label: "Smile"
-        weight: 10
-        clip: hello
-        duration: { min: 2, max: 4 }
+      - id: blink
+        label: "Blink"
+        weight: 30
+        clip: blink
+        duration: { min: 2, max: 5 }
       - id: read
         label: "Reading..."
-        weight: 8
+        weight: 20
         clip: think
-        likes: [tea]
         duration: { min: 6, max: 14 }
 
   coding:
@@ -58,53 +41,26 @@ activities:
         clip: coding
         goal_boost: focus
         duration: { min: 5, max: 15 }
-      - id: coffee
-        label: "Coffee"
-        weight: 10
-        clip: coffee
-        likes: [coffee, tea]
-        duration: { min: 3, max: 8 }
-        requires: { min_coffee_love: 50 }
       - id: think
         label: "Thinking..."
-        weight: 10
+        weight: 30
         clip: think
         goal_boost: focus
         duration: { min: 4, max: 10 }
-      - id: stretch
-        label: "Stretch"
-        weight: 5
-        clip: stretch
-        duration: { min: 2, max: 5 }
-      - id: smile
-        label: "Smile"
-        weight: 5
-        clip: celebrate
-        duration: { min: 2, max: 4 }
 
   sleep:
     life_modes: [night, home]
     behaviors:
-      - id: yawn
-        label: "Yawn..."
-        weight: 30
-        clip: yawn
-        duration: { min: 3, max: 6 }
       - id: blink_slow
         label: "Blink slowly..."
-        weight: 25
+        weight: 50
         clip: blink
         duration: { min: 4, max: 8 }
-      - id: sleep
-        label: "Sleep"
-        weight: 30
-        clip: sleep
-        duration: { min: 10, max: 30 }
-      - id: dream
-        label: "Dream..."
-        weight: 15
-        clip: sleep
-        duration: { min: 8, max: 20 }
+      - id: breathing
+        label: "Breathing..."
+        weight: 50
+        clip: idle
+        duration: { min: 5, max: 15 }
 
 emotion_meta:
   happy:
@@ -124,146 +80,96 @@ emotions:
   happy:
     idle:
       behaviors:
-        - id: wave
-          label: "Wave"
-          weight: 30
-          clip: wave
-        - id: look_around
-          label: "Look around"
-          weight: 30
-          clip: look_left
-        - id: smile
-          label: "Smile"
-          weight: 40
-          clip: hello
+        - id: breathing
+          label: "Breathing..."
+          weight: 50
+          clip: idle
+        - id: blink
+          label: "Blink"
+          weight: 50
+          clip: blink
     coding:
       behaviors:
         - id: typing
           label: "Typing..."
-          weight: 50
+          weight: 60
           clip: coding
-        - id: smile
-          label: "Smile"
-          weight: 25
-          clip: hello
-        - id: coffee
-          label: "Coffee"
-          weight: 25
-          clip: coffee
+        - id: think
+          label: "Thinking..."
+          weight: 40
+          clip: think
 
   frustrated:
     coding:
       behaviors:
         - id: think
           label: "Thinking..."
-          weight: 30
+          weight: 50
           clip: think
-        - id: sigh
-          label: "Sigh..."
-          weight: 25
-          clip: think
-        - id: coffee
-          label: "Coffee"
-          weight: 20
-          clip: coffee
         - id: typing_slow
           label: "Typing slowly..."
-          weight: 25
+          weight: 50
           clip: coding
 
   sleepy:
     idle:
       behaviors:
-        - id: yawn
-          label: "Yawn..."
-          weight: 40
-          clip: yawn
         - id: blink_slow
           label: "Blink slowly..."
-          weight: 30
+          weight: 60
           clip: blink
-        - id: sleep
-          label: "Sleep"
-          weight: 30
-          clip: sleep
+        - id: breathing
+          label: "Breathing..."
+          weight: 40
+          clip: idle
 
   excited:
     idle:
       behaviors:
-        - id: celebrate
-          label: "Celebrate!"
-          weight: 40
-          clip: celebrate
-        - id: wave
-          label: "Wave"
-          weight: 30
-          clip: wave
-        - id: smile
-          label: "Smile"
-          weight: 30
-          clip: hello
+        - id: breathing
+          label: "Breathing..."
+          weight: 50
+          clip: idle
+        - id: blink
+          label: "Blink"
+          weight: 50
+          clip: blink
 
 goals:
   focus:
     coding:
       progress_per_behavior: 8
-      complete_behavior: celebrate
-  recover:
-    coding:
-      sequence: [think, sigh, coffee, typing_slow]
-  morning_routine:
-    sequence: [stretch, coffee, look_around]
-  dream:
-    sequence: [dream, travel, bike, mountains, coffee]
+      complete_behavior: typing
 
 habits:
   morning:
     life_modes: [work]
     hour_start: 8
     hour_end: 10
-    goal: morning_routine
-  tea_break:
-    hour_start: 13
-    hour_end: 14
-    goal: recover
+    sequence: [breathing, think]
   evening:
     life_modes: [home]
     hour_start: 18
     hour_end: 20
-    sequence: [look_around, read, smile]
+    sequence: [breathing, read]
 
 season_boosts:
   monsoon:
-    behaviors: [look_around, read]
+    behaviors: [read, breathing]
     multiplier: 1.5
   winter:
-    behaviors: [coffee, read]
+    behaviors: [read, breathing]
     multiplier: 1.3
 
 conditions:
-  coffee:
-    requires: { energy_lt: 40 }
   sleep:
     requires: { idle_minutes_gt: 10 }
 
 behavior_clips:
   breathing: idle
   blink: blink
-  look_around: look_left
+  blink_slow: blink
   read: think
-  wave: wave
-  smile: hello
   typing: coding
   typing_slow: coding
   think: think
-  sigh: think
-  stretch: stretch
-  coffee: coffee
-  sleep: sleep
-  dream: sleep
-  celebrate: celebrate
-  yawn: yawn
-  blink_slow: blink
-  travel: idle
-  bike: idle
-  mountains: think

@@ -83,6 +83,14 @@ void LilygoRenderer::blitRGB565(const uint16_t *pixels, int x, int y, int w, int
   _gfx.pushImage(x, y, w, h, pixels);
 }
 
+void LilygoRenderer::blitRGB565ColorKey(const uint16_t *pixels, int x, int y, int w, int h,
+                                        uint16_t colorKey) {
+  if (!pixels || w <= 0 || h <= 0) {
+    return;
+  }
+  _gfx.pushImage(x, y, w, h, pixels, colorKey);
+}
+
 void LilygoRenderer::fillRect(int x, int y, int w, int h, uint16_t color) {
   _gfx.fillRect(x, y, w, h, color);
 }

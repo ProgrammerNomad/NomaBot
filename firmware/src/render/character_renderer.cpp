@@ -51,8 +51,9 @@ void drawBubbleTail(IRenderer &renderer, int centerX, int topY) {
 }
 
 bool captureFootprint(PackLoader &loader, SpriteCache &cache, BackgroundCache &bgCache,
-                      const char *bgSpriteId, int anchorX, int anchorY, const char *bodySpriteId,
-                      const char *faceSpriteId) {
+                      const char *bgSpriteId, int bodyAnchorX, int bodyAnchorY,
+                      const char *bodySpriteId, const char *faceSpriteId, int exprAnchorX,
+                      int exprAnchorY) {
   if (!bgSpriteId || !bgSpriteId[0] || !bodySpriteId || !bodySpriteId[0]) {
     bgCache.reset();
     return false;
@@ -71,16 +72,16 @@ bool captureFootprint(PackLoader &loader, SpriteCache &cache, BackgroundCache &b
     return false;
   }
 
-  int drawX = anchorX - bodyMeta->width / 2;
-  int drawY = anchorY;
+  int drawX = bodyAnchorX - bodyMeta->width / 2;
+  int drawY = bodyAnchorY;
   int patchW = bodyMeta->width;
   int patchH = bodyMeta->height;
 
   if (faceSpriteId && faceSpriteId[0]) {
     const SpriteMeta *faceMeta = loader.findSprite(faceSpriteId);
     if (faceMeta) {
-      int fx = anchorX - faceMeta->width / 2;
-      int fy = anchorY - 8;
+      int fx = exprAnchorX - faceMeta->width / 2;
+      int fy = exprAnchorY;
       int minX = drawX < fx ? drawX : fx;
       int minY = drawY < fy ? drawY : fy;
       int maxX = (drawX + patchW) > (fx + faceMeta->width) ? (drawX + patchW) : (fx + faceMeta->width);
@@ -122,7 +123,8 @@ void drawBackgroundNode(IRenderer &renderer, PackLoader &loader, SpriteCache &ca
 
   renderer.blitRGB565(bgPixels, 0, 0, bgMeta->width, bgMeta->height);
   captureFootprint(loader, cache, bgCache, node.spriteId, scene.character.x, scene.character.y,
-                   scene.character.spriteId, scene.expression.spriteId);
+                   scene.character.spriteId, scene.expression.spriteId, scene.expression.x,
+                   scene.expression.y);
 }
 
 void drawCharacterNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
@@ -130,7 +132,7 @@ void drawCharacterNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cac
   if (!node.visible || !node.spriteId || !node.spriteId[0]) {
     return;
   }
-  compositor.blitSprite(renderer, loader, cache, node.spriteId, node.x, node.y);
+  compositor.blitSprite(renderer, loader, cache, node.spriteId, node.x, node.y, false);
 }
 
 void drawExpressionNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
@@ -138,7 +140,7 @@ void drawExpressionNode(IRenderer &renderer, PackLoader &loader, SpriteCache &ca
   if (!node.visible || !node.spriteId || !node.spriteId[0]) {
     return;
   }
-  compositor.blitSprite(renderer, loader, cache, node.spriteId, node.x, node.y);
+  compositor.blitSprite(renderer, loader, cache, node.spriteId, node.x, node.y, true);
 }
 
 void drawHudNode(IRenderer &renderer, const SceneNode &node) {

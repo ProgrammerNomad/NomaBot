@@ -43,12 +43,12 @@ def clip_map() -> dict[str, str]:
     return _load_clip_map(data)
 
 
-def test_look_around_maps_to_look_left(clip_map: dict[str, str]) -> None:
-    assert clip_map["look_around"] == "look_left"
-
-
 def test_typing_maps_to_coding(clip_map: dict[str, str]) -> None:
     assert clip_map["typing"] == "coding"
+
+
+def test_read_maps_to_think(clip_map: dict[str, str]) -> None:
+    assert clip_map["read"] == "think"
 
 
 def test_think_maps_to_think(clip_map: dict[str, str]) -> None:

@@ -18,7 +18,7 @@ def test_sprite_scene_node_count_with_overlay() -> None:
 
 def test_sprite_scene_dirty_character_only() -> None:
     state = RenderState(
-        body_sprite_id="body_coding_01",
+        body_sprite_id="body_typing_01",
         background_sprite_id="bg_office",
     )
     scene = SceneBuilder.build(state, dirty=DirtyFlags.CHARACTER)

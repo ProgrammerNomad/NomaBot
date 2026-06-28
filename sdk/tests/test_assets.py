@@ -39,9 +39,23 @@ def test_compile_nomabot(nomabot_source, tmp_path):
     ids = {s["id"] for s in manifest["sprites"]}
     assert "bg_office" in ids
     assert "body_idle_01" in ids
-    assert "body_coding_01" in ids
+    assert "body_typing_01" in ids
+    assert "face_neutral" in ids
     assert "body/idle_01" not in ids
 
     assert report["sprites"] == len(manifest["sprites"])
-    assert report["frames"] >= 15
+    assert report["frames"] >= 4
     assert report["memory_human"].endswith("KB")
+
+
+def test_expression_png_uses_colorkey_for_transparent_pixels(nomabot_source, tmp_path) -> None:
+    import struct
+
+    from nomabot.assets.compiler import SPRITE_COLORKEY, _png_to_rgb565
+
+    face_png = nomabot_source / "sprites" / "face" / "face_neutral.png"
+    if not face_png.exists():
+        pytest.skip("Run scripts/generate_living_nomabot_art.py first")
+    data = _png_to_rgb565(face_png, use_colorkey=True)
+    assert len(data) >= 2
+    assert struct.unpack_from("<H", data, 0)[0] == SPRITE_COLORKEY

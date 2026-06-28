@@ -17,6 +17,9 @@ from nomabot_desktop.core.asset_registry import AssetRegistry
 from nomabot_desktop.transport import EmulatorState
 
 
+SPRITE_COLORKEY = 0xF81F
+
+
 def _rgb565_to_qimage(data: bytes, width: int, height: int) -> QImage:
     pixels = []
     for i in range(0, len(data), 2):
@@ -35,6 +38,20 @@ def _rgb565_to_qimage(data: bytes, width: int, height: int) -> QImage:
                 idx = (y * width + x) * 3
                 img.setPixelColor(x, y, QColor(pixels[idx], pixels[idx + 1], pixels[idx + 2]))
     return img
+
+
+def _blit_sprite_colorkey(target: QImage, sprite: QImage, x: int, y: int) -> None:
+    """Paste sprite onto target, skipping transparent colorkey pixels."""
+    for row in range(sprite.height()):
+        for col in range(sprite.width()):
+            px = sprite.pixelColor(col, row)
+            r, g, b = px.red(), px.green(), px.blue()
+            rgb565 = (r >> 3 << 11) | (g >> 2 << 5) | (b >> 3)
+            if rgb565 == SPRITE_COLORKEY:
+                continue
+            tx, ty = x + col, y + row
+            if 0 <= tx < target.width() and 0 <= ty < target.height():
+                target.setPixelColor(tx, ty, px)
 
 
 def _behavior_yaml() -> Path:
@@ -119,6 +136,8 @@ class EmulatorCanvas(QWidget):
                 default_background=self._state.background_sprite_id,
                 anchor_x=self._state.anchor_x,
                 anchor_y=self._state.anchor_y,
+                expression_dx=0,
+                expression_dy=24,
                 dirty=dirty,
             )
             self.update()
@@ -262,6 +281,13 @@ class EmulatorCanvas(QWidget):
                 buf_painter = QPainter(target)
                 buf_painter.drawImage(ax, ay, body_img)
                 buf_painter.end()
+
+        if scene.expression.dirty and scene.expression.visible and scene.expression.sprite_id:
+            expr_img, expr_meta = self._load_sprite_image(scene.expression.sprite_id)
+            if expr_img and expr_meta:
+                ex = scene.expression.x - expr_meta["width"] // 2
+                ey = scene.expression.y
+                _blit_sprite_colorkey(target, expr_img, ex, ey)
 
         buf_painter = QPainter(target)
         buf_painter.setPen(Qt.GlobalColor.white)

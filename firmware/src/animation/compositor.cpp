@@ -1,9 +1,10 @@
 #include "compositor.h"
 
 #include "assets/asset_registry.h"
+#include "renderer/renderer.hpp"
 
 void Compositor::blitSprite(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
-                            const char *spriteId, int x, int y) {
+                            const char *spriteId, int x, int y, bool colorKey) {
   const SpriteMeta *meta = loader.findSprite(spriteId);
   if (!meta) {
     return;
@@ -14,7 +15,11 @@ void Compositor::blitSprite(IRenderer &renderer, PackLoader &loader, SpriteCache
   }
   int drawX = x - meta->width / 2;
   int drawY = y;
-  renderer.blitRGB565(pixels, drawX, drawY, meta->width, meta->height);
+  if (colorKey) {
+    renderer.blitRGB565ColorKey(pixels, drawX, drawY, meta->width, meta->height, kSpriteColorKey);
+  } else {
+    renderer.blitRGB565(pixels, drawX, drawY, meta->width, meta->height);
+  }
 }
 
 void Compositor::render(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
@@ -36,7 +41,7 @@ void Compositor::render(IRenderer &renderer, PackLoader &loader, SpriteCache &ca
   }
 
   if (bodySpriteId && bodySpriteId[0]) {
-    blitSprite(renderer, loader, cache, bodySpriteId, anchorX, anchorY);
+    blitSprite(renderer, loader, cache, bodySpriteId, anchorX, anchorY, false);
   }
 
   if (animationLabel && animationLabel[0]) {

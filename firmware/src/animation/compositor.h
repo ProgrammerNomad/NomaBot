@@ -13,5 +13,5 @@ public:
               const char *messageText, const char *animationLabel);
 
   void blitSprite(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
-                  const char *spriteId, int x, int y);
+                  const char *spriteId, int x, int y, bool colorKey = false);
 };

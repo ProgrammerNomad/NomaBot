@@ -58,6 +58,18 @@ def test_scene_diagnostics() -> None:
     assert diag.render_objects == 4
 
 
+def test_expression_anchor_relative_to_body() -> None:
+    state = RenderState(
+        body_sprite_id="body_idle_01",
+        background_sprite_id="bg_office",
+    )
+    scene = SceneBuilder.build(state, anchor_x=85, anchor_y=80, expression_dx=0, expression_dy=24)
+    assert scene.character.x == 85
+    assert scene.character.y == 80
+    assert scene.expression.x == 85
+    assert scene.expression.y == 104
+
+
 def test_dirty_character_marks_character_and_expression() -> None:
     state = RenderState(body_sprite_id="body_idle_01", background_sprite_id="bg_office")
     scene = SceneBuilder.build(state, dirty=DirtyFlags.CHARACTER)

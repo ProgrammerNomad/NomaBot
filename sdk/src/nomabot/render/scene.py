@@ -134,6 +134,8 @@ class SceneBuilder:
         default_background: str = "bg_office",
         anchor_x: int = 85,
         anchor_y: int = 80,
+        expression_dx: int = 0,
+        expression_dy: int = 24,
         expressions: dict[str, str] | None = None,
         dirty: DirtyFlags = DirtyFlags.FULL,
     ) -> Scene:
@@ -163,8 +165,8 @@ class SceneBuilder:
         scene.expression = SceneNode(
             id=face_sprite,
             sprite_id=face_sprite,
-            x=anchor_x,
-            y=anchor_y - 8,
+            x=anchor_x + expression_dx,
+            y=anchor_y + expression_dy,
             z=SCENE_Z_EXPRESSION,
             visible=bool(face_sprite),
         )

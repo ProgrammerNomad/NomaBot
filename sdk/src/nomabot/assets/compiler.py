@@ -55,10 +55,26 @@ def _human_bytes(n: int) -> str:
     return f"{mb:.1f}MB"
 
 
-def _png_to_rgb565(path: Path) -> bytes:
+# RGB565 magenta colorkey for transparent sprite pixels (matches firmware kSpriteColorKey).
+SPRITE_COLORKEY = 0xF81F
+
+
+def _png_to_rgb565(path: Path, *, use_colorkey: bool = False) -> bytes:
     if Image is None:
         raise RuntimeError("Pillow required for asset compilation: uv add pillow --package nomabot")
-    img = Image.open(path).convert("RGB")
+    img = Image.open(path)
+    if use_colorkey and (
+        img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info)
+    ):
+        img = img.convert("RGBA")
+        pixels = []
+        for r, g, b, a in img.get_flattened_data():
+            if a < 128:
+                pixels.append(struct.pack("<H", SPRITE_COLORKEY))
+            else:
+                rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
+                pixels.append(struct.pack("<H", rgb565))
+        return b"".join(pixels)
     pixels = []
     for r, g, b in img.convert("RGB").get_flattened_data():
         rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
@@ -97,7 +113,8 @@ def compile_pack(source: Path, output: Path, profile_id: str) -> dict:
             out_rel = rel.with_suffix(".bin")
             out_bin = sprites_out / out_rel
             out_bin.parent.mkdir(parents=True, exist_ok=True)
-            data = _png_to_rgb565(png)
+            use_colorkey = rel.parts and rel.parts[0] == "face"
+            data = _png_to_rgb565(png, use_colorkey=use_colorkey)
             out_bin.write_bytes(data)
             if Image:
                 w, h = Image.open(png).size

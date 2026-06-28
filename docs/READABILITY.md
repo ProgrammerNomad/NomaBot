@@ -45,7 +45,17 @@ Idle          Thinking
 
 ## Home position
 
-Head anchor: **(85, 80)**. All behaviors return to the same standing silhouette at this point so NomaBot feels like he lives at the desk.
+Body anchor: **(85, 80)**. Expression sits at **body + (0, 24)** (Phase B). All behaviors return to the same standing silhouette at the body anchor.
+
+## Video test (60 seconds)
+
+After sprite or anchor changes, record **60 seconds** of autonomous behavior and review the recording (catches issues live viewing misses):
+
+- Did blink register?
+- Did thinking head tilt read?
+- Did typing feel different from idle?
+- One visor, one set of eyes — no black box around expression
+- Any moment of "why is he alive?" (good) vs "what is that glitch?" (bad)
 
 ## Device iteration loop
 
@@ -68,4 +78,4 @@ Before expanding to full bible / apartment / 15+ behaviors, v0 must pass on hard
 - Standing, typing, thinking, blink distinct at 1 m with HUD hidden
 - `diagnostics` shows `clip` and `body_sprite_id` changing with behavior
 
-See [18_BUILD.md](./18_BUILD.md) and [LIVING_NOMA_SPEC.md](./LIVING_NOMA_SPEC.md).
+See [18_BUILD.md](./18_BUILD.md), [LIVING_NOMA_SPEC.md](./LIVING_NOMA_SPEC.md), and iteration log [PHASE_B_NOTES.md](./PHASE_B_NOTES.md).

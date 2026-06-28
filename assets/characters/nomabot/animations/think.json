@@ -5,6 +5,10 @@
     {
       "sprite": "body_think",
       "duration_ms": 450
+    },
+    {
+      "sprite": "body_think",
+      "duration_ms": 450
     }
   ]
 }

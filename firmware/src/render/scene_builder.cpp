@@ -80,8 +80,8 @@ Scene SceneBuilder::build(const RenderState &state, PackLoader &loader, DirtyFla
   const char *faceSprite = loader.expressionForEmotion(emotion);
   scene.expression.id = faceSprite;
   scene.expression.spriteId = faceSprite;
-  scene.expression.x = loader.anchorX();
-  scene.expression.y = loader.anchorY() - 8;
+  scene.expression.x = loader.expressionAnchorX();
+  scene.expression.y = loader.expressionAnchorY();
   scene.expression.z = kSceneZExpression;
   scene.expression.visible = faceSprite && faceSprite[0];
 

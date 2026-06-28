@@ -21,37 +21,20 @@ def engine() -> BehaviorEngine:
 
 def test_activity_change_picks_coding_behavior(engine: BehaviorEngine) -> None:
     engine.set_activity("coding")
-    assert engine.behavior_id in {"typing", "coffee", "think", "stretch", "smile"}
+    assert engine.behavior_id in {"typing", "think"}
 
 
 def test_frustrated_emotion_overrides_coding_table(engine: BehaviorEngine) -> None:
     engine.set_activity("coding")
     engine.set_emotion("frustrated")
-    assert engine.behavior_id in {"think", "sigh", "coffee", "typing_slow"}
+    assert engine.behavior_id in {"think", "typing_slow"}
 
 
-def test_coffee_requires_low_energy_without_coffee_love(engine: BehaviorEngine) -> None:
-    engine.personality.coffee_love = 30
-    engine.runtime.coffee_love = 30
-    engine.runtime.energy = 80
-    engine.set_activity("coding")
-    picks = {engine.pick_behavior(force=True) for _ in range(30)}
-    assert "coffee" not in picks
-
-
-def test_coffee_love_boosts_coffee_eligibility(engine: BehaviorEngine) -> None:
-    engine.personality.coffee_love = 90
-    engine.runtime.coffee_love = 90
-    engine.set_activity("coding")
-    picks = {engine.pick_behavior(force=True) for _ in range(200)}
-    assert "coffee" in picks
-
-
-def test_personality_scales_smile_weight(engine: BehaviorEngine) -> None:
+def test_sleepy_idle_prefers_blink(engine: BehaviorEngine) -> None:
     engine.set_activity("idle")
-    engine.set_emotion("happy")
-    picks = {engine.pick_behavior(force=True) for _ in range(50)}
-    assert "smile" in picks
+    engine.set_emotion("sleepy")
+    picks = {engine.pick_behavior(force=True) for _ in range(30)}
+    assert picks <= {"blink_slow", "breathing"}
 
 
 def test_set_activity_command_in_runtime_path() -> None:

@@ -81,9 +81,9 @@ def _draw_apartment_v1(draw: ImageDraw.ImageDraw) -> None:
 
 
 def _draw_helmet(draw: ImageDraw.ImageDraw, ox: int, oy: int, *, tilt: int = 0) -> None:
-    """Helmet with optional head tilt (pixels right = thinking)."""
+    """Helmet with optional head tilt (pixels right = thinking). Phase B: +1px radius for 1m read."""
     hx = ox + tilt
-    draw.ellipse([hx - 20, oy - 18, hx + 20, oy + 14], fill=C["helmet"], outline=C["outline"], width=2)
+    draw.ellipse([hx - 21, oy - 19, hx + 21, oy + 14], fill=C["helmet"], outline=C["outline"], width=2)
     draw.rectangle([hx - 16, oy + 2, hx + 16, oy + 10], fill=C["visor"])
     draw.ellipse([hx - 6, oy - 8, hx + 6, oy + 4], fill=C["gold"], outline=C["outline"], width=1)
 
@@ -92,7 +92,7 @@ def _draw_robot_body(draw: ImageDraw.ImageDraw, ox: int, oy: int, pose: str) -> 
     """Draw NomaBot at head anchor (ox, oy). Silhouette-first poses for 170x320 LCD."""
     tilt = 0
     if pose == "think":
-        tilt = 8
+        tilt = 11
     elif pose == "blink":
         tilt = 0
 
@@ -103,13 +103,14 @@ def _draw_robot_body(draw: ImageDraw.ImageDraw, ox: int, oy: int, pose: str) -> 
     _draw_helmet(draw, ox, oy, tilt=tilt)
 
     if pose in ("typing", "coding"):
-        draw.line([ox - 18, oy + 22, ox - 34, oy + 38], fill=C["body_d"], width=5)
-        draw.line([ox + 18, oy + 22, ox + 34, oy + 38], fill=C["body_d"], width=5)
-        draw.line([ox - 34, oy + 38, ox - 28, oy + 42], fill=C["outline"], width=2)
-        draw.line([ox + 34, oy + 38, ox + 28, oy + 42], fill=C["outline"], width=2)
+        # Phase B: arms forward/down — clearly distinct from standing at 1m
+        draw.line([ox - 18, oy + 20, ox - 36, oy + 42], fill=C["body_d"], width=5)
+        draw.line([ox + 18, oy + 20, ox + 36, oy + 42], fill=C["body_d"], width=5)
+        draw.line([ox - 36, oy + 42, ox - 30, oy + 46], fill=C["outline"], width=2)
+        draw.line([ox + 36, oy + 42, ox + 30, oy + 46], fill=C["outline"], width=2)
     elif pose == "think":
         draw.line([ox - 18, oy + 22, ox - 28, oy + 36], fill=C["body_d"], width=4)
-        draw.line([ox + 18, oy + 18, ox + 32, oy + 6], fill=C["body_d"], width=5)
+        draw.line([ox + 18, oy + 16, ox + 34, oy + 2], fill=C["body_d"], width=5)
     elif pose == "coffee":
         draw.line([ox + 18, oy + 20, ox + 32, oy + 28], fill=C["body_d"], width=4)
         draw.rectangle([ox + 30, oy + 22, ox + 42, oy + 34], fill=C["mug"], outline=C["outline"], width=1)
@@ -134,12 +135,13 @@ def _draw_robot_body(draw: ImageDraw.ImageDraw, ox: int, oy: int, pose: str) -> 
         draw.line([ox - 18, oy + 14, ox - 34, oy + 0], fill=C["body_d"], width=5)
         draw.line([ox + 18, oy + 14, ox + 34, oy + 0], fill=C["body_d"], width=5)
     else:
-        draw.line([ox - 18, oy + 22, ox - 26, oy + 38], fill=C["body_d"], width=4)
-        draw.line([ox + 18, oy + 22, ox + 26, oy + 36], fill=C["body_d"], width=4)
+        # Standing / idle — arms hang lower than typing
+        draw.line([ox - 18, oy + 24, ox - 28, oy + 42], fill=C["body_d"], width=4)
+        draw.line([ox + 18, oy + 24, ox + 28, oy + 42], fill=C["body_d"], width=4)
 
     if pose == "blink":
         hx = ox + tilt
-        draw.rectangle([hx - 14, oy + 2, hx + 14, oy + 10], fill=C["visor"])
+        draw.rectangle([hx - 16, oy + 2, hx + 16, oy + 10], fill=C["visor"])
 
 
 def body_sprite(pose: str, name: str) -> None:
@@ -150,18 +152,28 @@ def body_sprite(pose: str, name: str) -> None:
     img.save(path)
 
 
-def _draw_face(draw: ImageDraw.ImageDraw, expression: str) -> None:
-    cx, cy = 14, 12
-    draw.ellipse([2, 2, 26, 22], fill=C["visor"])
+def _draw_expression(draw: ImageDraw.ImageDraw, expression: str) -> None:
+    """Expression layer — eyes, eyebrows, mouth only (no visor/helmet)."""
+    # Phase B: cy aligns eye row to visor center when dy=24 (body top anchor draw)
+    cx, cy = 14, 11
+    if expression in ("angry", "frustrated"):
+        draw.line([4, cy - 5, 10, cy - 3], fill=C["eye"], width=2)
+        draw.line([24, cy - 5, 18, cy - 3], fill=C["eye"], width=2)
+    elif expression in ("thinking", "confused"):
+        draw.line([6, cy - 4, 11, cy - 6], fill=C["eye"], width=2)
+        draw.line([22, cy - 4, 17, cy - 6], fill=C["eye"], width=2)
+
     if expression in ("sleepy", "yawning"):
-        draw.line([6, cy + 2, 22, cy + 2], fill=C["eye"], width=2)
+        draw.line([6, cy, 22, cy], fill=C["eye"], width=2)
     elif expression == "blink":
-        draw.line([5, cy, 23, cy], fill=C["eye"], width=3)
+        draw.line([5, cy, 12, cy], fill=C["eye"], width=3)
+        draw.line([16, cy, 23, cy], fill=C["eye"], width=3)
     else:
         draw.ellipse([5, cy - 3, 11, cy + 3], fill=C["eye"])
         draw.point([7, cy - 2], fill=C["eye_hi"])
         draw.ellipse([17, cy - 3, 23, cy + 3], fill=C["eye"])
         draw.point([19, cy - 2], fill=C["eye_hi"])
+
     mouth_y = cy + 8
     if expression in ("happy", "smile", "proud"):
         draw.arc([7, mouth_y - 2, 21, mouth_y + 8], 0, 180, fill=C["eye"], width=2)
@@ -175,12 +187,17 @@ def _draw_face(draw: ImageDraw.ImageDraw, expression: str) -> None:
         draw.line([9, mouth_y + 4, 19, mouth_y + 4], fill=C["eye"], width=2)
 
 
-def face_sprite(expression: str) -> None:
+def expression_sprite(expression: str) -> None:
+    """Write expression overlay PNG (sprite id face_* for pack compat)."""
     img = Image.new("RGBA", (28, 24), (0, 0, 0, 0))
-    _draw_face(ImageDraw.Draw(img), expression)
+    _draw_expression(ImageDraw.Draw(img), expression)
     path = FACE_DIR / f"face_{expression}.png"
     path.parent.mkdir(parents=True, exist_ok=True)
     img.save(path)
+
+
+def face_sprite(expression: str) -> None:
+    expression_sprite(expression)
 
 
 def write_clips(clips: dict[str, list[str]]) -> None:
@@ -191,6 +208,20 @@ def write_clips(clips: dict[str, list[str]]) -> None:
             json.dumps({"id": clip_id, "loop": True, "frames": frames}, indent=2),
             encoding="utf-8",
         )
+
+
+def _prune_prototype_assets(keep_bodies: set[str], keep_faces: set[str], keep_clips: set[str]) -> None:
+    """Remove stale full-pack PNGs/clips so compile_pack only ships prototype v0."""
+    for png in BODY_DIR.glob("*.png"):
+        if png.stem not in keep_bodies:
+            png.unlink()
+    for png in FACE_DIR.glob("*.png"):
+        if png.stem not in keep_faces:
+            png.unlink()
+    if ANIM_DIR.exists():
+        for clip_json in ANIM_DIR.glob("*.json"):
+            if clip_json.stem not in keep_clips:
+                clip_json.unlink()
 
 
 def draw_bg(minimal: bool) -> Image.Image:
@@ -221,6 +252,19 @@ def copy_prototype_refs() -> None:
 
 def generate_prototype_v0() -> None:
     """Prototype Pack v0 — seven assets, four clips, minimal bg."""
+    keep_bodies = {
+        "body_stand",
+        "body_idle_01",
+        "body_idle_02",
+        "body_typing_01",
+        "body_typing_02",
+        "body_think",
+        "body_blink_01",
+    }
+    keep_faces = {"face_neutral", "face_happy", "face_thinking", "face_blink"}
+    keep_clips = {"idle", "blink", "coding", "think"}
+    _prune_prototype_assets(keep_bodies, keep_faces, keep_clips)
+
     BODY_DIR.mkdir(parents=True, exist_ok=True)
     FACE_DIR.mkdir(parents=True, exist_ok=True)
     BG_DIR.mkdir(parents=True, exist_ok=True)

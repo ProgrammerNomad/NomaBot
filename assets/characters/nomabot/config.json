@@ -7,8 +7,10 @@
     "default_background": "office"
   },
   "anchors": {
-    "hands": { "x": 85, "y": 200 },
+    "body": { "x": 85, "y": 80 },
     "head": { "x": 85, "y": 80 },
+    "expression": { "dx": 0, "dy": 24 },
+    "hands": { "x": 85, "y": 200 },
     "desk": { "x": 85, "y": 280 }
   },
   "default_animation": "idle",

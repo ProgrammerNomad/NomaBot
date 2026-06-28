@@ -184,9 +184,19 @@ bool PackLoader::loadConfig() {
     _defaultBgSprite = "bg_office";
   }
 
-  if (doc["anchors"]["head"].is<JsonObject>()) {
+  if (doc["anchors"]["body"].is<JsonObject>()) {
+    _anchorX = doc["anchors"]["body"]["x"] | 85;
+    _anchorY = doc["anchors"]["body"]["y"] | 80;
+  } else if (doc["anchors"]["head"].is<JsonObject>()) {
     _anchorX = doc["anchors"]["head"]["x"] | 85;
     _anchorY = doc["anchors"]["head"]["y"] | 80;
+  }
+
+  _expressionDx = 0;
+  _expressionDy = 24;
+  if (doc["anchors"]["expression"].is<JsonObject>()) {
+    _expressionDx = doc["anchors"]["expression"]["dx"] | 0;
+    _expressionDy = doc["anchors"]["expression"]["dy"] | 24;
   }
 
   _expressions.clear();
