@@ -1,26 +1,30 @@
 # NomaBot Behavior Specification
 
-> Milestone 3.5 — frozen architecture. Desktop sends world context; firmware picks moment-to-moment behaviors.
+> Milestone 4 (v0.4.0) — Companion Brain. Desktop sends world context only; firmware Brain picks behaviors, goals, habits, and dreams.
 
 ## Core formula
 
 ```text
-LifeMode + Activity + Emotion  →  Behavior  →  Renderer
-         (+ personality, + conditions, + memory)
+LifeMode + Activity + Emotion + Season
+         + Goal (with progress)
+         + ShortMemory + Energy + Boredom + Curiosity
+         + Personality (traits + likes)
+    →  Behavior  →  TextRenderer
 ```
 
 ## Life modes
 
-| Mode | Activities | Feel |
-|------|------------|------|
-| `work` | idle, coding, meetings, debugging | Focused, coffee, celebrate/sigh |
-| `relax` | idle, music, reading, look_outside | Slow, wave, smile |
-| `travel` | pack, helmet, map, ride | Energetic, countdown |
-| `night` | wind_down, sleep, dream | Dim, yawn, slow blink |
+| Mode | When (desktop) | Feel |
+|------|----------------|------|
+| `work` | Weekday daytime, IDE active | Focus, goals with progress |
+| `home` | Evening at desk, not coding | Tea, look outside, wind down |
+| `travel` | User away / calendar stub | Helmet, map, bike, countdown |
+| `night` | Late hours | Yawn, dreams, sleep sequences |
+| `vacation` | Manual / weekend stub | Slow, playful, curious |
 
-Week 1 ships `work` only. Desktop sets life mode from time/context (Week 3).
+Desktop `LifeModeService` sets mode from time of day. Firmware never picks life mode.
 
-## Activities (Week 1)
+## Activities
 
 | Activity | When (desktop) | Default behaviors |
 |----------|----------------|-------------------|
@@ -30,108 +34,75 @@ Week 1 ships `work` only. Desktop sets life mode from time/context (Week 3).
 
 ## Emotions
 
-Emotions modify behavior weight tables. They decay toward `neutral` after ~5 minutes.
+Emotions modify behavior weight tables and decay toward `neutral` (YAML `emotion_meta.duration_sec`).
 
 | Emotion | Set by desktop when | Effect |
 |---------|---------------------|--------|
 | `neutral` | Default | Base activity table |
 | `happy` | Build success, good news | More smile, wave, celebrate |
-| `frustrated` | Build failed, errors | think, sigh, coffee, typing_slow |
+| `frustrated` | Build failed, errors | recover sequence: think → sigh → coffee |
 | `sleepy` | Late night | yawn, blink_slow, sleep |
-| `excited` | Deploy, milestone | celebrate, jump, wave |
+| `excited` | Deploy, milestone | celebrate |
 
-### Emotion × activity examples
+## Brain internals (firmware + Python mirror)
 
-**Coding + happy:** typing, typing, smile, coffee
+| Subsystem | Location | Notes |
+|-----------|----------|-------|
+| Energy | Firmware Brain | Decays during coding; coffee/stretch/sleep restore |
+| Boredom | Firmware Brain | Repeating behavior increases; boosts break behaviors |
+| Curiosity | Firmware Brain | Autonomous "I wonder..." moments |
+| Short memory | Firmware Brain | last coffee, last sleep; daily reset |
+| Goals | Firmware Brain | focus 0→100→celebrate; recover on frustrated |
+| Habits | YAML + desktop scheduler | morning, tea_break, evening, dream sequences |
+| Long memory | Desktop SQLite | days_together, user_name; friendship messages |
 
-**Coding + frustrated:** think, sigh, coffee, typing_slow
+## Protocol commands (world context only)
 
-**Idle + happy:** wave, look_around, smile
+| Command | Params | Desktop sends |
+|---------|--------|---------------|
+| `set_activity` | `activity` | ActivityService |
+| `set_emotion` | `emotion` | BuildEventService, dev panel |
+| `set_life_mode` | `mode` | LifeModeService |
+| `set_season` | `season` | SeasonService |
+| `trigger_habit` | `habit` | DailyRoutineService, scheduler |
+| `show_message` | `text`, `duration_ms` | FriendshipService, scheduler |
+| `play_animation` | `animation` | Override only (bypasses Brain until next activity) |
 
-**Idle + sleepy:** yawn, blink_slow, sleep
+Never send behavior IDs from desktop.
 
-## Behavior catalog
+## Data pipeline
 
-| ID | Label | Clip (Week 4) |
-|----|-------|---------------|
-| breathing | Breathing... | idle |
-| blink | Blink | idle |
-| look_around | Look around | idle |
-| typing | Typing... | coding |
-| typing_slow | Typing slowly... | coding |
-| think | Thinking... | coding |
-| coffee | Coffee | coffee |
-| stretch | Stretch | idle |
-| smile | Smile | idle |
-| sigh | Sigh... | idle |
-| wave | Wave | idle |
-| yawn | Yawn... | sleep |
-| blink_slow | Blink slowly... | sleep |
-| sleep | Sleep | sleep |
-| dream | Dream... | sleep |
-| celebrate | Celebrate! | celebrate |
+1. `behavior.yaml` + `personality.yaml` → `behavior.json` (SDK compiler)
+2. Pack compile copies `behavior.json` to LittleFS
+3. Firmware `Brain.loadFromPackPath()` loads personality from JSON; behavior tables from embedded defaults (YAML drives compiler tests; tables synced via `behavior_defaults`)
 
-## Transitions
-
-1. **Activity change** — pick new behavior immediately from new activity table (respecting emotion).
-2. **Behavior timer** — when duration elapses, weighted-random pick next behavior (exclude current if possible).
-3. **Emotion change** — re-pick behavior from emotion table on next tick.
-4. **Explicit override** — `play_animation` bypasses engine until next `set_activity`.
-
-## Personality traits
-
-Traits scale behavior weights (0–100). Same firmware, different YAML per character.
-
-| Trait | Effect |
-|-------|--------|
-| `energy` | Boosts active behaviors when high |
-| `coffee_love` | Boosts `coffee` weight |
-| `curiosity` | Boosts `look_around`, `think` |
-| `sleepiness` | Boosts `yawn`, `sleep` |
-| `optimism` | Boosts `smile`, `celebrate` |
-| `patience` | Reduces `sigh`, `frustrated` decay |
-| `playfulness` | Boosts `wave`, playful idle behaviors |
-
-## Conditions (Week 2)
-
-Evaluated against runtime state before a behavior is eligible:
-
-| Behavior | Condition |
-|----------|-----------|
-| `coffee` | `energy < 40` OR always if `coffee_love >= 50` |
-| `sleep` | `idle_minutes > 10` |
-
-## Memory (Week 3)
-
-Tiny runtime store — no firmware changes to add fields:
-
-- `last_coffee` — timestamp
-- `last_build` — `success` | `failed`
-- `last_sleep` — timestamp
-
-## Desktop command contract
-
-Desktop sends **world context only**:
-
-```json
-{ "cmd": "set_life_mode", "params": { "mode": "work" } }
-{ "cmd": "set_activity",  "params": { "activity": "coding" } }
-{ "cmd": "set_emotion",   "params": { "emotion": "frustrated" } }
-{ "cmd": "show_message",  "params": { "text": "Build failed" } }
-```
-
-Desktop never sends `typing`, `coffee`, or other micro-behaviors.
-
-## Diagnostics
+## Diagnostics payload
 
 ```json
 {
   "life_mode": "work",
   "activity": "coding",
-  "emotion": "frustrated",
+  "emotion": "happy",
+  "energy": 72,
+  "boredom": 15,
+  "goal": "focus",
+  "goal_progress": 60,
   "behavior": "typing",
   "render_mode": "text",
-  "time_in_behavior_sec": 8,
-  "next_behavior": "coffee"
+  "short_memory": { "last_coffee_min_ago": 45 }
 }
 ```
+
+## Text renderer layout
+
+```text
+WORK · CODING
+happy · focus · 60%
+Energy: 72
+Typing...
+Build failed          ← message overlay, auto-clear 5s
+```
+
+## Architecture freeze (post-M4)
+
+No new Brain subsystems after v0.4.0. Tune YAML, swap renderer (v0.5 sprites), add desktop integrations (v0.8 plugins).

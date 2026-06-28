@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 MIGRATIONS: dict[int, list[str]] = {
     1: [
@@ -46,6 +46,14 @@ MIGRATIONS: dict[int, list[str]] = {
         )
         """,
     ],
+    2: [
+        """
+        CREATE TABLE IF NOT EXISTS long_memory (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+        """,
+    ],
 }
 
 
@@ -54,8 +62,9 @@ def migrate(conn: sqlite3.Connection) -> None:
         "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'"
     ).fetchone()
     if row is None:
-        for stmt in MIGRATIONS[1]:
-            conn.execute(stmt)
+        for v in range(1, SCHEMA_VERSION + 1):
+            for stmt in MIGRATIONS.get(v, []):
+                conn.execute(stmt)
         conn.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
         conn.commit()
         return

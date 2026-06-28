@@ -157,9 +157,60 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 
 ---
 
-## Milestone 4 - Plugins & Themes
+## Milestone 3.5 - Text Brain
 
-**Goal:** Integrations and visual themes via SDK.
+**Goal:** Text-first autonomous companion; desktop sends world context only.
+
+**Target version:** `0.3.1` (shipped)
+
+---
+
+## Milestone 4 - Companion Brain
+
+**Goal:** Unified Brain OS on firmware — personality, emotion decay, energy, boredom, curiosity, goals with progress, habits, dreams, daily routine, friendship (long memory on desktop). Text renderer only.
+
+| Deliverable | Details |
+|-------------|---------|
+| `behavior.json` compiler | YAML → device pack |
+| Unified `Brain` module | Firmware + Python mirror |
+| Message queue | Priority overlay, `duration_ms` auto-clear |
+| Desktop context services | LifeMode, DailyRoutine, Season, BuildEvent, Friendship |
+| Emulator | Text layout + Brain tick sync |
+| Diagnostics | Full brain state JSON |
+
+**Exit criteria**
+
+- [ ] Full day simulation via dev panel
+- [ ] Build fail → frustrated → recover sequence
+- [ ] Day 100 welcome message from SQLite long memory
+
+**Target version:** `0.4.0`
+
+---
+
+## Milestone 5 - Sprite Renderer
+
+**Goal:** Swap text renderer for sprites; zero Brain changes.
+
+**Target version:** `0.5.0`
+
+---
+
+## Milestone 6 - Character Packs
+
+**Target version:** `0.6.0`
+
+---
+
+## Milestone 7 - Animation Studio
+
+**Target version:** `0.7.0`
+
+---
+
+## Milestone 8 - Plugins & Themes
+
+**Goal:** Integrations and visual themes via SDK (formerly Milestone 4).
 
 | Deliverable | Details |
 |-------------|---------|
@@ -175,13 +226,13 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 - [ ] Third-party sample plugin via `--plugin-path`
 - [ ] Theme changes bubble/notification styling on device
 
-**Target version:** `0.4.0`
+**Target version:** `0.8.0`
 
 ---
 
-## Milestone 5 - Wireless & Asset Streaming
+## Milestone 9 - Wireless & Asset Streaming
 
-**Goal:** Untether USB; resumable large pack upload.
+**Goal:** Untether USB; resumable large pack upload (formerly Milestone 5).
 
 | Deliverable | Details |
 |-------------|---------|
@@ -196,13 +247,13 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 - [ ] 2 MB pack uploads with simulated disconnect + resume
 - [ ] Day-long Wi-Fi operation on reference hardware
 
-**Target version:** `0.5.0`
+**Target version:** `0.9.0`
 
 ---
 
-## Milestone 6 - AI
+## Milestone 10 - AI
 
-**Goal:** Optional providers; Scheduler + AI smart reminders.
+**Goal:** Optional providers; Scheduler + AI smart reminders (formerly Milestone 6).
 
 | Deliverable | Details |
 |-------------|---------|
@@ -216,13 +267,13 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 
 - [ ] Ollama offline path; no keys on device
 
-**Target version:** `0.6.0`
+**Target version:** `0.10.0`
 
 ---
 
-## Milestone 7 - Platform 1.0
+## Milestone 11 - Platform 1.0
 
-**Goal:** Ecosystem-ready; four repos; catalog-ready metadata.
+**Goal:** Ecosystem-ready; four repos; catalog-ready metadata (formerly Milestone 7).
 
 | Deliverable | Details |
 |-------------|---------|
@@ -237,7 +288,7 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 **Exit criteria**
 
 - [ ] External contributor ships pack + plugin using SDK only
-- [ ] All `docs/` current; split repos tagging independently
+- [ ] All `docs/` current; split repos tagging independently |
 
 **Target version:** `1.0.0`
 
@@ -262,22 +313,24 @@ flowchart LR
     M1[M1 Core]
     M15[M1.5 DevEx]
     M2[M2 Noma Core]
-    M3[M3 Assets + Characters]
-    M4[M4 Plugins + Themes]
-    M5[M5 Wireless + Stream]
-    M6[M6 AI]
-    M7[M7 Platform 1.0]
+    M3[M3 Assets]
+    M35[M3.5 Text Brain]
+    M4[M4 Companion Brain]
+    M5[M5 Sprites]
+    M8[M8 Plugins]
+    M9[M9 Wireless]
+    M11[M11 Platform 1.0]
 
     M1 --> M15
     M15 --> M2
     M2 --> M3
-    M3 --> M4
-    M2 --> M5
-    M3 --> M5
-    M4 --> M6
-    M4 --> M7
-    M5 --> M7
-    M6 --> M7
+    M3 --> M35
+    M35 --> M4
+    M4 --> M5
+    M3 --> M8
+    M2 --> M9
+    M8 --> M11
+    M9 --> M11
 ```
 
 ---

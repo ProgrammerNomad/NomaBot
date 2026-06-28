@@ -13,6 +13,8 @@ try:
 except ImportError:
     Image = None  # type: ignore
 
+from nomabot.assets.behavior_compiler import write_behavior_json
+
 
 def _load_profile(profile_id: str) -> dict:
     root = Path(__file__).resolve().parents[4]
@@ -116,6 +118,9 @@ def compile_pack(source: Path, output: Path, profile_id: str) -> dict:
         for anim_file in (output / "animations").glob("*.json"):
             anim = json.loads(anim_file.read_text(encoding="utf-8"))
             frame_count += len(anim.get("frames", []))
+
+    if (source / "behavior.yaml").exists():
+        write_behavior_json(source, output)
 
     pack_id = metadata.get("id", source.name)
     version_str = metadata.get("version", "0.3.0")

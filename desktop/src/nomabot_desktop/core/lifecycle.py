@@ -22,9 +22,14 @@ from nomabot_desktop.core.events import StateRequest
 from nomabot_desktop.core.logging_config import setup_logging
 from nomabot_desktop.core.state_manager import BotState, StateManager
 from nomabot_desktop.services.activity import ActivityService
+from nomabot_desktop.services.build_events import BuildEventService
 from nomabot_desktop.services.character import CharacterService
+from nomabot_desktop.services.daily_routine import DailyRoutineService
 from nomabot_desktop.services.firmware_compat import log_firmware_issues
+from nomabot_desktop.services.friendship import FriendshipService
+from nomabot_desktop.services.life_mode import LifeModeService
 from nomabot_desktop.services.scheduler import SchedulerService
+from nomabot_desktop.services.season import SeasonService
 from nomabot_desktop.storage.service import DeviceRow
 from nomabot_desktop.transport import EmulatorState
 from nomabot_desktop.ui.emulator import EmulatorWindow
@@ -187,6 +192,15 @@ def _sync_emulator_state(ctx: AppContext, state: BotState) -> None:
     ctx.emu_state.life_mode = state.life_mode
     ctx.emu_state.animation = state.animation
     ctx.emu_state.message = state.message_text
+    ctx.emu_state.render_mode = "text"
+
+
+def _toggle_mute(ctx: AppContext, tray: AppTray | None, muted: bool) -> None:
+    ctx.config.muted = muted
+    if ctx.state_manager:
+        ctx.state_manager.set_muted(muted)
+    if tray:
+        tray.set_muted(muted)
 
 
 def _build_dev_window(ctx: AppContext) -> QMainWindow:
@@ -213,6 +227,21 @@ def _build_dev_window(ctx: AppContext) -> QMainWindow:
     btn_frustrated.clicked.connect(lambda: req("coding", emotion="frustrated"))
     btn_say = QPushButton('Say "Hello"')
     btn_say.clicked.connect(lambda: req("message_active", message_text="Hello"))
+    btn_home = QPushButton("Life mode: home")
+    btn_home.clicked.connect(lambda: req("idle", life_mode="home"))
+    btn_morning = QPushButton("Habit: morning")
+    btn_morning.clicked.connect(lambda: req("idle", habit="morning"))
+    btn_build_ok = QPushButton("Build OK")
+    btn_build_fail = QPushButton("Build fail")
+
+    from nomabot_desktop.services.build_events import BuildResult
+
+    btn_build_ok.clicked.connect(
+        lambda: ctx.bus.publish("build.result", BuildResult(success=True, message="Build OK"))
+    )
+    btn_build_fail.clicked.connect(
+        lambda: ctx.bus.publish("build.result", BuildResult(success=False, message="Build failed"))
+    )
 
     layout.addWidget(btn_idle)
     layout.addWidget(btn_coding)
@@ -220,8 +249,12 @@ def _build_dev_window(ctx: AppContext) -> QMainWindow:
     layout.addWidget(btn_happy)
     layout.addWidget(btn_frustrated)
     layout.addWidget(btn_say)
+    layout.addWidget(btn_home)
+    layout.addWidget(btn_morning)
+    layout.addWidget(btn_build_ok)
+    layout.addWidget(btn_build_fail)
     window.setCentralWidget(central)
-    window.resize(320, 280)
+    window.resize(320, 380)
     return window
 
 
@@ -234,7 +267,7 @@ def run_app(
     no_tray: bool = False,
 ) -> None:
     log_dir = setup_logging()
-    logger.info("NomaBot desktop 0.3.1 starting")
+    logger.info("NomaBot desktop 0.4.0 starting")
 
     ctx = create_context()
     ctx.log_dir = log_dir
@@ -286,6 +319,15 @@ def run_app(
     scheduler = SchedulerService(ctx.bus, ctx.storage)
     scheduler.start()
 
+    life_mode = LifeModeService(ctx.bus)
+    life_mode.start()
+    daily_routine = DailyRoutineService(ctx.bus)
+    daily_routine.start()
+    season = SeasonService(ctx.bus)
+    season.start()
+    BuildEventService(ctx.bus)
+    FriendshipService(ctx.bus, ctx.storage)
+
     activity = ActivityService(ctx.bus, ctx.config)
     if not no_activity:
         activity.start()
@@ -331,12 +373,8 @@ def run_app(
 
     activity.stop()
     scheduler.stop()
+    life_mode.stop()
+    daily_routine.stop()
+    season.stop()
     _schedule(ctx.transport_manager.disconnect_all()).result()
     ctx.storage.close()
-
-
-    def _toggle_mute(ctx: AppContext, tray: AppTray | None, muted: bool) -> None:
-        ctx.config.muted = muted
-        ctx.state_manager.set_muted(muted)  # type: ignore[union-attr]
-        if tray:
-            tray.set_muted(muted)

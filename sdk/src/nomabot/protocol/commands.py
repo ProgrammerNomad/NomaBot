@@ -47,6 +47,14 @@ class SetLifeModeParams(BaseModel):
     mode: str
 
 
+class TriggerHabitParams(BaseModel):
+    habit: str
+
+
+class SetSeasonParams(BaseModel):
+    season: str
+
+
 class PingParams(BaseModel):
     pass
 
@@ -74,6 +82,8 @@ COMMAND_MODELS: dict[str, type[BaseModel]] = {
     "set_activity": SetActivityParams,
     "set_emotion": SetEmotionParams,
     "set_life_mode": SetLifeModeParams,
+    "trigger_habit": TriggerHabitParams,
+    "set_season": SetSeasonParams,
     "load_character": LoadCharacterParams,
     "diagnostics": DiagnosticsParams,
 }

@@ -16,7 +16,7 @@ class MockTransport:
         self.sent_envelopes: list[Envelope] = []
         self._callback: Callable[[bytes], None] | None = None
         self._connected = False
-        self.firmware_version = "0.3.1"
+        self.firmware_version = "0.4.0"
         self.device_id = "mock-esp32"
         self.display_width = 170
         self.display_height = 320
@@ -77,6 +77,8 @@ class MockTransport:
                         "set_activity",
                         "set_emotion",
                         "set_life_mode",
+                        "trigger_habit",
+                        "set_season",
                         "load_character",
                         "diagnostics",
                     ],
@@ -118,6 +120,14 @@ class MockTransport:
         if cmd == "set_life_mode" and env.params:
             self.last_life_mode = env.params.get("mode")
             return build_response(env.id, "set_life_mode", data={"ok": True, "mode": self.last_life_mode})
+        if cmd == "trigger_habit" and env.params:
+            return build_response(
+                env.id, "trigger_habit", data={"ok": True, "habit": env.params.get("habit")}
+            )
+        if cmd == "set_season" and env.params:
+            return build_response(
+                env.id, "set_season", data={"ok": True, "season": env.params.get("season")}
+            )
         if cmd == "load_character" and env.params:
             self.last_character_id = env.params.get("character_id")
             return build_response(
@@ -149,6 +159,10 @@ class MockTransport:
                     "emotion": self.last_emotion,
                     "behavior": self.last_behavior,
                     "render_mode": self.render_mode,
+                    "energy": 72,
+                    "boredom": 15,
+                    "goal": "focus",
+                    "goal_progress": 60,
                     "time_in_behavior_sec": 8,
                     "next_behavior": self.next_behavior,
                     "animation": self.last_behavior,

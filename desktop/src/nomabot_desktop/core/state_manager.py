@@ -99,6 +99,36 @@ class StateManager:
                     animation=anim,
                 )
             )
+        elif payload.action == "SetEmotion":
+            emotion = payload.parameters.get("emotion", "neutral")
+            self._apply(
+                StateRequest(
+                    state=self._state.activity,
+                    priority=payload.priority,
+                    source=f"scheduler:{payload.job_id}",
+                    emotion=emotion,
+                )
+            )
+        elif payload.action == "SetLifeMode":
+            mode = payload.parameters.get("mode", "work")
+            self._apply(
+                StateRequest(
+                    state=self._state.activity,
+                    priority=payload.priority,
+                    source=f"scheduler:{payload.job_id}",
+                    life_mode=mode,
+                )
+            )
+        elif payload.action == "TriggerHabit":
+            habit = payload.parameters.get("habit", "")
+            self._apply(
+                StateRequest(
+                    state=self._state.activity,
+                    priority=payload.priority,
+                    source=f"scheduler:{payload.job_id}",
+                    habit=habit,
+                )
+            )
 
     def _apply(self, req: StateRequest) -> bool:
         self._state.name = req.state
@@ -138,6 +168,8 @@ class StateManager:
             activity=self._state.activity if req.state in ACTIVITY_STATES or req.activity else None,
             emotion=req.emotion,
             life_mode=req.life_mode,
+            habit=req.habit,
+            season=req.season,
             animation=req.animation,
         )
         if req.message_text:

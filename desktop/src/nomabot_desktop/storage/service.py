@@ -62,6 +62,20 @@ class StorageService:
         )
         self._conn.commit()
 
+    def get_long_memory(self, key: str, default: str | None = None) -> str | None:
+        row = self._conn.execute("SELECT value FROM long_memory WHERE key = ?", (key,)).fetchone()
+        return row["value"] if row else default
+
+    def set_long_memory(self, key: str, value: str) -> None:
+        self._conn.execute(
+            """
+            INSERT INTO long_memory (key, value) VALUES (?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            """,
+            (key, value),
+        )
+        self._conn.commit()
+
     def upsert_device(self, device: DeviceRow) -> None:
         self._conn.execute(
             """
@@ -149,7 +163,7 @@ class StorageService:
         existing = self.list_scheduler_jobs()
         if existing:
             return
-        self.upsert_scheduler_job(
+        defaults = [
             SchedulerJobRow(
                 job_id="test-reminder",
                 action="ShowMessage",
@@ -157,8 +171,18 @@ class StorageService:
                 interval_seconds=120,
                 priority="LOW",
                 enabled=True,
-            )
-        )
+            ),
+            SchedulerJobRow(
+                job_id="morning-habit",
+                action="TriggerHabit",
+                parameters={"habit": "morning"},
+                interval_seconds=86400,
+                priority="NORMAL",
+                enabled=False,
+            ),
+        ]
+        for job in defaults:
+            self.upsert_scheduler_job(job)
 
     @staticmethod
     def _row_to_device(row: sqlite3.Row) -> DeviceRow:

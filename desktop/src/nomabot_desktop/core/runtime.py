@@ -12,7 +12,9 @@ from nomabot.protocol.commands import (
     SetBackgroundParams,
     SetEmotionParams,
     SetLifeModeParams,
+    SetSeasonParams,
     ShowMessageParams,
+    TriggerHabitParams,
     build_command,
 )
 from nomabot.protocol.envelope import Envelope
@@ -35,6 +37,8 @@ class _MergedState:
     activity: str | None = None
     emotion: str | None = None
     life_mode: str | None = None
+    habit: str | None = None
+    season: str | None = None
     priority: Priority = Priority.BACKGROUND
 
 
@@ -82,6 +86,12 @@ class NomaRuntime:
         if request.life_mode and request.priority >= s.priority:
             s.life_mode = request.life_mode
             commands.append(build_command("set_life_mode", SetLifeModeParams(mode=request.life_mode)))
+
+        if request.habit and request.priority >= s.priority:
+            commands.append(build_command("trigger_habit", TriggerHabitParams(habit=request.habit)))
+
+        if request.season and request.priority >= s.priority:
+            commands.append(build_command("set_season", SetSeasonParams(season=request.season)))
 
         if request.animation and request.priority >= s.priority:
             s.animation = request.animation

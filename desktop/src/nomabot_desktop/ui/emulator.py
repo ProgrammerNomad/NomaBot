@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import struct
+from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QImage, QPainter
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
+from nomabot.brain import Brain
 from nomabot_desktop.core.asset_registry import AssetRegistry
 from nomabot_desktop.transport import EmulatorState
 
@@ -32,6 +34,10 @@ def _rgb565_to_qimage(data: bytes, width: int, height: int) -> QImage:
     return img
 
 
+def _behavior_yaml() -> Path:
+    return Path(__file__).resolve().parents[4] / "assets" / "characters" / "nomabot" / "behavior.yaml"
+
+
 class EmulatorCanvas(QWidget):
     def __init__(
         self,
@@ -42,20 +48,85 @@ class EmulatorCanvas(QWidget):
         super().__init__(parent)
         self._state = state
         self._assets = assets
+        self._brain = Brain.from_yaml(_behavior_yaml())
+        self._brain.set_life_mode(state.life_mode)
+        self._brain.set_activity(state.activity)
+        self._brain.set_emotion(state.emotion or "neutral")
         self.setFixedSize(state.width, state.height)
 
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._on_tick)
         self._timer.start(50)
 
+    def _sync_from_state(self) -> None:
+        if self._brain.life_mode != (self._state.life_mode or "work"):
+            self._brain.set_life_mode(self._state.life_mode or "work")
+        if self._brain.activity != (self._state.activity or "idle"):
+            self._brain.set_activity(self._state.activity or "idle")
+        if self._brain.emotion != (self._state.emotion or "neutral"):
+            self._brain.set_emotion(self._state.emotion or "neutral")
+        if self._state.season:
+            self._brain.set_season(self._state.season)
+
     def _on_tick(self) -> None:
-        self._state.advance_frame(self._assets)
+        self._sync_from_state()
+        self._brain.tick()
+        self._state.behavior = self._brain.behavior_id
+        self._state.behavior_label = self._brain.behavior_label
+        self._state.goal = self._brain.goal
+        self._state.goal_progress = self._brain.goal_progress
+        self._state.energy = self._brain.energy
+        self._state.curiosity_active = self._brain.curiosity_active
+        if self._state.render_mode != "text":
+            self._state.advance_frame(self._assets)
         self.update()
 
     def paintEvent(self, event) -> None:  # noqa: N802
         painter = QPainter(self)
-        pack = self._state.character_id
+        if self._state.render_mode == "text" or not self._assets.get_sprite(
+            self._state.character_id, self._state.body_sprite_id
+        ):
+            self._paint_text_mode(painter)
+        else:
+            self._paint_sprite_mode(painter)
+        painter.end()
 
+    def _paint_text_mode(self, painter: QPainter) -> None:
+        painter.fillRect(self.rect(), QColor("#000000"))
+        painter.setPen(Qt.GlobalColor.white)
+        painter.setFont(QFont("Segoe UI", 8))
+        header = f"{self._state.life_mode or 'work'} · {self._state.activity or 'idle'}"
+        painter.drawText(4, 14, header)
+
+        goal = self._state.goal or self._brain.goal
+        progress = self._state.goal_progress
+        emotion = self._state.emotion or "neutral"
+        if goal and goal != "none":
+            meta = f"{emotion} · {goal} · {progress}%"
+            painter.setPen(QColor("#AD55AD"))
+            painter.drawText(4, 30, meta)
+        elif emotion != "neutral":
+            painter.setPen(QColor("#AD55AD"))
+            painter.drawText(4, 30, emotion)
+
+        energy = self._state.energy if self._state.energy else self._brain.energy
+        painter.setPen(QColor("#7BEF7B"))
+        painter.drawText(4, 46, f"Energy: {energy}")
+
+        painter.setPen(Qt.GlobalColor.white)
+        if self._state.curiosity_active or self._brain.curiosity_active:
+            painter.setPen(QColor("#FD20FD"))
+            painter.drawText(4, 62, "I wonder...")
+        else:
+            label = self._state.behavior_label or self._brain.behavior_label
+            painter.drawText(4, 62, label)
+
+        if self._state.message:
+            painter.setPen(Qt.GlobalColor.white)
+            painter.drawText(4, self.height() - 12, self._state.message[:36])
+
+    def _paint_sprite_mode(self, painter: QPainter) -> None:
+        pack = self._state.character_id
         bg_id = self._state.background_sprite_id
         bg_meta = self._assets.get_sprite(pack, bg_id)
         bg_path = self._assets.sprite_bin_path(pack, bg_id)
@@ -79,12 +150,9 @@ class EmulatorCanvas(QWidget):
         painter.setPen(Qt.GlobalColor.white)
         painter.setFont(QFont("Segoe UI", 8))
         painter.drawText(4, 14, f"anim: {self._state.animation or 'none'}")
-
         if self._state.message:
             painter.setFont(QFont("Segoe UI", 9))
             painter.drawText(8, self.height() - 40, self._state.message[:40])
-
-        painter.end()
 
 
 class EmulatorWindow(QWidget):
@@ -92,6 +160,6 @@ class EmulatorWindow(QWidget):
         super().__init__()
         self.setWindowTitle("NomaBot Emulator")
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("LILYGO T-Display S3 - 170×320"))
+        layout.addWidget(QLabel("LILYGO T-Display S3 - 170×320 (text brain)"))
         layout.addWidget(EmulatorCanvas(state, assets))
         self.resize(200, 400)

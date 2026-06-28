@@ -64,6 +64,11 @@ class EmulatorState:
         self.anchor_x = 85
         self.anchor_y = 80
         self.render_mode = "text"
+        self.season: str | None = "spring"
+        self.goal = "none"
+        self.goal_progress = 0
+        self.energy = 80
+        self.curiosity_active = False
         self._frame_index = 0
         self._frame_start_ms = 0.0
 
@@ -129,6 +134,17 @@ class EmulatorTransport(MockDevice):
                 self.state.emotion = env.params.get("emotion", "neutral")
             elif env.cmd == "set_life_mode" and env.params:
                 self.state.life_mode = env.params.get("mode", "work")
+            elif env.cmd == "trigger_habit" and env.params:
+                habit = env.params.get("habit", "")
+                if habit == "morning":
+                    self.state.behavior_label = "Morning routine..."
+                elif habit == "tea_break":
+                    self.state.emotion = "happy"
+                    self.state.behavior_label = "Coffee"
+                elif habit == "evening":
+                    self.state.behavior_label = "Evening wind-down..."
+            elif env.cmd == "set_season" and env.params:
+                self.state.season = env.params.get("season", "spring")
             elif env.cmd == "load_character" and env.params:
                 self.state.character_id = env.params.get("character_id", "nomabot")
                 self.state.reset_clip()

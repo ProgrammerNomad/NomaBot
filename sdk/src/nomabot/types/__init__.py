@@ -33,4 +33,6 @@ class RenderRequest(BaseModel):
     activity: str | None = None
     emotion: str | None = None
     life_mode: str | None = None
+    habit: str | None = None
+    season: str | None = None
     priority: Priority = Priority.NORMAL

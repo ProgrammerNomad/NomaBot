@@ -74,7 +74,7 @@ wheels = [
 
 [[package]]
 name = "nomabot"
-version = "0.3.1"
+version = "0.4.0"
 source = { editable = "sdk" }
 dependencies = [
     { name = "pillow" },
@@ -104,7 +104,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "nomabot-desktop"
-version = "0.3.1"
+version = "0.4.0"
 source = { editable = "desktop" }
 dependencies = [
     { name = "nomabot" },

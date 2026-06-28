@@ -19,6 +19,8 @@ class StateRequest:
     activity: str | None = None
     emotion: str | None = None
     life_mode: str | None = None
+    habit: str | None = None
+    season: str | None = None
     message_text: str | None = None
     device_id: str | None = None
 

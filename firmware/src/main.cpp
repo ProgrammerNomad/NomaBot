@@ -127,6 +127,8 @@ static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
   caps.add("set_activity");
   caps.add("set_emotion");
   caps.add("set_life_mode");
+  caps.add("trigger_habit");
+  caps.add("set_season");
   caps.add("load_character");
   caps.add("diagnostics");
 
@@ -185,7 +187,8 @@ static ProtocolResponse handlePlayAnimation(const std::string &id, JsonObject pa
 
 static ProtocolResponse handleShowMessage(const std::string &id, JsonObject params) {
   const char *text = params["text"] | "";
-  characterRuntime.setMessage(text);
+  unsigned long durationMs = params["duration_ms"] | 5000UL;
+  characterRuntime.setMessage(text, durationMs);
   JsonDocument data;
   data["ok"] = true;
   JsonDocument doc;
@@ -264,6 +267,42 @@ static ProtocolResponse handleSetLifeMode(const std::string &id, JsonObject para
   doc["id"] = id;
   doc["type"] = "response";
   doc["cmd"] = "set_life_mode";
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
+}
+
+static ProtocolResponse handleTriggerHabit(const std::string &id, JsonObject params) {
+  const char *habit = params["habit"] | "";
+  characterRuntime.triggerHabit(habit);
+  JsonDocument data;
+  data["ok"] = true;
+  data["habit"] = habit;
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "trigger_habit";
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
+}
+
+static ProtocolResponse handleSetSeason(const std::string &id, JsonObject params) {
+  const char *season = params["season"] | "spring";
+  characterRuntime.setSeason(season);
+  JsonDocument data;
+  data["ok"] = true;
+  data["season"] = season;
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "set_season";
   doc["ok"] = true;
   doc["data"] = data;
   std::string out;
@@ -381,6 +420,15 @@ static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
   data["animation"] = characterRuntime.currentAnimation();
   data["frame"] = characterRuntime.currentFrame();
   data["state"] = characterRuntime.currentActivity();
+  data["energy"] = characterRuntime.energy();
+  data["boredom"] = characterRuntime.boredom();
+  data["goal"] = characterRuntime.goal();
+  data["goal_progress"] = characterRuntime.goalProgress();
+  JsonObject shortMem = data["short_memory"].to<JsonObject>();
+  int coffeeAgo = characterRuntime.lastCoffeeMinAgo(now);
+  if (coffeeAgo >= 0) {
+    shortMem["last_coffee_min_ago"] = coffeeAgo;
+  }
 
   JsonDocument doc;
   doc["v"] = 1;
@@ -405,6 +453,8 @@ static void registerProtocolHandlers() {
   protocol.registerCommand("set_activity", handleSetActivity);
   protocol.registerCommand("set_emotion", handleSetEmotion);
   protocol.registerCommand("set_life_mode", handleSetLifeMode);
+  protocol.registerCommand("trigger_habit", handleTriggerHabit);
+  protocol.registerCommand("set_season", handleSetSeason);
   protocol.registerCommand("load_character", handleLoadCharacter);
   protocol.registerCommand("diagnostics", handleDiagnostics);
 }

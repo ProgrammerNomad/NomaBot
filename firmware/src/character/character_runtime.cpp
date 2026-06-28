@@ -18,17 +18,17 @@ const char *characterLoadErrorLabel(CharacterLoadError err) {
 
 void CharacterRuntime::begin(IRenderer *renderer) {
   _renderer = renderer;
-  _behavior.useDefaults();
+  _brain.useDefaults();
   PersonalityTraits traits;
-  _behavior.setPersonality(traits);
-  _behavior.setLifeMode("work");
-  _behavior.setActivity("idle");
+  _brain.setPersonality(traits);
+  _brain.setLifeMode("work");
+  _brain.setActivity("idle");
 }
 
 void CharacterRuntime::useBehaviorDefaults() {
-  _behavior.useDefaults();
-  _behavior.setLifeMode("work");
-  _behavior.setActivity("idle");
+  _brain.useDefaults();
+  _brain.setLifeMode("work");
+  _brain.setActivity("idle");
   _renderMode = RenderMode::Text;
 }
 
@@ -65,7 +65,7 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
 
   std::string behaviorPath = loader.rootPath() + "/behavior.json";
   File behaviorFile = LittleFS.open(behaviorPath.c_str(), "r");
-  if (!behaviorFile && behaviorPath.size() > 0 && behaviorPath[0] == '/') {
+  if (!behaviorFile && !behaviorPath.empty() && behaviorPath[0] == '/') {
     behaviorFile = LittleFS.open(behaviorPath.c_str() + 1, "r");
   }
   if (behaviorFile) {
@@ -82,6 +82,7 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
       }
     }
   }
+  _brain.loadFromPackPath(loader.rootPath().c_str());
 
   syncClipFromBehavior();
   return true;
@@ -90,7 +91,6 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
 void CharacterRuntime::unload() {
   _cache.clear();
   _characterId = "nomabot";
-  _message.clear();
   _activeClipId.clear();
   _loader = nullptr;
   _assets.bind(nullptr);
@@ -119,42 +119,42 @@ void CharacterRuntime::syncClipFromBehavior() {
   if (_overrideAnimation || textModeActive()) {
     return;
   }
-  applyClip(_behavior.clipForBehavior());
+  applyClip(_brain.clipForBehavior());
 }
 
-void CharacterRuntime::setLifeMode(const char *mode) {
-  _behavior.setLifeMode(mode);
-}
+void CharacterRuntime::setLifeMode(const char *mode) { _brain.setLifeMode(mode); }
 
 void CharacterRuntime::setActivity(const char *activity) {
   _overrideAnimation = false;
-  _behavior.setActivity(activity);
+  _brain.setActivity(activity);
   syncClipFromBehavior();
 }
 
 void CharacterRuntime::setEmotion(const char *emotion) {
-  _behavior.setEmotion(emotion);
+  _brain.setEmotion(emotion);
   syncClipFromBehavior();
 }
+
+void CharacterRuntime::setSeason(const char *season) { _brain.setSeason(season); }
+
+void CharacterRuntime::triggerHabit(const char *habitId) { _brain.triggerHabit(habitId); }
 
 void CharacterRuntime::playAnimation(const char *animationId) {
   _overrideAnimation = true;
   applyClip(animationId);
 }
 
-void CharacterRuntime::setState(const char *state) {
-  setActivity(state);
-}
+void CharacterRuntime::setState(const char *state) { setActivity(state); }
 
 const char *CharacterRuntime::currentAnimation() const {
   if (_overrideAnimation && !_activeClipId.empty()) {
     return _activeClipId.c_str();
   }
-  return _behavior.behaviorId();
+  return _brain.behaviorId();
 }
 
-void CharacterRuntime::setMessage(const char *text) {
-  _message = text ? text : "";
+void CharacterRuntime::setMessage(const char *text, unsigned long durationMs) {
+  _messages.push(text, 1, durationMs, millis());
 }
 
 void CharacterRuntime::setBackground(const char *backgroundKey) {
@@ -169,8 +169,9 @@ void CharacterRuntime::setBackground(const char *backgroundKey) {
 }
 
 void CharacterRuntime::tick(unsigned long nowMs) {
+  _messages.tick(nowMs);
   if (!_overrideAnimation) {
-    _behavior.update(nowMs);
+    _brain.update(nowMs);
     if (!textModeActive()) {
       syncClipFromBehavior();
     }
@@ -199,20 +200,16 @@ void CharacterRuntime::render() {
     return;
   }
 
-  if (textModeActive()) {
-    _textRenderer.render(*_renderer, _behavior.lifeMode(), _behavior.activity(),
-                         _behavior.emotion(), _behavior.behaviorLabel(), _message.c_str());
-    return;
-  }
+  const char *msg = _messages.activeText();
 
-  if (!_loader) {
-    _textRenderer.render(*_renderer, _behavior.lifeMode(), _behavior.activity(),
-                         _behavior.emotion(), _behavior.behaviorLabel(), _message.c_str());
+  if (textModeActive() || !_loader) {
+    _textRenderer.render(*_renderer, _brain.lifeMode(), _brain.activity(), _brain.emotion(),
+                         _brain.goal(), _brain.goalProgress(), _brain.energy(),
+                         _brain.curiosityActive(), _brain.behaviorLabel(), msg);
     return;
   }
 
   const char *bodySprite = _clipPlayer.currentSpriteId();
   _compositor.render(*_renderer, *_loader, _cache, _assets, _backgroundSprite.c_str(), bodySprite,
-                     _loader->anchorX(), _loader->anchorY(), _message.c_str(),
-                     _behavior.behaviorLabel());
+                     _loader->anchorX(), _loader->anchorY(), msg, _brain.behaviorLabel());
 }
