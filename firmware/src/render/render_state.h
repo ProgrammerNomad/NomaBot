@@ -39,6 +39,10 @@ enum DirtyFlags : uint8_t {
   DirtyFull = 0xFF,
 };
 
+// M5 active: DirtyCharacter covers the whole character entity.
+// Reserved M6+ (see docs/SCENE_SPEC.md): DirtyBody, DirtyEyes, DirtyAccessory,
+// DirtyBubble, DirtyHud — reuse bits only after ADR; not implemented in M5.
+
 inline DirtyFlags operator|(DirtyFlags a, DirtyFlags b) {
   return static_cast<DirtyFlags>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
 }

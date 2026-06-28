@@ -8,6 +8,9 @@ void RenderScheduler::setSpriteContext(PackLoader *loader, SpriteCache *cache,
   _cache = cache;
   _assets = assets;
   _compositor = compositor;
+  if (!loader) {
+    _bgCache.reset();
+  }
 }
 
 void RenderScheduler::drawTextLayers(const RenderState &state, DirtyFlags dirty) {
@@ -39,19 +42,13 @@ void RenderScheduler::drawTextLayers(const RenderState &state, DirtyFlags dirty)
 }
 
 void RenderScheduler::drawSpriteLayers(const RenderState &state, DirtyFlags dirty) {
-  if (!_renderer || !_loader || !_cache || !_assets || !_compositor) {
+  if (!_renderer || !_loader || !_cache || !_compositor) {
     return;
   }
 
-  if (dirty == DirtyFull || hasDirty(dirty, DirtyBackground) || hasDirty(dirty, DirtyCharacter) ||
-      hasDirty(dirty, DirtyBehavior) || hasDirty(dirty, DirtyMessage)) {
-    const char *body = state.bodySpriteId ? state.bodySpriteId : "body_idle_01";
-    const char *bg = state.backgroundSpriteId ? state.backgroundSpriteId : "";
-    const char *label = state.behaviorLabel ? state.behaviorLabel : "";
-    const char *overlay = state.overlayText ? state.overlayText : "";
-    _compositor->render(*_renderer, *_loader, *_cache, *_assets, bg, body, _loader->anchorX(),
-                        _loader->anchorY(), overlay, label);
-  }
+  _lastScene = SceneBuilder::build(state, *_loader, dirty);
+  CharacterRenderer::drawScene(*_renderer, _lastScene, dirty, *_loader, *_cache, *_compositor,
+                               _bgCache);
 }
 
 void RenderScheduler::render(const RenderState &state, DirtyFlags dirty, bool textMode) {

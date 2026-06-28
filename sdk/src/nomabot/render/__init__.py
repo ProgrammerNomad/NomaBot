@@ -39,9 +39,16 @@ class RenderState:
     display_energy: int = 80
     curiosity: bool = False
     overlay_text: str = ""
+    background_sprite_id: str | None = None
+    body_sprite_id: str | None = None
+    clip_frame_index: int = 0
 
     def __post_init__(self) -> None:
         self.display_energy = quantize_energy(self.energy)
+
+
+def has_dirty(flags: DirtyFlags, bit: DirtyFlags) -> bool:
+    return bool(flags & bit)
 
 
 class DirtyTracker:
@@ -98,6 +105,13 @@ class DirtyTracker:
             dirty |= DirtyFlags.BEHAVIOR
         if state.overlay_text != last.overlay_text:
             dirty |= DirtyFlags.MESSAGE
+        if state.background_sprite_id != last.background_sprite_id:
+            dirty |= DirtyFlags.BACKGROUND
+        if (
+            state.body_sprite_id != last.body_sprite_id
+            or state.clip_frame_index != last.clip_frame_index
+        ):
+            dirty |= DirtyFlags.CHARACTER
         return dirty
 
     def commit_rendered(self, state: RenderState) -> None:
@@ -113,4 +127,70 @@ class DirtyTracker:
             display_energy=state.display_energy,
             curiosity=state.curiosity,
             overlay_text=state.overlay_text,
+            background_sprite_id=state.background_sprite_id,
+            body_sprite_id=state.body_sprite_id,
+            clip_frame_index=state.clip_frame_index,
         )
+
+
+@dataclass
+class OverlayMessage:
+    overlay_id: str = "anonymous"
+    text: str = ""
+    priority: int = 2
+    expires_at_ms: int = 0
+
+
+class OverlayManager:
+    """Python mirror of firmware OverlayManager."""
+
+    def __init__(self) -> None:
+        self._active: OverlayMessage | None = None
+
+    def push(
+        self,
+        overlay_id: str,
+        text: str,
+        priority: int,
+        duration_ms: int,
+        now_ms: int,
+    ) -> None:
+        if not text:
+            return
+        oid = overlay_id or "anonymous"
+        if self._active and self._active.overlay_id == oid:
+            self._active = OverlayMessage(
+                overlay_id=oid,
+                text=text,
+                priority=priority,
+                expires_at_ms=now_ms + duration_ms if duration_ms > 0 else 0,
+            )
+            return
+        if self._active and priority < self._active.priority:
+            return
+        self._active = OverlayMessage(
+            overlay_id=oid,
+            text=text,
+            priority=priority,
+            expires_at_ms=now_ms + duration_ms if duration_ms > 0 else 0,
+        )
+
+    def cancel(self, overlay_id: str) -> bool:
+        if not self._active or self._active.overlay_id != overlay_id:
+            return False
+        self._active = None
+        return True
+
+    def tick(self, now_ms: int) -> bool:
+        if not self._active:
+            return False
+        if self._active.expires_at_ms > 0 and now_ms >= self._active.expires_at_ms:
+            self._active = None
+            return True
+        return False
+
+    def active_text(self) -> str:
+        return self._active.text if self._active else ""
+
+    def queue_depth(self) -> int:
+        return 1 if self._active else 0

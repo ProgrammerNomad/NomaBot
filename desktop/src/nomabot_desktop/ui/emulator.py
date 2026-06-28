@@ -11,6 +11,8 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from nomabot.brain import Brain
 from nomabot.render import DirtyFlags, DirtyTracker, RenderState, quantize_energy
+from nomabot.render.background_cache import BackgroundCache
+from nomabot.render.scene import Scene, SceneBuilder
 from nomabot_desktop.core.asset_registry import AssetRegistry
 from nomabot_desktop.transport import EmulatorState
 
@@ -56,6 +58,9 @@ class EmulatorCanvas(QWidget):
         self._tracker = DirtyTracker()
         self._dirty = DirtyFlags.FULL
         self._render_state = RenderState()
+        self._scene = Scene()
+        self._bg_cache = BackgroundCache()
+        self._frame_buffer: QImage | None = None
         self.setFixedSize(state.width, state.height)
         self.setAutoFillBackground(True)
 
@@ -87,6 +92,9 @@ class EmulatorCanvas(QWidget):
             display_energy=quantize_energy(energy),
             curiosity=self._brain.curiosity_active,
             overlay_text=self._state.message or "",
+            background_sprite_id=self._state.background_sprite_id,
+            body_sprite_id=self._state.body_sprite_id,
+            clip_frame_index=self._state._frame_index,
         )
 
     def _on_tick(self) -> None:
@@ -106,6 +114,13 @@ class EmulatorCanvas(QWidget):
         if dirty != DirtyFlags.NONE:
             self._render_state = render_state
             self._dirty = dirty
+            self._scene = SceneBuilder.build(
+                render_state,
+                default_background=self._state.background_sprite_id,
+                anchor_x=self._state.anchor_x,
+                anchor_y=self._state.anchor_y,
+                dirty=dirty,
+            )
             self.update()
 
     def paintEvent(self, event) -> None:  # noqa: N802
@@ -115,7 +130,7 @@ class EmulatorCanvas(QWidget):
         ):
             self._paint_text_mode(painter, self._render_state, self._dirty)
         else:
-            self._paint_sprite_mode(painter)
+            self._paint_sprite_mode(painter, self._scene, self._dirty)
         if self._dirty != DirtyFlags.NONE:
             self._tracker.commit_rendered(self._render_state)
             self._dirty = DirtyFlags.NONE
@@ -169,34 +184,104 @@ class EmulatorCanvas(QWidget):
                 painter.setPen(Qt.GlobalColor.white)
                 painter.drawText(4, self.height() - 12, state.overlay_text[:36])
 
-    def _paint_sprite_mode(self, painter: QPainter) -> None:
+    def _load_sprite_image(self, sprite_id: str | None) -> tuple[QImage | None, dict | None]:
+        if not sprite_id:
+            return None, None
         pack = self._state.character_id
-        bg_id = self._state.background_sprite_id
-        bg_meta = self._assets.get_sprite(pack, bg_id)
-        bg_path = self._assets.sprite_bin_path(pack, bg_id)
-        if bg_meta and bg_path:
-            bg_img = _rgb565_to_qimage(bg_path.read_bytes(), bg_meta["width"], bg_meta["height"])
-            painter.drawImage(0, 0, bg_img)
-        else:
-            painter.fillRect(self.rect(), QColor(self._state.background))
+        meta = self._assets.get_sprite(pack, sprite_id)
+        path = self._assets.sprite_bin_path(pack, sprite_id)
+        if not meta or not path:
+            return None, None
+        img = _rgb565_to_qimage(path.read_bytes(), meta["width"], meta["height"])
+        return img, meta
 
-        body_id = self._state.body_sprite_id
-        body_meta = self._assets.get_sprite(pack, body_id)
-        body_path = self._assets.sprite_bin_path(pack, body_id)
-        if body_meta and body_path:
-            body_img = _rgb565_to_qimage(
-                body_path.read_bytes(), body_meta["width"], body_meta["height"]
+    def _capture_bg_cache(self, bg_img: QImage, character_node) -> None:
+        body_img, body_meta = self._load_sprite_image(character_node.sprite_id)
+        if not body_img or not body_meta:
+            self._bg_cache.reset()
+            return
+        draw_x = character_node.x - body_meta["width"] // 2
+        draw_y = character_node.y
+        pixels: list[int] = []
+        for row in range(body_meta["height"]):
+            for col in range(body_meta["width"]):
+                x = draw_x + col
+                y = draw_y + row
+                if 0 <= x < bg_img.width() and 0 <= y < bg_img.height():
+                    c = bg_img.pixelColor(x, y)
+                    pixels.append((c.red() << 8) | (c.green() << 3) | (c.blue() >> 3))
+                else:
+                    pixels.append(0)
+        self._bg_cache.capture_from_background(
+            pixels,
+            body_meta["width"],
+            body_meta["height"],
+            0,
+            0,
+            body_meta["width"],
+            body_meta["height"],
+        )
+
+    def _paint_sprite_mode(self, painter: QPainter, scene: Scene, dirty: DirtyFlags) -> None:
+        if dirty == DirtyFlags.FULL:
+            self._frame_buffer = QImage(self.size(), QImage.Format.Format_RGB888)
+            self._frame_buffer.fill(QColor("#000000"))
+
+        target = self._frame_buffer
+        if target is None:
+            target = QImage(self.size(), QImage.Format.Format_RGB888)
+            target.fill(QColor("#000000"))
+            self._frame_buffer = target
+
+        if scene.background.dirty or dirty == DirtyFlags.FULL:
+            bg_img, _ = self._load_sprite_image(scene.background.sprite_id)
+            if bg_img:
+                buf_painter = QPainter(target)
+                buf_painter.drawImage(0, 0, bg_img)
+                buf_painter.end()
+                self._capture_bg_cache(bg_img, scene.character)
+            else:
+                target.fill(QColor(self._state.background))
+
+        if scene.character.dirty:
+            if not scene.background.dirty and dirty != DirtyFlags.FULL:
+                canvas = [
+                    [target.pixelColor(x, y).rgb() for x in range(target.width())]
+                    for y in range(target.height())
+                ]
+                self._bg_cache.restore(canvas)
+                for y, row in enumerate(canvas):
+                    for x, px in enumerate(row):
+                        c = QColor(px)
+                        target.setPixelColor(x, y, c)
+
+            body_img, body_meta = self._load_sprite_image(scene.character.sprite_id)
+            if body_img and body_meta:
+                ax = scene.character.x - body_meta["width"] // 2
+                ay = scene.character.y
+                buf_painter = QPainter(target)
+                buf_painter.drawImage(ax, ay, body_img)
+                buf_painter.end()
+
+        buf_painter = QPainter(target)
+        buf_painter.setPen(Qt.GlobalColor.white)
+        buf_painter.setFont(QFont("Segoe UI", 8))
+
+        if scene.hud.dirty and scene.hud.visible and scene.hud.text:
+            buf_painter.fillRect(0, 0, self.width(), 18, QColor("#000000"))
+            buf_painter.drawText(scene.hud.x, scene.hud.y + 6, scene.hud.text)
+
+        if scene.speech_bubble.dirty and scene.speech_bubble.visible and scene.speech_bubble.text:
+            band_y = self.height() - 24
+            buf_painter.fillRect(0, band_y, self.width(), 24, QColor("#000000"))
+            buf_painter.drawText(
+                scene.speech_bubble.x,
+                self.height() - 12,
+                scene.speech_bubble.text[:40],
             )
-            ax, ay = self._state.anchor_x, self._state.anchor_y
-            x = ax - body_meta["width"] // 2
-            painter.drawImage(x, ay, body_img)
+        buf_painter.end()
 
-        painter.setPen(Qt.GlobalColor.white)
-        painter.setFont(QFont("Segoe UI", 8))
-        painter.drawText(4, 14, f"anim: {self._state.animation or 'none'}")
-        if self._state.message:
-            painter.setFont(QFont("Segoe UI", 9))
-            painter.drawText(8, self.height() - 40, self._state.message[:40])
+        painter.drawImage(0, 0, target)
 
 
 class EmulatorWindow(QWidget):
@@ -204,6 +289,6 @@ class EmulatorWindow(QWidget):
         super().__init__()
         self.setWindowTitle("NomaBot Emulator")
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("LILYGO T-Display S3 - 170×320 (text brain)"))
+        layout.addWidget(QLabel("LILYGO T-Display S3 - 170×320 (Tiny World Renderer)"))
         layout.addWidget(EmulatorCanvas(state, assets))
         self.resize(200, 400)

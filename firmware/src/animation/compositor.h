@@ -12,7 +12,6 @@ public:
               const char *backgroundSpriteId, const char *bodySpriteId, int anchorX, int anchorY,
               const char *messageText, const char *animationLabel);
 
-private:
   void blitSprite(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
                   const char *spriteId, int x, int y);
 };

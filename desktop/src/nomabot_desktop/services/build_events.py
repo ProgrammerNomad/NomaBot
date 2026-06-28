@@ -1,4 +1,4 @@
-"""Build event service — emotion + message on build ok/fail."""
+"""Build event service — emotion via context, speech via overlay."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from nomabot.types import Priority
 from nomabot_desktop.core.bus import EventBus
 from nomabot_desktop.core.command_source import CommandSource
-from nomabot_desktop.core.events import StateRequest
+from nomabot_desktop.core.events import OverlayShow, StateRequest
 
 logger = logging.getLogger("noma.build_events")
 
@@ -34,7 +34,14 @@ class BuildEventService:
                     priority=Priority.HIGH,
                     source=CommandSource.SYSTEM,
                     emotion="excited",
-                    message_text=payload.message or "Build OK",
+                ),
+            )
+            self._bus.publish(
+                "overlay.show",
+                OverlayShow(
+                    overlay_id="build_ok",
+                    text=payload.message or "Build OK",
+                    priority=Priority.HIGH,
                 ),
             )
         else:
@@ -46,6 +53,13 @@ class BuildEventService:
                     priority=Priority.HIGH,
                     source=CommandSource.SYSTEM,
                     emotion="frustrated",
-                    message_text=payload.message or "Build failed",
+                ),
+            )
+            self._bus.publish(
+                "overlay.show",
+                OverlayShow(
+                    overlay_id="build_failed",
+                    text=payload.message or "Build failed",
+                    priority=Priority.HIGH,
                 ),
             )

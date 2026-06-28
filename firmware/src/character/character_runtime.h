@@ -15,6 +15,7 @@
 #include "render/render_mode.h"
 #include "render/render_scheduler.h"
 #include "render/render_state.h"
+#include "render/scene.h"
 #include "render/text_scene_renderer.h"
 #include "renderer/renderer.hpp"
 
@@ -51,11 +52,17 @@ public:
   const char *lastCommandSource() const { return _lastCommandSource.c_str(); }
   unsigned long renderCount() const { return _renderCount; }
   unsigned long lastRenderMs() const { return _lastRenderMs; }
+  unsigned long lastBrainTickMs() const { return _lastBrainTickMs; }
+  int overlayQueueDepth() const { return _overlays.queueDepth(); }
   DirtyFlags lastDirtyFlags() const { return _lastDirtyFlags; }
+  SceneDiagnostics lastSceneDiagnostics() const { return _scheduler.lastSceneDiagnostics(); }
+  const char *bodySpriteId() const {
+    return _bodySpriteId.empty() ? nullptr : _bodySpriteId.c_str();
+  }
 
   void playAnimation(const char *animationId);
   void setState(const char *state);
-  void setMessage(const char *text, unsigned long durationMs = 5000);
+  void setMessage(const char *id, const char *text, int priority, unsigned long durationMs = 5000);
   void setBackground(const char *backgroundKey);
 
   void setRenderMode(RenderMode mode) { _renderMode = mode; }
@@ -113,6 +120,7 @@ private:
   std::string _lastCommandSource = "brain";
   unsigned long _renderCount = 0;
   unsigned long _lastRenderMs = 0;
+  unsigned long _lastBrainTickMs = 0;
   DirtyFlags _lastDirtyFlags = DirtyNone;
 
   void applyClip(const char *animationId);

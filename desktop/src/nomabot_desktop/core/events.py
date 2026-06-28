@@ -22,7 +22,18 @@ class StateRequest:
     life_mode: str | None = None
     habit: str | None = None
     season: str | None = None
-    message_text: str | None = None
+    device_id: str | None = None
+
+
+@dataclass(frozen=True)
+class OverlayShow:
+    """Ephemeral overlay speech/toast — routed to OverlayService, not Brain."""
+
+    overlay_id: str
+    text: str
+    priority: Priority = Priority.NORMAL
+    duration_ms: int = 5000
+    style: str = "speech"
     device_id: str | None = None
 
 

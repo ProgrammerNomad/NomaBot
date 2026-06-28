@@ -1,4 +1,4 @@
-"""Noma Runtime - central render orchestrator."""
+"""Noma Runtime - context commands only (no overlays)."""
 
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ from nomabot.protocol.commands import (
     SetEmotionParams,
     SetLifeModeParams,
     SetSeasonParams,
-    ShowMessageParams,
     TriggerHabitParams,
     build_command,
 )
@@ -32,8 +31,6 @@ ACTIVITY_STATES = frozenset({"idle", "coding", "sleep", "gaming", "travel"})
 class _MergedState:
     animation: str | None = None
     background: str | None = None
-    message_text: str | None = None
-    message_style: str = "speech"
     activity: str | None = None
     emotion: str | None = None
     life_mode: str | None = None
@@ -43,7 +40,7 @@ class _MergedState:
 
 
 class NomaRuntime:
-    """Builds protocol commands and dispatches via priority queue."""
+    """Builds context protocol commands; overlays use OverlayService."""
 
     def __init__(
         self,
@@ -69,14 +66,15 @@ class NomaRuntime:
             cb(self._state)
 
     async def submit(self, request: RenderRequest) -> list[Envelope]:
-        """Build commands for accepted context; arbitrator already filtered sources."""
+        """Context commands only — arbitrator already filtered sources."""
         commands: list[Envelope] = []
         s = self._state
 
-        activity = request.activity or request.state
-        if activity:
-            s.activity = activity
-            commands.append(build_command("set_activity", SetActivityParams(activity=activity)))
+        if request.activity:
+            s.activity = request.activity
+            commands.append(
+                build_command("set_activity", SetActivityParams(activity=request.activity))
+            )
 
         if request.emotion:
             s.emotion = request.emotion
@@ -84,13 +82,29 @@ class NomaRuntime:
 
         if request.life_mode:
             s.life_mode = request.life_mode
-            commands.append(build_command("set_life_mode", SetLifeModeParams(mode=request.life_mode)))
+            commands.append(
+                build_command("set_life_mode", SetLifeModeParams(mode=request.life_mode))
+            )
 
         if request.habit:
             commands.append(build_command("trigger_habit", TriggerHabitParams(habit=request.habit)))
 
         if request.season:
             commands.append(build_command("set_season", SetSeasonParams(season=request.season)))
+
+        self._notify()
+
+        for cmd in commands:
+            self._queue.enqueue(cmd, priority=request.priority, device_id=request.device_id)
+            logger.info("Runtime queued %s", cmd.cmd)
+
+        await self._dispatcher.flush()
+        return commands
+
+    async def submit_renderer(self, request: RenderRequest) -> list[Envelope]:
+        """Renderer-only commands: animation and background."""
+        commands: list[Envelope] = []
+        s = self._state
 
         if request.animation and request.priority >= s.priority:
             s.animation = request.animation
@@ -103,21 +117,6 @@ class NomaRuntime:
             s.background = request.background
             commands.append(
                 build_command("set_background", SetBackgroundParams(background=request.background))
-            )
-
-        if request.message and request.priority >= s.priority:
-            s.message_text = request.message.text
-            s.message_style = request.message.style
-            s.priority = request.priority
-            commands.append(
-                build_command(
-                    "show_message",
-                    ShowMessageParams(
-                        text=request.message.text,
-                        style=request.message.style,
-                        duration_ms=request.message.duration_ms,
-                    ),
-                )
             )
 
         self._notify()

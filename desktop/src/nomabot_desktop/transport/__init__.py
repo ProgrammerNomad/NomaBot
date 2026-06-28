@@ -58,6 +58,7 @@ class EmulatorState:
         self.behavior_label = "Breathing..."
         self.animation: str | None = "idle"
         self.message: str | None = None
+        self.overlay_id: str | None = None
         self.background = "#1a1a2e"
         self.background_sprite_id = "bg_office"
         self.body_sprite_id = "body_idle_01"

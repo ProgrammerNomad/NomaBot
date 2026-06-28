@@ -13,7 +13,7 @@ NOMABOT = ROOT / "assets" / "characters" / "nomabot"
 
 def test_compile_behavior_includes_personality_and_likes() -> None:
     data = compile_behavior(NOMABOT)
-    assert data["render_mode"] == "text"
+    assert data["render_mode"] == "sprite"
     assert "personality" in data
     assert data["personality"]["coffee_love"] == 90
     assert "coffee" in data["likes"]

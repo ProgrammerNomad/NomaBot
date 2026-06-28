@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from nomabot.types import Priority
 from nomabot_desktop.core.bus import EventBus
 from nomabot_desktop.core.command_source import CommandSource
-from nomabot_desktop.core.events import DeviceConnected, StateRequest
+from nomabot_desktop.core.events import DeviceConnected, OverlayShow, StateRequest
 from nomabot_desktop.storage.service import StorageService
 
 logger = logging.getLogger("noma.friendship")
@@ -65,6 +65,13 @@ class FriendshipService:
                 priority=Priority.NORMAL,
                 source=CommandSource.USER,
                 emotion="happy",
-                message_text=text,
+            ),
+        )
+        self._bus.publish(
+            "overlay.show",
+            OverlayShow(
+                overlay_id="friendship_welcome",
+                text=text,
+                priority=Priority.NORMAL,
             ),
         )

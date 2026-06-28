@@ -23,7 +23,7 @@ async def test_runtime_to_mock_play_animation():
     dispatcher.set_default_device("d1")
     runtime = NomaRuntime(queue, dispatcher)
 
-    await runtime.submit(RenderRequest(animation="coding", priority=Priority.NORMAL))
+    await runtime.submit_renderer(RenderRequest(animation="coding", priority=Priority.NORMAL))
 
     assert mock.last_animation == "coding"
     assert len(mock.sent_envelopes) >= 2

@@ -28,8 +28,8 @@ async def _make_runtime() -> tuple[NomaRuntime, MockDevice, TransportManager]:
 async def test_priority_merge_animation():
     runtime, mock, tm = await _make_runtime()
 
-    await runtime.submit(RenderRequest(animation="idle", priority=Priority.LOW))
-    await runtime.submit(RenderRequest(animation="coding", priority=Priority.HIGH))
+    await runtime.submit_renderer(RenderRequest(animation="idle", priority=Priority.LOW))
+    await runtime.submit_renderer(RenderRequest(animation="coding", priority=Priority.HIGH))
 
     assert mock.last_animation == "coding"
     await tm.disconnect_all()
@@ -39,8 +39,21 @@ async def test_priority_merge_animation():
 async def test_low_priority_does_not_override_high():
     runtime, mock, tm = await _make_runtime()
 
-    await runtime.submit(RenderRequest(animation="coding", priority=Priority.HIGH))
-    await runtime.submit(RenderRequest(animation="idle", priority=Priority.LOW))
+    await runtime.submit_renderer(RenderRequest(animation="coding", priority=Priority.HIGH))
+    await runtime.submit_renderer(RenderRequest(animation="idle", priority=Priority.LOW))
 
     assert mock.last_animation == "coding"
+    await tm.disconnect_all()
+
+
+@pytest.mark.asyncio
+async def test_context_submit_does_not_send_animation():
+    runtime, mock, tm = await _make_runtime()
+
+    await runtime.submit(
+        RenderRequest(activity="coding", animation="idle", priority=Priority.NORMAL)
+    )
+
+    assert mock.last_activity == "coding"
+    assert mock.last_animation is None
     await tm.disconnect_all()

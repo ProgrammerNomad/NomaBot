@@ -33,11 +33,11 @@ async def test_state_manager_requests_runtime() -> None:
         pending.append(asyncio.ensure_future(coro))
 
     sm = StateManager(bus, schedule)
-    sm.bind_runtime(runtime.submit)
+    sm.bind_runtime(runtime.submit, runtime.submit_renderer)
 
     sm.request(StateRequest(state="coding", priority=Priority.NORMAL, animation="coding"))
-    if pending:
-        await pending[0]
+    while pending:
+        await pending.pop(0)
 
     assert mock.last_animation == "coding"
     await tm.disconnect_all()

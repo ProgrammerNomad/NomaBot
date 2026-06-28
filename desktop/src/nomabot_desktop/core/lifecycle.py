@@ -19,8 +19,10 @@ from nomabot.types import Priority
 from nomabot_desktop.core.command_source import CommandSource
 from nomabot_desktop.core.app_context import AppContext, create_context
 from nomabot_desktop.core.device_manager import DeviceRecord
-from nomabot_desktop.core.events import StateRequest
+from nomabot_desktop.core.command_router import CommandRouter
+from nomabot_desktop.core.events import OverlayShow, StateRequest
 from nomabot_desktop.core.logging_config import setup_logging
+from nomabot_desktop.core.overlay_service import OverlayService
 from nomabot_desktop.core.state_manager import BotState, StateManager
 from nomabot_desktop.services.activity import ActivityService
 from nomabot_desktop.services.build_events import BuildEventService
@@ -192,8 +194,14 @@ def _sync_emulator_state(ctx: AppContext, state: BotState) -> None:
     ctx.emu_state.emotion = state.emotion
     ctx.emu_state.life_mode = state.life_mode
     ctx.emu_state.animation = state.animation
-    ctx.emu_state.message = state.message_text
     ctx.emu_state.render_mode = "text"
+
+
+def _sync_emulator_overlay(ctx: AppContext, overlay: OverlayShow) -> None:
+    if ctx.emu_state is None:
+        return
+    ctx.emu_state.message = overlay.text
+    ctx.emu_state.overlay_id = overlay.overlay_id
 
 
 def _toggle_mute(ctx: AppContext, tray: AppTray | None, muted: bool) -> None:
@@ -211,15 +219,21 @@ def _build_dev_window(ctx: AppContext) -> QMainWindow:
     layout = QVBoxLayout(central)
 
     def req(state: str, **kwargs):
-        ctx.bus.publish(
-            "state.request",
+        if ctx.router is None:
+            return
+        ctx.router.context(
             StateRequest(
                 state=state,
                 priority=Priority.NORMAL,
                 source=CommandSource.DEV_PANEL,
                 **kwargs,
-            ),
+            )
         )
+
+    def say_hello() -> None:
+        if ctx.router is None:
+            return
+        ctx.router.overlay(overlay_id="dev_hello", text="Hello")
 
     btn_idle = QPushButton("Activity: idle")
     btn_idle.clicked.connect(lambda: req("idle"))
@@ -232,7 +246,7 @@ def _build_dev_window(ctx: AppContext) -> QMainWindow:
     btn_frustrated = QPushButton("Emotion: frustrated")
     btn_frustrated.clicked.connect(lambda: req("coding", emotion="frustrated"))
     btn_say = QPushButton('Say "Hello"')
-    btn_say.clicked.connect(lambda: req("message_active", message_text="Hello"))
+    btn_say.clicked.connect(say_hello)
     btn_home = QPushButton("Life mode: home")
     btn_home.clicked.connect(lambda: req("idle", life_mode="home"))
     btn_morning = QPushButton("Habit: morning")
@@ -273,18 +287,24 @@ def run_app(
     no_tray: bool = False,
 ) -> None:
     log_dir = setup_logging()
-    logger.info("NomaBot desktop 0.4.0 starting")
+    logger.info("NomaBot desktop 0.4.1 starting")
 
     ctx = create_context()
     ctx.log_dir = log_dir
     ctx.character_service = CharacterService(ctx.runtime.assets, ctx.transport_manager)
 
+    overlay = OverlayService(ctx.bus, ctx.queue, ctx.dispatcher, _schedule)
+    ctx.overlay = overlay
+
     state_manager = StateManager(ctx.bus, _schedule)
-    state_manager.bind_runtime(ctx.runtime.submit)
+    state_manager.bind_runtime(ctx.runtime.submit, ctx.runtime.submit_renderer)
     state_manager.set_muted(ctx.config.muted)
     ctx.state_manager = state_manager
 
+    ctx.router = CommandRouter(state_manager, overlay, ctx.runtime, _schedule)
+
     ctx.bus.subscribe("state.changed", lambda s: _sync_emulator_state(ctx, s))
+    ctx.bus.subscribe("overlay.changed", lambda o: _sync_emulator_overlay(ctx, o))
 
     try:
         device_id, emu_state = _schedule(

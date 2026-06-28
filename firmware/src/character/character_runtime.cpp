@@ -211,9 +211,10 @@ const char *CharacterRuntime::currentAnimation() const {
   return _brain.behaviorId();
 }
 
-void CharacterRuntime::setMessage(const char *text, unsigned long durationMs) {
+void CharacterRuntime::setMessage(const char *id, const char *text, int priority,
+                                  unsigned long durationMs) {
   noteCommandSource("protocol");
-  _overlays.push(text, 1, durationMs, millis());
+  _overlays.push(id, text, priority, durationMs, millis());
   _dirtyTracker.forceDirty(DirtyMessage);
 }
 
@@ -284,6 +285,7 @@ void CharacterRuntime::present() {
 }
 
 void CharacterRuntime::tick(unsigned long nowMs) {
+  unsigned long tickStart = millis();
   if (_overlays.tick(nowMs)) {
     _dirtyTracker.notePending(DirtyMessage);
   }
@@ -301,6 +303,7 @@ void CharacterRuntime::tick(unsigned long nowMs) {
     }
   }
   updateFps(nowMs);
+  _lastBrainTickMs = millis() - tickStart;
 }
 
 void CharacterRuntime::updateFps(unsigned long nowMs) {

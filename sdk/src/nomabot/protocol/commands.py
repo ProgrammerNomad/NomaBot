@@ -23,8 +23,10 @@ class PlayAnimationParams(BaseModel):
 
 class ShowMessageParams(BaseModel):
     text: str
+    id: str = "anonymous"
     style: str = "speech"
     duration_ms: int = 5000
+    priority: int = 2
 
 
 class SetBackgroundParams(BaseModel):

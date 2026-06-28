@@ -4,6 +4,7 @@
 #include <LittleFS.h>
 #include "assets/pack_loader.h"
 #include "character/character_runtime.h"
+#include "debug/command_history.h"
 #include "protocol/handler.h"
 #include "renderer/lilygo_renderer.h"
 
@@ -19,6 +20,8 @@ static const char *bootFsStatus = "FAIL";
 static const char *bootPackStatus = "FAIL";
 
 static void emitLine(const std::string &line) { Serial.print(line.c_str()); }
+
+#define RECORD_CMD(name, detail) gCommandHistory.record(name, detail, millis())
 
 static void showBootError(const char *label) {
   renderer.fillScreen(0xF800);
@@ -171,6 +174,7 @@ static ProtocolResponse handlePing(const std::string &id, JsonObject) {
 static ProtocolResponse handlePlayAnimation(const std::string &id, JsonObject params) {
   const char *animation = params["animation"] | "idle";
   characterRuntime.playAnimation(animation);
+  RECORD_CMD("play_animation", animation);
   JsonDocument data;
   data["ok"] = true;
   JsonDocument doc;
@@ -186,9 +190,12 @@ static ProtocolResponse handlePlayAnimation(const std::string &id, JsonObject pa
 }
 
 static ProtocolResponse handleShowMessage(const std::string &id, JsonObject params) {
+  const char *overlayId = params["id"] | "anonymous";
   const char *text = params["text"] | "";
+  int priority = params["priority"] | 2;
   unsigned long durationMs = params["duration_ms"] | 5000UL;
-  characterRuntime.setMessage(text, durationMs);
+  characterRuntime.setMessage(overlayId, text, priority, durationMs);
+  RECORD_CMD("show_message", overlayId);
   JsonDocument data;
   data["ok"] = true;
   JsonDocument doc;
@@ -206,6 +213,7 @@ static ProtocolResponse handleShowMessage(const std::string &id, JsonObject para
 static ProtocolResponse handleSetState(const std::string &id, JsonObject params) {
   const char *state = params["state"] | "idle";
   characterRuntime.applyActivityCommand(state);
+  RECORD_CMD("set_state", state);
   JsonDocument data;
   data["ok"] = true;
   JsonDocument doc;
@@ -223,6 +231,7 @@ static ProtocolResponse handleSetState(const std::string &id, JsonObject params)
 static ProtocolResponse handleSetActivity(const std::string &id, JsonObject params) {
   const char *activity = params["activity"] | "idle";
   characterRuntime.applyActivityCommand(activity);
+  RECORD_CMD("set_activity", activity);
   JsonDocument data;
   data["ok"] = true;
   data["activity"] = activity;
@@ -241,6 +250,7 @@ static ProtocolResponse handleSetActivity(const std::string &id, JsonObject para
 static ProtocolResponse handleSetEmotion(const std::string &id, JsonObject params) {
   const char *emotion = params["emotion"] | "neutral";
   characterRuntime.setEmotion(emotion);
+  RECORD_CMD("set_emotion", emotion);
   JsonDocument data;
   data["ok"] = true;
   data["emotion"] = emotion;
@@ -259,6 +269,7 @@ static ProtocolResponse handleSetEmotion(const std::string &id, JsonObject param
 static ProtocolResponse handleSetLifeMode(const std::string &id, JsonObject params) {
   const char *mode = params["mode"] | "work";
   characterRuntime.setLifeMode(mode);
+  RECORD_CMD("set_life_mode", mode);
   JsonDocument data;
   data["ok"] = true;
   data["mode"] = mode;
@@ -277,6 +288,7 @@ static ProtocolResponse handleSetLifeMode(const std::string &id, JsonObject para
 static ProtocolResponse handleTriggerHabit(const std::string &id, JsonObject params) {
   const char *habit = params["habit"] | "";
   characterRuntime.triggerHabit(habit);
+  RECORD_CMD("trigger_habit", habit);
   JsonDocument data;
   data["ok"] = true;
   data["habit"] = habit;
@@ -295,6 +307,7 @@ static ProtocolResponse handleTriggerHabit(const std::string &id, JsonObject par
 static ProtocolResponse handleSetSeason(const std::string &id, JsonObject params) {
   const char *season = params["season"] | "spring";
   characterRuntime.setSeason(season);
+  RECORD_CMD("set_season", season);
   JsonDocument data;
   data["ok"] = true;
   data["season"] = season;
@@ -313,6 +326,7 @@ static ProtocolResponse handleSetSeason(const std::string &id, JsonObject params
 static ProtocolResponse handleSetBackground(const std::string &id, JsonObject params) {
   const char *bg = params["background"] | "office";
   characterRuntime.setBackground(bg);
+  RECORD_CMD("set_background", bg);
   JsonDocument data;
   data["ok"] = true;
   JsonDocument doc;
@@ -459,8 +473,23 @@ static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
   data["last_command_source"] = characterRuntime.lastCommandSource();
   data["render_count"] = characterRuntime.renderCount();
   data["last_render_ms"] = characterRuntime.lastRenderMs();
+  data["brain_tick_ms"] = characterRuntime.lastBrainTickMs();
+  data["render_ms"] = characterRuntime.lastRenderMs();
+  data["queue_depth"] = characterRuntime.overlayQueueDepth();
+  SceneDiagnostics sceneDiag = characterRuntime.lastSceneDiagnostics();
+  data["scene"] = sceneDiag.scene ? sceneDiag.scene : "";
+  data["body"] = sceneDiag.body ? sceneDiag.body : "";
+  data["eyes"] = sceneDiag.eyes ? sceneDiag.eyes : "";
+  data["overlay"] = sceneDiag.overlay ? sceneDiag.overlay : "";
+  data["render_objects"] = sceneDiag.renderObjects;
+  if (const char *bodySprite = characterRuntime.bodySpriteId()) {
+    data["body_sprite_id"] = bodySprite;
+  }
+  data["clip_frame_index"] = characterRuntime.currentFrame();
   JsonArray dirtyLast = data["dirty_last"].to<JsonArray>();
   appendDirtyLast(dirtyLast, characterRuntime.lastDirtyFlags());
+  JsonArray history = data["command_history"].to<JsonArray>();
+  gCommandHistory.appendToJson(history);
 
   JsonDocument doc;
   doc["v"] = 1;
@@ -517,9 +546,8 @@ void setup() {
   printBootBanner();
 }
 
-void loop() {
-  unsigned long now = millis();
-
+// v0.4.1 loop freeze — do not reorder without ADR.
+static void usbPoll() {
   while (Serial.available()) {
     char c = Serial.read();
     if (c == '\n') {
@@ -529,10 +557,20 @@ void loop() {
       serialBuffer += c;
     }
   }
+}
 
+static void brainTick(unsigned long nowMs) { characterRuntime.tick(nowMs); }
+
+static void rendererPresent() { characterRuntime.present(); }
+
+static void sleepYield() { delay(1); }
+
+void loop() {
+  unsigned long now = millis();
+  usbPoll();
   if (bootOk) {
-    characterRuntime.tick(now);
-    characterRuntime.present();
-    delay(1);
+    brainTick(now);
+    rendererPresent();
   }
+  sleepYield();
 }

@@ -184,13 +184,15 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 - [ ] Build fail → frustrated → recover sequence
 - [ ] Day 100 welcome message from SQLite long memory
 
-**Target version:** `0.4.0`
+**Target version:** `0.4.0` (dev-sync in 0.4.0; context/overlay split + architecture freeze in **0.4.1** — see [Architecture Freeze](./ARCHITECTURE_FREEZE.md))
 
 ---
 
-## Milestone 5 - Sprite Renderer
+## Milestone 5 - Character Renderer (Tiny World Renderer)
 
-**Goal:** Swap text renderer for sprites; zero Brain changes.
+**Goal:** Swap `TextSceneRenderer` for scene-aware `CharacterRenderer` (sprites today; SVG/OLED/GIF/ePaper later). **Zero Brain changes.**
+
+Pipeline: `RenderScheduler → SceneBuilder → CharacterRenderer → SpriteCache`. See [SCENE_SPEC.md](./SCENE_SPEC.md) and [Architecture Freeze](./ARCHITECTURE_FREEZE.md).
 
 **Target version:** `0.5.0`
 

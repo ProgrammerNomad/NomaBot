@@ -10,7 +10,9 @@ from typing import Any
 from nomabot_desktop.core.asset_registry import AssetRegistry
 from nomabot_desktop.core.bus import EventBus
 from nomabot_desktop.core.command_dispatcher import CommandDispatcher
+from nomabot_desktop.core.command_router import CommandRouter
 from nomabot_desktop.core.device_manager import DeviceManager
+from nomabot_desktop.core.overlay_service import OverlayService
 from nomabot_desktop.core.priority_queue import PriorityQueue
 from nomabot_desktop.core.runtime import NomaRuntime
 from nomabot_desktop.core.state_manager import StateManager
@@ -30,6 +32,8 @@ class AppContext:
     queue: PriorityQueue
     dispatcher: CommandDispatcher
     runtime: NomaRuntime
+    overlay: OverlayService | None = None
+    router: CommandRouter | None = None
     state_manager: StateManager | None = None
     emu_state: EmulatorState | None = None
     log_dir: Path | None = None

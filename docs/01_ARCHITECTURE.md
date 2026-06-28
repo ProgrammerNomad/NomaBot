@@ -501,4 +501,5 @@ Catalog entries reference signed artifacts, semver, and compatibility (`min_desk
 | [Offline Mode](./16_OFFLINE.md) | USB-only complete experience |
 | [Security](./17_SECURITY.md) | Pairing, OTA, sandbox |
 | [ADR index](./adr/README.md) | Architecture decision records |
+| [Architecture Freeze](./ARCHITECTURE_FREEZE.md) | Frozen subsystems (v0.4.1+) |
 | [Roadmap](./10_ROADMAP.md) | Milestones |
