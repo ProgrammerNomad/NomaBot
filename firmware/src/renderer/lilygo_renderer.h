@@ -15,4 +15,5 @@ public:
   void drawText(int x, int y, const char *text, uint16_t color) override;
   int width() const override;
   int height() const override;
+  void setRotation(int rotation) override;
 };

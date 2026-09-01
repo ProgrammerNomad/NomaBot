@@ -47,3 +47,27 @@ class ConfigService:
     @last_port.setter
     def last_port(self, value: str) -> None:
         self.set_str("last_port", value)
+
+    @property
+    def weather_api_key(self) -> str | None:
+        return self.get_str("weather_api_key")
+
+    @weather_api_key.setter
+    def weather_api_key(self, value: str) -> None:
+        self.set_str("weather_api_key", value)
+
+    @property
+    def weather_city(self) -> str | None:
+        return self.get_str("weather_city", "Mumbai,IN")
+
+    @weather_city.setter
+    def weather_city(self, value: str) -> None:
+        self.set_str("weather_city", value)
+
+    @property
+    def weather_enabled(self) -> bool:
+        return self.get_bool("weather_enabled", True) and bool(self.weather_api_key)
+
+    @weather_enabled.setter
+    def weather_enabled(self, value: bool) -> None:
+        self.set_bool("weather_enabled", value)

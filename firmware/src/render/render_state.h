@@ -14,6 +14,9 @@ struct RenderState {
   int displayEnergy = 80;
   bool curiosity = false;
   const char *overlayText = "";
+  const char *clockText = "";
+  const char *weatherText = "";
+  const char *weatherIcon = "";
   const char *backgroundSpriteId = nullptr;
   const char *bodySpriteId = nullptr;
   int clipFrameIndex = 0;

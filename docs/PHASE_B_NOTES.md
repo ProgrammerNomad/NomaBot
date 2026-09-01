@@ -44,7 +44,11 @@ After flash, confirm diagnostics **`render_mode`: `sprite`** before Phase B art 
 
 ---
 
-## LCD Visual Polish (2026-09-01)
+## Eyes ambient branch (2026-09-01)
+
+Experimental **`feature/eyes-ambient`**: landscape 320×170 eyes-only character (`load_character eyes`). Full-body nomabot remains on main. See [`docs/EYES_AMBIENT.md`](EYES_AMBIENT.md).
+
+---
 
 | Change | Detail | LCD verify |
 |--------|--------|------------|

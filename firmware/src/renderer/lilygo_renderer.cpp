@@ -105,3 +105,7 @@ void LilygoRenderer::drawText(int x, int y, const char *text, uint16_t color) {
 int LilygoRenderer::width() const { return _gfx.width(); }
 
 int LilygoRenderer::height() const { return _gfx.height(); }
+
+void LilygoRenderer::setRotation(int rotation) {
+  _gfx.setRotation(rotation & 3);
+}

@@ -13,9 +13,8 @@ static PackLoader packLoader;
 static CharacterRuntime characterRuntime;
 static ProtocolHandler protocol;
 static String serialBuffer;
-static String activeCharacterId = "nomabot";
+static String activeCharacterId = "eyes";
 static bool bootOk = false;
-static bool textModeBoot = false;
 static const char *bootFsStatus = "FAIL";
 static const char *bootPackStatus = "FAIL";
 
@@ -31,16 +30,12 @@ static void showBootError(const char *label) {
 }
 
 static void printBootBanner() {
-  if (textModeBoot) {
-    Serial.printf(
-        "NomaBot FW %s | Mode: TEXT | Life: %s | Activity: %s | Emotion: %s | Behavior: %s\n",
-        NOMA_FIRMWARE_VERSION, characterRuntime.lifeMode(), characterRuntime.currentActivity(),
-        characterRuntime.currentEmotion(), characterRuntime.currentBehavior());
-    return;
-  }
+  const char *mode =
+      bootOk ? renderModeName(characterRuntime.renderMode()) : "ERROR";
   Serial.printf(
-      "NomaBot FW %s | FS: %s | Pack: %s | Character: %s\n", NOMA_FIRMWARE_VERSION,
-      bootFsStatus, bootPackStatus, bootOk ? activeCharacterId.c_str() : "none");
+      "NomaBot FW %s | FS: %s | Pack: %s | Character: %s | render_mode=%s\n",
+      NOMA_FIRMWARE_VERSION, bootFsStatus, bootPackStatus,
+      bootOk ? activeCharacterId.c_str() : "none", mode);
 }
 
 static bool loadActiveCharacter() {
@@ -58,7 +53,7 @@ static bool loadActiveCharacter() {
   if (deserializeJson(doc, text)) {
     return false;
   }
-  const char *id = doc["character_id"] | "nomabot";
+  const char *id = doc["character_id"] | "eyes";
   activeCharacterId = id;
   return true;
 }
@@ -82,22 +77,12 @@ static bool bootCharacter() {
   loadActiveCharacter();
   if (!characterRuntime.loadCharacter(packLoader, activeCharacterId.c_str())) {
     const char *label = packLoadErrorLabel(packLoader.lastError());
-    Serial.printf("Pack load failed: %s (%s) — falling back to text mode\n",
-                  activeCharacterId.c_str(), label);
+    Serial.printf("Pack load failed: %s (%s)\n", activeCharacterId.c_str(), label);
     bootPackStatus = "FAIL";
     return false;
   }
   bootPackStatus = "OK";
   return true;
-}
-
-static void startTextModeBoot() {
-  textModeBoot = true;
-  bootOk = true;
-  characterRuntime.useBehaviorDefaults();
-  characterRuntime.setLifeMode("work");
-  characterRuntime.setActivity("idle");
-  characterRuntime.present();
 }
 
 static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
@@ -132,6 +117,8 @@ static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
   caps.add("set_life_mode");
   caps.add("trigger_habit");
   caps.add("set_season");
+  caps.add("set_weather");
+  caps.add("set_clock");
   caps.add("load_character");
   caps.add("diagnostics");
 
@@ -140,9 +127,9 @@ static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
     data["character_id"] = characterRuntime.characterId();
     data["pack_uuid"] = info->uuid;
   } else {
-    data["character_id"] = "nomabot";
+    data["character_id"] = "eyes";
   }
-  data["render_mode"] = textModeBoot ? "text" : renderModeName(characterRuntime.renderMode());
+  data["render_mode"] = bootOk ? renderModeName(characterRuntime.renderMode()) : "error";
 
   JsonDocument doc;
   doc["v"] = 1;
@@ -323,6 +310,51 @@ static ProtocolResponse handleSetSeason(const std::string &id, JsonObject params
   return {out + "\n", true};
 }
 
+static ProtocolResponse handleSetWeather(const std::string &id, JsonObject params) {
+  const char *icon = params["icon"] | "cloud";
+  const char *condition = params["condition"] | "";
+  float tempC = params["temp_c"] | 0.0f;
+  const char *city = params["city"] | "";
+  char textBuf[96];
+  if (city[0]) {
+    snprintf(textBuf, sizeof(textBuf), "%.0fC %s  %s", tempC, condition, city);
+  } else {
+    snprintf(textBuf, sizeof(textBuf), "%.0fC %s", tempC, condition);
+  }
+  characterRuntime.setWeather(icon, textBuf);
+  RECORD_CMD("set_weather", icon);
+  JsonDocument data;
+  data["ok"] = true;
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "set_weather";
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
+}
+
+static ProtocolResponse handleSetClock(const std::string &id, JsonObject params) {
+  const char *timeText = params["time"] | "";
+  characterRuntime.setClock(timeText);
+  RECORD_CMD("set_clock", timeText);
+  JsonDocument data;
+  data["ok"] = true;
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "set_clock";
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
+}
+
 static ProtocolResponse handleSetBackground(const std::string &id, JsonObject params) {
   const char *bg = params["background"] | "office";
   characterRuntime.setBackground(bg);
@@ -361,7 +393,7 @@ static ProtocolResponse handleGetStatus(const std::string &id, JsonObject) {
 }
 
 static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject params) {
-  const char *characterId = params["character_id"] | "nomabot";
+  const char *characterId = params["character_id"] | "eyes";
   characterRuntime.unload();
   packLoader.unload();
 
@@ -371,7 +403,6 @@ static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject pa
     ok = true;
     activeCharacterId = characterId;
     bootOk = true;
-    textModeBoot = false;
     bootPackStatus = "OK";
     const PackInfo *info = characterRuntime.packInfo();
     persistActiveCharacter(characterId, info ? info->uuid.c_str() : nullptr);
@@ -388,14 +419,15 @@ static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject pa
       display["height"] = info->displayHeight;
     }
     characterRuntime.present();
+    data["render_mode"] = renderModeName(characterRuntime.renderMode());
   } else {
-    bootOk = true;
-    textModeBoot = true;
+    bootOk = false;
     bootPackStatus = "FAIL";
-    characterRuntime.useBehaviorDefaults();
-    data["error"] = packLoadErrorLabel(packLoader.lastError());
-    data["render_mode"] = "text";
-    characterRuntime.present();
+    const char *label = packLoadErrorLabel(packLoader.lastError());
+    data["error"] = label;
+    data["render_mode"] = "error";
+    showBootError("PACK LOAD FAIL");
+    Serial.printf("load_character failed: %s (%s)\n", characterId, label);
   }
 
   JsonDocument doc;
@@ -457,7 +489,8 @@ static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
   data["behavior"] = characterRuntime.currentBehavior();
   data["behavior_label"] = characterRuntime.brain().behaviorLabel();
   data["clip"] = characterRuntime.brain().clipForBehavior();
-  data["render_mode"] = textModeBoot ? "text" : renderModeName(characterRuntime.renderMode());
+  data["render_mode"] =
+      bootOk ? renderModeName(characterRuntime.renderMode()) : "error";
   data["time_in_behavior_sec"] = characterRuntime.timeInBehaviorSec(now);
   data["next_behavior"] = characterRuntime.nextBehavior();
   data["animation"] = characterRuntime.currentAnimation();
@@ -518,6 +551,8 @@ static void registerProtocolHandlers() {
   protocol.registerCommand("set_life_mode", handleSetLifeMode);
   protocol.registerCommand("trigger_habit", handleTriggerHabit);
   protocol.registerCommand("set_season", handleSetSeason);
+  protocol.registerCommand("set_weather", handleSetWeather);
+  protocol.registerCommand("set_clock", handleSetClock);
   protocol.registerCommand("load_character", handleLoadCharacter);
   protocol.registerCommand("diagnostics", handleDiagnostics);
 }
@@ -532,17 +567,21 @@ void setup() {
   bool fsMounted = packLoader.mountFilesystem();
   if (fsMounted) {
     bootFsStatus = "OK";
-    if (bootCharacter()) {
-      bootOk = true;
+    bootOk = bootCharacter();
+    if (!bootOk) {
+      delay(500);
+      bootOk = bootCharacter();
+    }
+    if (bootOk) {
       characterRuntime.setLifeMode("work");
       characterRuntime.setActivity("idle");
       characterRuntime.present();
     } else {
-      startTextModeBoot();
+      showBootError("EYES PACK FAIL");
     }
   } else {
-    Serial.println("LittleFS mount failed — text mode boot");
-    startTextModeBoot();
+    Serial.println("LittleFS mount failed");
+    showBootError("FS MOUNT FAIL");
   }
 
   printBootBanner();

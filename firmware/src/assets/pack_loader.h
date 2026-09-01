@@ -73,6 +73,8 @@ public:
   int expressionAnchorX() const { return _anchorX + _expressionDx; }
   int expressionAnchorY() const { return _anchorY + _expressionDy; }
   bool hudEnabled() const { return _hudEnabled; }
+  bool eyesOnlyMode() const { return _eyesOnlyMode; }
+  bool landscapeOrientation() const { return _landscapeOrientation; }
 
   void listDirectory(const std::string &path) const;
 
@@ -89,6 +91,8 @@ private:
   int _expressionDx = 0;
   int _expressionDy = 24;
   bool _hudEnabled = true;
+  bool _eyesOnlyMode = false;
+  bool _landscapeOrientation = false;
   std::string _defaultExpressionSprite;
   std::vector<std::pair<std::string, std::string>> _expressions;
   std::vector<SpriteMeta> _sprites;

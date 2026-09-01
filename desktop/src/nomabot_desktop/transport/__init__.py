@@ -47,10 +47,10 @@ class TransportAdapter:
 class EmulatorState:
     """Shared state for emulator UI - mirrors firmware behavior display."""
 
-    def __init__(self, width: int = 170, height: int = 320) -> None:
+    def __init__(self, width: int = 320, height: int = 170) -> None:
         self.width = width
         self.height = height
-        self.character_id = "nomabot"
+        self.character_id = "eyes"
         self.life_mode = "work"
         self.activity = "idle"
         self.emotion = "neutral"
@@ -59,17 +59,20 @@ class EmulatorState:
         self.animation: str | None = "idle"
         self.message: str | None = None
         self.overlay_id: str | None = None
-        self.background = "#1a1a2e"
-        self.background_sprite_id = "bg_office"
-        self.body_sprite_id = "body_idle_01"
-        self.anchor_x = 85
-        self.anchor_y = 80
-        self.render_mode = "text"
+        self.background = "#000000"
+        self.background_sprite_id = "bg_dark"
+        self.body_sprite_id = "eyes_neutral"
+        self.anchor_x = 160
+        self.anchor_y = 85
+        self.render_mode = "eyes"
         self.season: str | None = "spring"
         self.goal = "none"
         self.goal_progress = 0
         self.energy = 80
         self.curiosity_active = False
+        self.clock_text = ""
+        self.weather_text = ""
+        self.weather_icon = ""
         self._frame_index = 0
         self._frame_start_ms = 0.0
 
@@ -112,7 +115,8 @@ class EmulatorTransport(MockDevice):
             env = parse_line(line)
             if env.cmd == "play_animation" and env.params:
                 self.state.animation = env.params.get("animation")
-                self.state.render_mode = "sprite"
+                if self.state.render_mode != "eyes":
+                    self.state.render_mode = "sprite"
                 self.state.reset_clip()
             elif env.cmd == "show_message" and env.params:
                 self.state.message = env.params.get("text")
@@ -130,7 +134,6 @@ class EmulatorTransport(MockDevice):
                 activity = env.params.get("activity")
                 if activity:
                     self.state.activity = activity
-                    self.state.render_mode = "text"
             elif env.cmd == "set_emotion" and env.params:
                 self.state.emotion = env.params.get("emotion", "neutral")
             elif env.cmd == "set_life_mode" and env.params:
@@ -146,7 +149,32 @@ class EmulatorTransport(MockDevice):
                     self.state.behavior_label = "Evening wind-down..."
             elif env.cmd == "set_season" and env.params:
                 self.state.season = env.params.get("season", "spring")
+            elif env.cmd == "set_weather" and env.params:
+                temp = env.params.get("temp_c", 0)
+                condition = env.params.get("condition", "")
+                city = env.params.get("city", "")
+                icon = env.params.get("icon", "cloud")
+                self.state.weather_icon = icon
+                if city:
+                    self.state.weather_text = f"{temp:.0f}C {condition}  {city}"
+                else:
+                    self.state.weather_text = f"{temp:.0f}C {condition}"
+            elif env.cmd == "set_clock" and env.params:
+                self.state.clock_text = env.params.get("time", "")
             elif env.cmd == "load_character" and env.params:
-                self.state.character_id = env.params.get("character_id", "nomabot")
+                pack = env.params.get("character_id", "eyes")
+                self.state.character_id = pack
+                if pack == "eyes":
+                    self.state.render_mode = "eyes"
+                    self.state.width = 320
+                    self.state.height = 170
+                    self.state.background_sprite_id = "bg_dark"
+                    self.state.body_sprite_id = "eyes_neutral"
+                else:
+                    self.state.render_mode = "sprite"
+                    self.state.width = 170
+                    self.state.height = 320
+                    self.state.background_sprite_id = "bg_office"
+                    self.state.body_sprite_id = "body_idle_01"
                 self.state.reset_clip()
         await super().send(data)

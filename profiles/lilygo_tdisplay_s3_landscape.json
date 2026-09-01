@@ -1,0 +1,7 @@
+{
+  "id": "lilygo_tdisplay_s3_landscape",
+  "display": { "width": 320, "height": 170 },
+  "renderer": "LilyGo_T_Display_S3",
+  "default_baud": 115200,
+  "asset_budget_bytes": 2097152
+}

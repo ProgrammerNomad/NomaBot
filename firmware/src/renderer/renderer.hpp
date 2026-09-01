@@ -17,4 +17,5 @@ public:
   virtual void drawText(int x, int y, const char *text, uint16_t color) = 0;
   virtual int width() const = 0;
   virtual int height() const = 0;
+  virtual void setRotation(int rotation) { (void)rotation; }
 };

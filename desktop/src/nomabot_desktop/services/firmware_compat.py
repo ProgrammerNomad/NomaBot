@@ -9,6 +9,7 @@ logger = logging.getLogger("noma.firmware")
 
 _MIN_FIRMWARE = (0, 3, 0)
 _REQUIRED_CAPS = ("load_character", "diagnostics")
+_EYES_CAPS = ("set_weather", "set_clock")
 
 
 def _parse_version(version: str) -> tuple[int, int, int]:
@@ -36,6 +37,13 @@ def check_firmware_compatible(hello_data: dict) -> list[str]:
             issues.append(
                 f"Firmware missing capability '{cap}' (version {fw}). "
                 "Re-flash firmware binary, then uploadfs, then RESET the board."
+            )
+
+    for cap in _EYES_CAPS:
+        if cap not in caps:
+            issues.append(
+                f"Firmware missing eyes capability '{cap}' (version {fw}). "
+                "Re-flash firmware with upload target (not uploadfs only), then RESET."
             )
 
     return issues

@@ -1,5 +1,7 @@
 #include "character_renderer.h"
 
+#include "renderer/renderer.hpp"
+
 namespace {
 
 constexpr int kHudBandHeight = 18;
@@ -140,7 +142,36 @@ void drawExpressionNode(IRenderer &renderer, PackLoader &loader, SpriteCache &ca
   if (!node.visible || !node.spriteId || !node.spriteId[0]) {
     return;
   }
+  const SpriteMeta *meta = loader.findSprite(node.spriteId);
+  if (meta && meta->width >= renderer.width() - 2) {
+    const uint16_t *pixels = cache.get(node.spriteId, loader, meta);
+    if (pixels) {
+      renderer.blitRGB565ColorKey(pixels, 0, 0, meta->width, meta->height, kSpriteColorKey);
+    }
+    return;
+  }
   compositor.blitSprite(renderer, loader, cache, node.spriteId, node.x, node.y, true);
+}
+
+void drawAmbientBarNode(IRenderer &renderer, const SceneNode &node, const RenderState *state) {
+  (void)state;
+  if (!node.visible) {
+    return;
+  }
+  constexpr int kBarH = 22;
+  renderer.fillRect(0, 0, renderer.width(), kBarH, 0x2949);
+  const char *clock = node.id ? node.id : "";
+  if (clock[0]) {
+    renderer.drawText(6, 6, clock, kTextColor);
+  }
+  if (node.text && node.text[0]) {
+    int tw = textWidthEstimate(node.text);
+    int x = renderer.width() - tw - 8;
+    if (x < 80) {
+      x = 80;
+    }
+    renderer.drawText(x, 6, node.text, kTextColor);
+  }
 }
 
 void drawHudNode(IRenderer &renderer, const SceneNode &node) {
@@ -211,6 +242,9 @@ void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, Dirty
                                   BackgroundCache &bgCache) {
   if (dirty == DirtyFull) {
     drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background, scene);
+    if (scene.ambientBar.visible) {
+      drawAmbientBarNode(renderer, scene.ambientBar, nullptr);
+    }
     drawCharacterNode(renderer, loader, cache, compositor, scene.character);
     drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
     if (scene.hud.visible) {
@@ -227,19 +261,33 @@ void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, Dirty
   }
 
   if (scene.character.dirty || scene.expression.dirty) {
-    if (!scene.background.dirty) {
+    bool fullScreenEyes = false;
+    if (scene.expression.visible && scene.expression.spriteId) {
+      const SpriteMeta *eyeMeta = loader.findSprite(scene.expression.spriteId);
+      fullScreenEyes = eyeMeta && eyeMeta->width >= renderer.width() - 2;
+    }
+    if (fullScreenEyes && scene.expression.dirty && !scene.background.dirty) {
+      drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background, scene);
+      drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
+    } else if (!scene.background.dirty) {
       bgCache.restore(renderer);
     }
-    if (scene.character.dirty) {
-      drawCharacterNode(renderer, loader, cache, compositor, scene.character);
-    }
-    if (scene.expression.dirty) {
-      drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
+    if (!fullScreenEyes || !scene.expression.dirty) {
+      if (scene.character.dirty) {
+        drawCharacterNode(renderer, loader, cache, compositor, scene.character);
+      }
+      if (scene.expression.dirty && !fullScreenEyes) {
+        drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
+      }
     }
   }
 
   if (scene.hud.dirty) {
     drawHudNode(renderer, scene.hud);
+  }
+
+  if (scene.ambientBar.dirty) {
+    drawAmbientBarNode(renderer, scene.ambientBar, nullptr);
   }
 
   if (scene.speechBubble.dirty) {

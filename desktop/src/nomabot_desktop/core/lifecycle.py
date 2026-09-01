@@ -25,14 +25,17 @@ from nomabot_desktop.core.logging_config import setup_logging
 from nomabot_desktop.core.overlay_service import OverlayService
 from nomabot_desktop.core.state_manager import BotState, StateManager
 from nomabot_desktop.services.activity import ActivityService
+from nomabot_desktop.services.ambient_display import AmbientDisplayService
 from nomabot_desktop.services.build_events import BuildEventService
 from nomabot_desktop.services.character import CharacterService
+from nomabot_desktop.services.clock import ClockService
 from nomabot_desktop.services.daily_routine import DailyRoutineService
 from nomabot_desktop.services.firmware_compat import log_firmware_issues
 from nomabot_desktop.services.friendship import FriendshipService
 from nomabot_desktop.services.life_mode import LifeModeService
 from nomabot_desktop.services.scheduler import SchedulerService
 from nomabot_desktop.services.season import SeasonService
+from nomabot_desktop.services.weather import WeatherService
 from nomabot_desktop.storage.service import DeviceRow
 from nomabot_desktop.transport import EmulatorState
 from nomabot_desktop.ui.emulator import EmulatorWindow
@@ -66,8 +69,9 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
 
-def _load_profile() -> dict:
-    path = _repo_root() / "profiles" / "lilygo_tdisplay_s3.json"
+def _load_profile(landscape: bool = False) -> dict:
+    name = "lilygo_tdisplay_s3_landscape.json" if landscape else "lilygo_tdisplay_s3.json"
+    path = _repo_root() / "profiles" / name
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -99,7 +103,7 @@ async def _connect_device(ctx: AppContext, device_id: str) -> None:
     _persist_device(ctx, device_id, hello)
     fw_ok = log_firmware_issues(hello)
     if ctx.character_service and fw_ok:
-        await ctx.character_service.activate(device_id, "nomabot")
+        await ctx.character_service.activate(device_id, "eyes")
     elif ctx.character_service and not fw_ok:
         logger.error(
             "Skipping load_character until firmware is 0.3.0+ with load_character cap. "
@@ -133,10 +137,15 @@ async def _bootstrap_hardware(
         ctx.config.last_port = port
     elif emulator:
         device_id = "emulator"
+        profile = _load_profile(landscape=True)
         emu_state = EmulatorState(
             width=profile["display"]["width"],
             height=profile["display"]["height"],
         )
+        emu_state.character_id = "eyes"
+        emu_state.render_mode = "eyes"
+        emu_state.background_sprite_id = "bg_dark"
+        emu_state.body_sprite_id = "eyes_neutral"
         ctx.emu_state = emu_state
         ctx.device_manager.register(
             DeviceRecord(
@@ -194,7 +203,6 @@ def _sync_emulator_state(ctx: AppContext, state: BotState) -> None:
     ctx.emu_state.emotion = state.emotion
     ctx.emu_state.life_mode = state.life_mode
     ctx.emu_state.animation = state.animation
-    ctx.emu_state.render_mode = "text"
 
 
 def _sync_emulator_overlay(ctx: AppContext, overlay: OverlayShow) -> None:
@@ -313,8 +321,11 @@ def run_app(
     except SerialException as exc:
         if port:
             logger.error(
-                "Cannot open %s (%s). Close PlatformIO serial monitor, "
-                "any other NomaBot instance, and Arduino IDE serial — then retry.",
+                "Cannot open %s (%s).\n"
+                "  1. Close PlatformIO serial monitor, Arduino IDE serial, and any other NomaBot instance.\n"
+                "  2. PowerShell: Get-Process python*, pio* -ErrorAction SilentlyContinue | Stop-Process -Force\n"
+                "  3. Unplug USB, wait 3s, replug — then run only ONE desktop instance.\n"
+                "  4. If still denied, check Device Manager for the correct COM port.",
                 port,
                 exc,
             )
@@ -351,6 +362,12 @@ def run_app(
     daily_routine.start()
     season = SeasonService(ctx.bus)
     season.start()
+    clock_svc = ClockService(ctx.dispatcher, device_id)
+    clock_svc.start()
+    weather_svc = WeatherService(ctx.dispatcher, ctx.config, device_id)
+    weather_svc.start()
+    ambient_svc = AmbientDisplayService()
+    ambient_svc.start()
     BuildEventService(ctx.bus)
     FriendshipService(ctx.bus, ctx.storage)
 
@@ -407,5 +424,8 @@ def run_app(
     life_mode.stop()
     daily_routine.stop()
     season.stop()
+    clock_svc.stop()
+    weather_svc.stop()
+    ambient_svc.stop()
     _schedule(ctx.transport_manager.disconnect_all()).result()
     ctx.storage.close()

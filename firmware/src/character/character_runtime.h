@@ -64,6 +64,8 @@ public:
   void setState(const char *state);
   void setMessage(const char *id, const char *text, int priority, unsigned long durationMs = 5000);
   void setBackground(const char *backgroundKey);
+  void setWeather(const char *icon, const char *text);
+  void setClock(const char *timeText);
 
   void setRenderMode(RenderMode mode) { _renderMode = mode; }
   RenderMode renderMode() const { return _renderMode; }
@@ -109,10 +111,13 @@ private:
   CharacterLoadError _lastLoadError = CharacterLoadError::None;
   RenderMode _renderMode = RenderMode::Text;
   bool _overrideAnimation = false;
-  std::string _characterId = "nomabot";
+  std::string _characterId = "eyes";
   std::string _backgroundSprite;
   std::string _activeClipId;
   std::string _bodySpriteId;
+  std::string _clockText;
+  std::string _weatherText;
+  std::string _weatherIcon;
   unsigned long _lastFpsMs = 0;
   int _frameCount = 0;
   int _fps = 0;

@@ -1,0 +1,14 @@
+{
+  "id": "look_left",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "eyes_look_left",
+      "duration_ms": 350
+    },
+    {
+      "sprite": "eyes_neutral",
+      "duration_ms": 300
+    }
+  ]
+}

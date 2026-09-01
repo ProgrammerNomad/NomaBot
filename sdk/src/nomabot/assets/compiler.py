@@ -42,6 +42,8 @@ def _sprite_id(rel: Path) -> str:
         return stem
     if len(parts) >= 2 and parts[0] == "face":
         return stem if stem.startswith("face_") else f"face_{stem}"
+    if len(parts) >= 2 and parts[0] == "eyes":
+        return stem if stem.startswith("eyes_") else f"eyes_{stem}"
     return str(rel.with_suffix("")).replace("\\", "/")
 
 
@@ -59,6 +61,13 @@ def _human_bytes(n: int) -> str:
 SPRITE_COLORKEY = 0xF81F
 
 
+def _iter_rgb_pixels(img: Image.Image):
+    if hasattr(img, "get_flattened_data"):
+        yield from img.get_flattened_data()
+    else:
+        yield from img.getdata()
+
+
 def _png_to_rgb565(path: Path, *, use_colorkey: bool = False) -> bytes:
     if Image is None:
         raise RuntimeError("Pillow required for asset compilation: uv add pillow --package nomabot")
@@ -68,7 +77,7 @@ def _png_to_rgb565(path: Path, *, use_colorkey: bool = False) -> bytes:
     ):
         img = img.convert("RGBA")
         pixels = []
-        for r, g, b, a in img.get_flattened_data():
+        for r, g, b, a in _iter_rgb_pixels(img):
             if a < 128:
                 pixels.append(struct.pack("<H", SPRITE_COLORKEY))
             else:
@@ -76,7 +85,7 @@ def _png_to_rgb565(path: Path, *, use_colorkey: bool = False) -> bytes:
                 pixels.append(struct.pack("<H", rgb565))
         return b"".join(pixels)
     pixels = []
-    for r, g, b in img.convert("RGB").get_flattened_data():
+    for r, g, b in _iter_rgb_pixels(img.convert("RGB")):
         rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
         pixels.append(struct.pack("<H", rgb565))
     return b"".join(pixels)
@@ -113,7 +122,7 @@ def compile_pack(source: Path, output: Path, profile_id: str) -> dict:
             out_rel = rel.with_suffix(".bin")
             out_bin = sprites_out / out_rel
             out_bin.parent.mkdir(parents=True, exist_ok=True)
-            use_colorkey = rel.parts and rel.parts[0] in ("body", "face")
+            use_colorkey = rel.parts and rel.parts[0] in ("body", "face", "eyes")
             data = _png_to_rgb565(png, use_colorkey=use_colorkey)
             out_bin.write_bytes(data)
             if Image:

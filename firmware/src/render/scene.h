@@ -2,9 +2,10 @@
 
 #include "render_state.h"
 
-static constexpr int kSceneMaxNodes = 5;
+static constexpr int kSceneMaxNodes = 6;
 
 static constexpr int kSceneZBackground = 0;
+static constexpr int kSceneZAmbient = 5;
 static constexpr int kSceneZCharacter = 10;
 static constexpr int kSceneZExpression = 11;
 static constexpr int kSceneZProp = 20;  // reserved — baked into bg in M5.1
@@ -25,6 +26,7 @@ struct SceneNode {
 struct Scene {
   const char *sceneId = "office";
   SceneNode background;
+  SceneNode ambientBar;
   SceneNode character;
   SceneNode expression;
   SceneNode hud;
@@ -43,6 +45,9 @@ struct SceneDiagnostics {
 inline int sceneVisibleNodeCount(const Scene &scene) {
   int count = 0;
   if (scene.background.visible) {
+    count++;
+  }
+  if (scene.ambientBar.visible) {
     count++;
   }
   if (scene.character.visible) {

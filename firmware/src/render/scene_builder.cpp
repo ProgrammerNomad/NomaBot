@@ -21,6 +21,7 @@ void markNodeDirty(SceneNode &node, bool dirtyFlag) {
 void applyDirtyFlags(Scene &scene, DirtyFlags dirty) {
   if (dirty == DirtyFull) {
     markNodeDirty(scene.background, true);
+    markNodeDirty(scene.ambientBar, true);
     markNodeDirty(scene.character, true);
     markNodeDirty(scene.expression, true);
     markNodeDirty(scene.hud, true);
@@ -29,6 +30,7 @@ void applyDirtyFlags(Scene &scene, DirtyFlags dirty) {
   }
 
   markNodeDirty(scene.background, hasDirty(dirty, DirtyBackground));
+  markNodeDirty(scene.ambientBar, hasDirty(dirty, DirtyBehavior));
   markNodeDirty(scene.character, hasDirty(dirty, DirtyCharacter));
   markNodeDirty(scene.expression, hasDirty(dirty, DirtyCharacter));
   markNodeDirty(scene.hud, hasDirty(dirty, DirtyBehavior));
@@ -37,9 +39,13 @@ void applyDirtyFlags(Scene &scene, DirtyFlags dirty) {
     scene.speechBubble.dirty = true;
   }
 
-  if (hasDirty(dirty, DirtyBackground) && scene.character.visible) {
-    scene.character.dirty = true;
-    scene.expression.dirty = scene.expression.visible;
+  if (hasDirty(dirty, DirtyBackground)) {
+    if (scene.character.visible) {
+      scene.character.dirty = true;
+    }
+    if (scene.expression.visible) {
+      scene.expression.dirty = true;
+    }
   }
   if (hasDirty(dirty, DirtyCharacter) && scene.expression.visible) {
     scene.expression.dirty = true;
@@ -50,6 +56,7 @@ void applyDirtyFlags(Scene &scene, DirtyFlags dirty) {
 
 Scene SceneBuilder::build(const RenderState &state, PackLoader &loader, DirtyFlags dirty) {
   Scene scene;
+  const bool eyesOnly = loader.eyesOnlyMode();
 
   const char *bgSprite = state.backgroundSpriteId;
   if (!bgSprite || !bgSprite[0]) {
@@ -57,7 +64,7 @@ Scene SceneBuilder::build(const RenderState &state, PackLoader &loader, DirtyFla
   }
   const char *bodySprite = state.bodySpriteId;
   if (!bodySprite || !bodySprite[0]) {
-    bodySprite = "body_idle_01";
+    bodySprite = eyesOnly ? "eyes_neutral" : "body_idle_01";
   }
 
   scene.sceneId = sceneIdFromBackground(bgSprite);
@@ -69,21 +76,41 @@ Scene SceneBuilder::build(const RenderState &state, PackLoader &loader, DirtyFla
   scene.background.z = kSceneZBackground;
   scene.background.visible = bgSprite && bgSprite[0];
 
-  scene.character.id = bodySprite;
-  scene.character.spriteId = bodySprite;
-  scene.character.x = loader.anchorX();
-  scene.character.y = loader.anchorY();
-  scene.character.z = kSceneZCharacter;
-  scene.character.visible = bodySprite && bodySprite[0];
+  const char *clockText = state.clockText ? state.clockText : "";
+  const char *weatherText = state.weatherText ? state.weatherText : "";
+  scene.ambientBar.id = clockText;
+  scene.ambientBar.spriteId = state.weatherIcon ? state.weatherIcon : "";
+  scene.ambientBar.text = weatherText;
+  scene.ambientBar.x = 4;
+  scene.ambientBar.y = 6;
+  scene.ambientBar.z = kSceneZAmbient;
+  scene.ambientBar.visible = eyesOnly && (clockText[0] != '\0' || weatherText[0] != '\0');
 
-  const char *emotion = state.emotion ? state.emotion : "neutral";
-  const char *faceSprite = loader.expressionForEmotion(emotion);
-  scene.expression.id = faceSprite;
-  scene.expression.spriteId = faceSprite;
-  scene.expression.x = loader.expressionAnchorX();
-  scene.expression.y = loader.expressionAnchorY();
-  scene.expression.z = kSceneZExpression;
-  scene.expression.visible = faceSprite && faceSprite[0];
+  if (eyesOnly) {
+    scene.character.visible = false;
+    scene.expression.id = bodySprite;
+    scene.expression.spriteId = bodySprite;
+    scene.expression.x = 0;
+    scene.expression.y = 0;
+    scene.expression.z = kSceneZExpression;
+    scene.expression.visible = bodySprite && bodySprite[0];
+  } else {
+    scene.character.id = bodySprite;
+    scene.character.spriteId = bodySprite;
+    scene.character.x = loader.anchorX();
+    scene.character.y = loader.anchorY();
+    scene.character.z = kSceneZCharacter;
+    scene.character.visible = bodySprite && bodySprite[0];
+
+    const char *emotion = state.emotion ? state.emotion : "neutral";
+    const char *faceSprite = loader.expressionForEmotion(emotion);
+    scene.expression.id = faceSprite;
+    scene.expression.spriteId = faceSprite;
+    scene.expression.x = loader.expressionAnchorX();
+    scene.expression.y = loader.expressionAnchorY();
+    scene.expression.z = kSceneZExpression;
+    scene.expression.visible = faceSprite && faceSprite[0];
+  }
 
   const char *label = state.behaviorLabel ? state.behaviorLabel : "";
   scene.hud.id = "hud";

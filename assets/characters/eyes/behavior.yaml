@@ -1,0 +1,109 @@
+render_mode: eyes
+
+life_modes:
+  work:
+    default_activity: idle
+  home:
+    default_activity: idle
+  night:
+    default_activity: sleep
+
+activities:
+  idle:
+    life_modes: [work, home]
+    behaviors:
+      - id: breathing
+        label: ""
+        weight: 55
+        clip: idle
+        duration: { min: 4, max: 10 }
+      - id: blink
+        label: ""
+        weight: 35
+        clip: blink
+        duration: { min: 2, max: 4 }
+      - id: look
+        label: ""
+        weight: 10
+        clip: look_left
+        duration: { min: 3, max: 6 }
+
+  coding:
+    life_modes: [work]
+    behaviors:
+      - id: focus
+        label: ""
+        weight: 70
+        clip: focus
+        duration: { min: 4, max: 12 }
+      - id: blink
+        label: ""
+        weight: 30
+        clip: blink
+        duration: { min: 2, max: 5 }
+
+  sleep:
+    life_modes: [night, home]
+    behaviors:
+      - id: sleepy
+        label: ""
+        weight: 70
+        clip: sleepy
+        duration: { min: 5, max: 12 }
+      - id: blink_slow
+        label: ""
+        weight: 30
+        clip: blink
+        duration: { min: 3, max: 6 }
+
+  read:
+    life_modes: [work, home]
+    behaviors:
+      - id: look
+        label: ""
+        weight: 50
+        clip: look_left
+        duration: { min: 4, max: 8 }
+      - id: look_right
+        label: ""
+        weight: 50
+        clip: look_right
+        duration: { min: 4, max: 8 }
+
+emotion_meta:
+  happy:
+    duration_sec: 120
+    decay_to: neutral
+  sleepy:
+    duration_sec: 300
+    decay_to: neutral
+
+emotions:
+  happy:
+    idle:
+      behaviors:
+        - id: breathing
+          weight: 50
+          clip: idle
+        - id: blink
+          weight: 50
+          clip: blink
+
+  sleepy:
+    idle:
+      behaviors:
+        - id: sleepy
+          weight: 70
+          clip: sleepy
+        - id: blink
+          weight: 30
+          clip: blink
+
+behavior_clips:
+  breathing: idle
+  blink: blink
+  blink_slow: blink
+  focus: focus
+  look: look_left
+  look_right: look_right
+  sleepy: sleepy

@@ -94,12 +94,18 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
       if (strcmp(mode, "sprite") == 0) {
         _renderMode = RenderMode::Sprite;
         Serial.println("render_mode=sprite");
+      } else if (strcmp(mode, "eyes") == 0) {
+        _renderMode = RenderMode::Eyes;
+        Serial.println("render_mode=eyes");
       } else {
         Serial.printf("render_mode=%s (text fallback)\n", mode);
       }
     }
   } else {
     Serial.println("behavior.json missing — defaulting to text mode");
+  }
+  if (_renderer) {
+    _renderer->setRotation(loader.landscapeOrientation() ? 1 : 0);
   }
   _brain.loadFromPackPath(loader.rootPath().c_str());
   syncSpriteContext();
@@ -110,7 +116,7 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
 
 void CharacterRuntime::unload() {
   _cache.clear();
-  _characterId = "nomabot";
+  _characterId = "eyes";
   _activeClipId.clear();
   _bodySpriteId.clear();
   _loader = nullptr;
@@ -119,6 +125,9 @@ void CharacterRuntime::unload() {
   _lastLoadError = CharacterLoadError::None;
   _overrideAnimation = false;
   _lastClipFrame = -1;
+  if (_renderer) {
+    _renderer->setRotation(0);
+  }
   syncSpriteContext();
   invalidateRender(DirtyFull);
 }
@@ -239,6 +248,25 @@ void CharacterRuntime::setBackground(const char *backgroundKey) {
   _dirtyTracker.forceDirty(DirtyBackground);
 }
 
+void CharacterRuntime::setWeather(const char *icon, const char *text) {
+  noteCommandSource("protocol");
+  _weatherIcon = icon ? icon : "";
+  _weatherText = text ? text : "";
+  if (_weatherIcon == "rain" || _weatherIcon == "storm") {
+    _brain.setEmotion("sleepy");
+  } else if (_weatherIcon == "sun") {
+    _brain.setEmotion("happy");
+  }
+  syncClipFromBehavior();
+  _dirtyTracker.forceDirty(DirtyBehavior | DirtyCharacter);
+}
+
+void CharacterRuntime::setClock(const char *timeText) {
+  noteCommandSource("protocol");
+  _clockText = timeText ? timeText : "";
+  _dirtyTracker.forceDirty(DirtyBehavior);
+}
+
 RenderState CharacterRuntime::buildRenderState() const {
   RenderState state;
   state.lifeMode = _brain.lifeMode();
@@ -252,6 +280,9 @@ RenderState CharacterRuntime::buildRenderState() const {
   state.displayEnergy = quantizeEnergy(state.energy);
   state.curiosity = _brain.curiosityActive();
   state.overlayText = _overlays.activeText();
+  state.clockText = _clockText.empty() ? nullptr : _clockText.c_str();
+  state.weatherText = _weatherText.empty() ? nullptr : _weatherText.c_str();
+  state.weatherIcon = _weatherIcon.empty() ? nullptr : _weatherIcon.c_str();
   state.backgroundSpriteId =
       _backgroundSprite.empty() ? nullptr : _backgroundSprite.c_str();
   state.bodySpriteId = _bodySpriteId.empty() ? nullptr : _bodySpriteId.c_str();

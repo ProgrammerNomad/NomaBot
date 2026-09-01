@@ -48,6 +48,11 @@ DirtyFlags DirtyTracker::computeDiff(const RenderState &next) const {
       next.clipFrameIndex != _last.clipFrameIndex) {
     dirty = dirty | DirtyCharacter;
   }
+  if (strChanged(next.clockText, _last.clockText) ||
+      strChanged(next.weatherText, _last.weatherText) ||
+      strChanged(next.weatherIcon, _last.weatherIcon)) {
+    dirty = dirty | DirtyBehavior;
+  }
   return dirty;
 }
 

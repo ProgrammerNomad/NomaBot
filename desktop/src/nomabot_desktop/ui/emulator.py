@@ -54,8 +54,9 @@ def _blit_sprite_colorkey(target: QImage, sprite: QImage, x: int, y: int) -> Non
                 target.setPixelColor(tx, ty, px)
 
 
-def _behavior_yaml() -> Path:
-    return Path(__file__).resolve().parents[4] / "assets" / "characters" / "nomabot" / "behavior.yaml"
+def _behavior_yaml(character_id: str) -> Path:
+    root = Path(__file__).resolve().parents[4]
+    return root / "assets" / "characters" / character_id / "behavior.yaml"
 
 
 class EmulatorCanvas(QWidget):
@@ -68,7 +69,7 @@ class EmulatorCanvas(QWidget):
         super().__init__(parent)
         self._state = state
         self._assets = assets
-        self._brain = Brain.from_yaml(_behavior_yaml())
+        self._brain = Brain.from_yaml(_behavior_yaml(state.character_id))
         self._brain.set_life_mode(state.life_mode)
         self._brain.set_activity(state.activity)
         self._brain.set_emotion(state.emotion or "neutral")
@@ -109,6 +110,9 @@ class EmulatorCanvas(QWidget):
             display_energy=quantize_energy(energy),
             curiosity=self._brain.curiosity_active,
             overlay_text=self._state.message or "",
+            clock_text=self._state.clock_text,
+            weather_text=self._state.weather_text,
+            weather_icon=self._state.weather_icon,
             background_sprite_id=self._state.background_sprite_id,
             body_sprite_id=self._state.body_sprite_id,
             clip_frame_index=self._state._frame_index,
@@ -123,7 +127,7 @@ class EmulatorCanvas(QWidget):
         self._state.goal_progress = self._brain.goal_progress
         self._state.energy = self._brain.energy
         self._state.curiosity_active = self._brain.curiosity_active
-        if self._state.render_mode != "text":
+        if self._state.render_mode in ("sprite", "eyes"):
             self._state.advance_frame(self._assets)
 
         render_state = self._build_render_state()
@@ -131,6 +135,7 @@ class EmulatorCanvas(QWidget):
         if dirty != DirtyFlags.NONE:
             self._render_state = render_state
             self._dirty = dirty
+            eyes_only = self._state.render_mode == "eyes"
             self._scene = SceneBuilder.build(
                 render_state,
                 default_background=self._state.background_sprite_id,
@@ -139,14 +144,18 @@ class EmulatorCanvas(QWidget):
                 expression_dx=0,
                 expression_dy=24,
                 show_hud=False,
+                eyes_only=eyes_only,
                 dirty=dirty,
             )
+            if self.width() != self._state.width or self.height() != self._state.height:
+                self.setFixedSize(self._state.width, self._state.height)
             self.update()
 
     def paintEvent(self, event) -> None:  # noqa: N802
         painter = QPainter(self)
-        if self._state.render_mode == "text" or not self._assets.get_sprite(
-            self._state.character_id, self._state.body_sprite_id
+        if self._state.render_mode == "text" or (
+            self._state.render_mode in ("sprite", "eyes")
+            and not self._assets.get_sprite(self._state.character_id, self._state.body_sprite_id)
         ):
             self._paint_text_mode(painter, self._render_state, self._dirty)
         else:
@@ -284,13 +293,23 @@ class EmulatorCanvas(QWidget):
         if scene.expression.dirty and scene.expression.visible and scene.expression.sprite_id:
             expr_img, expr_meta = self._load_sprite_image(scene.expression.sprite_id)
             if expr_img and expr_meta:
-                ex = scene.expression.x - expr_meta["width"] // 2
-                ey = scene.expression.y
-                _blit_sprite_colorkey(target, expr_img, ex, ey)
+                if expr_meta["width"] >= self.width() - 2:
+                    _blit_sprite_colorkey(target, expr_img, 0, 0)
+                else:
+                    ex = scene.expression.x - expr_meta["width"] // 2
+                    ey = scene.expression.y
+                    _blit_sprite_colorkey(target, expr_img, ex, ey)
 
         buf_painter = QPainter(target)
         buf_painter.setPen(Qt.GlobalColor.white)
         buf_painter.setFont(QFont("Segoe UI", 8))
+
+        if scene.ambient_bar.dirty and scene.ambient_bar.visible:
+            buf_painter.fillRect(0, 0, self.width(), 22, QColor("#1e293b"))
+            if scene.ambient_bar.id:
+                buf_painter.drawText(6, 14, scene.ambient_bar.id)
+            if scene.ambient_bar.text:
+                buf_painter.drawText(self.width() - 140, 14, scene.ambient_bar.text[:28])
 
         if scene.hud.dirty and scene.hud.visible and scene.hud.text:
             buf_painter.fillRect(0, 0, self.width(), 18, QColor("#000000"))
@@ -314,6 +333,8 @@ class EmulatorWindow(QWidget):
         super().__init__()
         self.setWindowTitle("NomaBot Emulator")
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("LILYGO T-Display S3 - 170×320 (Tiny World Renderer)"))
+        layout.addWidget(
+            QLabel("LILYGO T-Display S3 — landscape eyes (320×170) or portrait nomabot")
+        )
         layout.addWidget(EmulatorCanvas(state, assets))
         self.resize(200, 400)

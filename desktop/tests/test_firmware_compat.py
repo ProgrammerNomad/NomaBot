@@ -21,7 +21,23 @@ def test_m3_firmware_ok():
             "play_animation",
             "load_character",
             "diagnostics",
+            "set_weather",
+            "set_clock",
         ],
     }
     assert check_firmware_compatible(hello) == []
     assert log_firmware_issues(hello)
+
+
+def test_eyes_firmware_missing_ambient_caps():
+    hello = {
+        "firmware_version": "0.4.0",
+        "caps": [
+            "play_animation",
+            "load_character",
+            "diagnostics",
+        ],
+    }
+    issues = check_firmware_compatible(hello)
+    assert any("set_weather" in i for i in issues)
+    assert any("set_clock" in i for i in issues)

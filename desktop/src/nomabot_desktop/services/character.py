@@ -44,10 +44,19 @@ class CharacterService:
     def compiled_dir(self, pack_id: str) -> Path:
         return _repo_root() / "compiled" / pack_id
 
-    def ensure_compiled(self, pack_id: str, *, profile: str = "lilygo_tdisplay_s3") -> dict:
+    def ensure_compiled(self, pack_id: str, *, profile: str | None = None) -> dict:
         source = self.source_dir(pack_id)
         output = self.compiled_dir(pack_id)
         manifest_path = output / "manifest.json"
+
+        if profile is None:
+            meta_path = source / "metadata.json"
+            if meta_path.exists():
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                profiles = meta.get("hardware_profiles") or ["lilygo_tdisplay_s3"]
+                profile = profiles[0]
+            else:
+                profile = "lilygo_tdisplay_s3"
 
         needs_build = True
         if manifest_path.exists() and (source / "metadata.json").exists():
@@ -101,5 +110,34 @@ class CharacterService:
         data = resp.data or {}
         self._active_pack_id = pack_id
         self._active_uuid = data.get("uuid") or manifest.get("uuid")
+        render_mode = data.get("render_mode", "eyes" if pack_id == "eyes" else "sprite")
+        if pack_id == "eyes" and render_mode != "eyes":
+            logger.error(
+                "Device render_mode=%s after load_character eyes — "
+                "re-flash firmware with upload target, not uploadfs only",
+                render_mode,
+            )
+
+        diag = await client.diagnostics()
+        if diag.ok and pack_id == "eyes":
+            diag_mode = (diag.data or {}).get("render_mode", "")
+            if diag_mode != "eyes":
+                logger.error(
+                    "Diagnostics render_mode=%s (expected eyes). "
+                    "Re-flash firmware binary + LittleFS, then RESET board.",
+                    diag_mode,
+                )
+
+        adapter = self._transport._adapters.get(device_id)  # noqa: SLF001
+        if adapter and hasattr(adapter._inner, "state"):  # noqa: SLF001
+            st = adapter._inner.state  # noqa: SLF001
+            st.character_id = pack_id
+            st.render_mode = render_mode
+            if pack_id == "eyes":
+                st.background_sprite_id = "bg_dark"
+                st.body_sprite_id = "eyes_neutral"
+                st.width = 320
+                st.height = 170
+            st.reset_clip()
         logger.info("Activated character %s uuid=%s", pack_id, self._active_uuid)
         return data

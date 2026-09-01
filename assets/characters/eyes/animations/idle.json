@@ -1,0 +1,14 @@
+{
+  "id": "idle",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "eyes_neutral",
+      "duration_ms": 400
+    },
+    {
+      "sprite": "eyes_neutral",
+      "duration_ms": 400
+    }
+  ]
+}

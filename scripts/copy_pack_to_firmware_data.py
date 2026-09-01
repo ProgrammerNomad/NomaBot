@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy compiled character pack into firmware LittleFS data directory."""
+"""Copy compiled eyes character pack into firmware LittleFS (eyes branch: eyes only)."""
 
 from __future__ import annotations
 
@@ -14,16 +14,16 @@ def main() -> int:
     parser.add_argument(
         "--compiled",
         type=Path,
-        default=Path("compiled/nomabot"),
+        default=Path("compiled/eyes"),
         help="Compiled pack directory",
     )
     parser.add_argument(
         "--dest",
         type=Path,
-        default=Path("firmware/data/characters/nomabot"),
+        default=Path("firmware/data/characters/eyes"),
         help="Firmware data destination",
     )
-    parser.add_argument("--character-id", default="nomabot")
+    parser.add_argument("--character-id", default="eyes")
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parents[1]

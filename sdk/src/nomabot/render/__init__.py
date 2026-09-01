@@ -39,6 +39,9 @@ class RenderState:
     display_energy: int = 80
     curiosity: bool = False
     overlay_text: str = ""
+    clock_text: str = ""
+    weather_text: str = ""
+    weather_icon: str = ""
     background_sprite_id: str | None = None
     body_sprite_id: str | None = None
     clip_frame_index: int = 0
@@ -103,6 +106,9 @@ class DirtyTracker:
             state.behavior_id != last.behavior_id
             or state.behavior_label != last.behavior_label
             or state.curiosity != last.curiosity
+            or state.clock_text != last.clock_text
+            or state.weather_text != last.weather_text
+            or state.weather_icon != last.weather_icon
         ):
             dirty |= DirtyFlags.BEHAVIOR
             if state.behavior_id != last.behavior_id:
@@ -131,6 +137,9 @@ class DirtyTracker:
             display_energy=state.display_energy,
             curiosity=state.curiosity,
             overlay_text=state.overlay_text,
+            clock_text=state.clock_text,
+            weather_text=state.weather_text,
+            weather_icon=state.weather_icon,
             background_sprite_id=state.background_sprite_id,
             body_sprite_id=state.body_sprite_id,
             clip_frame_index=state.clip_frame_index,
