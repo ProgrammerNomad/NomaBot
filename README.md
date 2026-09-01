@@ -1,6 +1,6 @@
 # Eyes Ambient
 
-Standalone **ESP32 desk pet** for the [LILYGO T-Display S3](https://wiki.lilygo.cc/products/t-display-series/t-display-s3/). Cyan square eyes blink and look around on their own. WiFi provides live clock and weather — no PC or desktop app required.
+Standalone **ESP32 desk pet** for the [LILYGO T-Display S3](https://wiki.lilygo.cc/products/t-display-series/t-display-s3/). Cyan square eyes blink and look around on their own. WiFi provides live clock and weather - no PC or desktop app required.
 
 Inspired by [Desper](https://www.youtube.com/watch?v=DZxC5BGkKT8).
 
@@ -56,7 +56,7 @@ Edit `firmware\secrets.h`:
 #define WIFI_SSID "YourNetwork"
 #define WIFI_PASS "YourPassword"
 #define WEATHER_API_KEY "your_openweathermap_key"   // free at openweathermap.org
-#define WEATHER_CITY "Ghaziabad,IN"                 // City,CC — no space after comma
+#define WEATHER_CITY "Ghaziabad,IN"                 // City,CC - no space after comma
 #define TIMEZONE_OFFSET_SEC 19800                   // IST = 19800
 ```
 
@@ -92,9 +92,9 @@ Power from USB. Press **RST** once after flashing. Eyes should animate within a 
 | Eyes stacked vertically / tiny | Hold board **landscape** (long edge horizontal) |
 | Eyes frozen | Reflash latest firmware (`just flash`) |
 | Weather blank | Check `WEATHER_CITY` format (`City,CC`, no space), API key, serial log |
-| Weather HTTP 401 | Invalid API key — wait ~10 min after creating a new OpenWeatherMap key |
+| Weather HTTP 401 | Invalid API key - wait ~10 min after creating a new OpenWeatherMap key |
 | Port busy on flash | Close serial monitor; kill other `pio`/Python processes |
-| Red boot screen | LittleFS pack missing — run `just assets` then `uploadfs` |
+| Red boot screen | LittleFS pack missing - run `just assets` then `uploadfs` |
 
 ### Serial monitor (debug)
 

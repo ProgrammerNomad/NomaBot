@@ -1,4 +1,4 @@
-# Eyes Ambient task runner — install: https://github.com/casey/just
+# Eyes Ambient task runner - install: https://github.com/casey/just
 
 sync:
     uv sync --all-packages

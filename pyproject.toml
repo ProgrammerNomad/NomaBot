@@ -1,7 +1,7 @@
 [project]
 name = "eyes-ambient-workspace"
 version = "0.2.0"
-description = "Eyes Ambient — standalone ESP32 desk pet"
+description = "Eyes Ambient - standalone ESP32 desk pet"
 requires-python = ">=3.13"
 dependencies = [
     "nomabot",
