@@ -1,5 +1,8 @@
 # Eyes Ambient task runner - install: https://github.com/casey/just
 
+version:
+    uv run python scripts/sync_version.py
+
 sync:
     uv sync --all-packages
 
@@ -22,10 +25,11 @@ assets:
     uv run python scripts/copy_pack_to_firmware_data.py
 
 firmware:
+    uv run python scripts/sync_version.py
     cd firmware && pio run -e lilygo_tdisplay_s3
 
 flash:
     just assets
     cd firmware && pio run -e lilygo_tdisplay_s3 -t upload -t uploadfs
 
-ci: lint test profiles assets firmware
+ci: version lint test profiles assets firmware

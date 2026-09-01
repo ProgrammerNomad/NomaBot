@@ -1,6 +1,6 @@
 [project]
 name = "eyes-ambient-workspace"
-version = "0.2.0"
+version = "0.6.0"
 description = "Eyes Ambient - standalone ESP32 desk pet"
 requires-python = ">=3.13"
 dependencies = [

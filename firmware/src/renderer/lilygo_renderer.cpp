@@ -116,3 +116,7 @@ int LilygoRenderer::height() const { return _gfx.height(); }
 void LilygoRenderer::setRotation(int rotation) {
   _gfx.setRotation(rotation & 3);
 }
+
+void LilygoRenderer::setBrightness(uint8_t level) {
+  _gfx.setBrightness(level);
+}

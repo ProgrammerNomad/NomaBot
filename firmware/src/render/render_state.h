@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "ambient/display_mode.h"
+#include "net/service_status.h"
 
 struct RenderState {
   const char *lifeMode = "work";
@@ -26,6 +27,19 @@ struct RenderState {
   const char *backgroundSpriteId = nullptr;
   const char *bodySpriteId = nullptr;
   int clipFrameIndex = 0;
+  float weatherTempC = 20.0f;
+  uint16_t eyeTint = 0x07FF;
+  bool notifyFlash = false;
+  unsigned long pomodoroRemainingSec = 0;
+  unsigned long pomodoroTotalSec = 1500;
+  unsigned long uptimeSec = 0;
+  unsigned long heapFree = 0;
+  int wifiRssi = 0;
+  const char *firmwareVersion = nullptr;
+  const char *calendarText = nullptr;
+  const char *minigameText = nullptr;
+  uint8_t transitionAlpha = 0;
+  ServiceStatus serviceStatus{};
 };
 
 enum RenderLayer : uint8_t {

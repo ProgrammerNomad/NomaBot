@@ -1,6 +1,7 @@
 #include "character_renderer.h"
 
 #include "ambient/display_mode.h"
+#include "render/screen_renderers.h"
 #include "renderer/renderer.hpp"
 
 namespace {
@@ -315,11 +316,33 @@ void drawLargeCenteredText(IRenderer &renderer, const char *line1, const char *l
 
 void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, DirtyFlags dirty,
                                   PackLoader &loader, SpriteCache &cache, Compositor &compositor,
-                                  BackgroundCache &bgCache) {
-  if (scene.ambientMode == AmbientDisplayMode::ClockScreen ||
-      scene.ambientMode == AmbientDisplayMode::WeatherScreen) {
+                                  BackgroundCache &bgCache, const RenderState &state) {
+  if (scene.ambientMode == AmbientDisplayMode::ClockScreen) {
     if (dirty == DirtyFull || hasDirty(dirty, DirtyBackground) || hasDirty(dirty, DirtyBehavior)) {
-      drawLargeCenteredText(renderer, scene.largeLine1, scene.largeLine2, scene.largeLine3);
+      drawClockScreen(renderer, state, state.serviceStatus);
+      drawModeTransitionFade(renderer, state.transitionAlpha);
+    }
+    return;
+  }
+
+  if (scene.ambientMode == AmbientDisplayMode::WeatherScreen) {
+    if (dirty == DirtyFull || hasDirty(dirty, DirtyBackground) || hasDirty(dirty, DirtyBehavior)) {
+      drawWeatherScreen(renderer, state, state.serviceStatus);
+      drawModeTransitionFade(renderer, state.transitionAlpha);
+    }
+    return;
+  }
+
+  if (scene.ambientMode == AmbientDisplayMode::PomodoroScreen) {
+    if (dirty == DirtyFull || hasDirty(dirty, DirtyBackground) || hasDirty(dirty, DirtyBehavior)) {
+      drawPomodoroScreen(renderer, state);
+    }
+    return;
+  }
+
+  if (scene.ambientMode == AmbientDisplayMode::StatsScreen) {
+    if (dirty == DirtyFull || hasDirty(dirty, DirtyBackground) || hasDirty(dirty, DirtyBehavior)) {
+      drawStatsScreen(renderer, state);
     }
     return;
   }
@@ -337,6 +360,14 @@ void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, Dirty
     if (scene.speechBubble.visible) {
       drawSpeechBubbleNode(renderer, loader, cache, scene.background.spriteId, scene.speechBubble);
     }
+    drawServiceStatusDots(renderer, state.serviceStatus);
+    if (state.calendarText && state.calendarText[0]) {
+      renderer.drawText(4, renderer.height() - 12, state.calendarText, 0xFFFF);
+    }
+    if (state.minigameText && state.minigameText[0]) {
+      renderer.drawText(4, 12, state.minigameText, 0xFFE0);
+    }
+    drawModeTransitionFade(renderer, state.transitionAlpha);
     return;
   }
 
@@ -381,4 +412,6 @@ void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, Dirty
   if (scene.speechBubble.dirty) {
     drawSpeechBubbleNode(renderer, loader, cache, scene.background.spriteId, scene.speechBubble);
   }
+  drawServiceStatusDots(renderer, state.serviceStatus);
+  drawModeTransitionFade(renderer, state.transitionAlpha);
 }

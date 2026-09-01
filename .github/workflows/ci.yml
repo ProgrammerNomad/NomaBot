@@ -21,7 +21,10 @@ jobs:
         run: uv python install 3.13
 
       - name: Sync dependencies
-        run: uv sync
+        run: uv sync --all-packages
+
+      - name: Sync version
+        run: uv run python scripts/sync_version.py
 
       - name: Ruff check
         run: uv run ruff check sdk scripts
@@ -56,7 +59,10 @@ jobs:
         run: uv python install 3.13
 
       - name: Sync dependencies
-        run: uv sync
+        run: uv sync --all-packages
+
+      - name: Sync version
+        run: uv run python scripts/sync_version.py
 
       - name: Build eyes assets for LittleFS
         run: |

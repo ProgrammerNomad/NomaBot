@@ -6,6 +6,7 @@
 #include <LittleFS.h>
 
 #include "ambient/display_mode.h"
+#include "net/service_status.h"
 
 const char *characterLoadErrorLabel(CharacterLoadError err) {
   switch (err) {
@@ -145,13 +146,29 @@ const char *CharacterRuntime::currentAnimation() const {
 }
 
 void CharacterRuntime::setWeatherDisplay(const char *icon, const char *tempLine,
-                                         const char *conditionLine, const char *city) {
+                                         const char *conditionLine, const char *city,
+                                         float tempC) {
   _weatherIcon = icon ? icon : "";
   _weatherText = tempLine ? tempLine : "";
   _weatherConditionText = conditionLine ? conditionLine : "";
   _weatherCityText = city ? city : "";
+  _weatherTempC = tempC;
+  if (tempC < 15.0f) {
+    _eyeTint = 0x07FF;
+  } else if (tempC < 25.0f) {
+    _eyeTint = 0x07E0;
+  } else if (tempC < 35.0f) {
+    _eyeTint = 0xFFE0;
+  } else {
+    _eyeTint = 0xF800;
+  }
+  if (_weatherIcon == "rain" || _weatherIcon == "storm") {
+    _bodySpriteId = "eyes_rain";
+  }
   if (_ambientMode == AmbientDisplayMode::WeatherScreen) {
     _dirtyTracker.forceDirty(DirtyBehavior | DirtyCharacter | DirtyBackground);
+  } else {
+    _dirtyTracker.forceDirty(DirtyCharacter);
   }
 }
 
@@ -168,7 +185,56 @@ void CharacterRuntime::setDisplayMode(AmbientDisplayMode mode) {
     return;
   }
   _ambientMode = mode;
+  _transitionAlpha = 255;
   invalidateRender(DirtyFull);
+}
+
+void CharacterRuntime::setPomodoro(unsigned long remainingSec, unsigned long totalSec) {
+  _pomodoroRemainingSec = remainingSec;
+  _pomodoroTotalSec = totalSec;
+  if (_ambientMode == AmbientDisplayMode::PomodoroScreen) {
+    _dirtyTracker.forceDirty(DirtyFull);
+  }
+}
+
+void CharacterRuntime::setStats(unsigned long uptimeSec, unsigned long heapFree, int wifiRssi,
+                                const char *firmwareVersion) {
+  _uptimeSec = uptimeSec;
+  _heapFree = heapFree;
+  _wifiRssi = wifiRssi;
+  (void)firmwareVersion;
+  if (_ambientMode == AmbientDisplayMode::StatsScreen) {
+    _dirtyTracker.forceDirty(DirtyFull);
+  }
+}
+
+void CharacterRuntime::setCalendarText(const char *text) {
+  _calendarText = text ? text : "";
+}
+
+void CharacterRuntime::setMinigameText(const char *text) {
+  _minigameText = text ? text : "";
+  _dirtyTracker.forceDirty(DirtyBehavior);
+}
+
+void CharacterRuntime::triggerNotify(unsigned long durationMs) {
+  _notifyUntilMs = millis() + durationMs;
+  _dirtyTracker.forceDirty(DirtyCharacter);
+}
+
+void CharacterRuntime::setTransitionAlpha(uint8_t alpha) {
+  if (_transitionAlpha == alpha) {
+    return;
+  }
+  _transitionAlpha = alpha;
+  if (alpha > 0) {
+    _dirtyTracker.forceDirty(DirtyFull);
+  }
+}
+
+void CharacterRuntime::setEyeTint(uint16_t rgb565) {
+  _eyeTint = rgb565;
+  _dirtyTracker.forceDirty(DirtyCharacter);
 }
 
 RenderState CharacterRuntime::buildRenderState() const {
@@ -183,6 +249,19 @@ RenderState CharacterRuntime::buildRenderState() const {
       _weatherConditionText.empty() ? nullptr : _weatherConditionText.c_str();
   state.weatherCityText = _weatherCityText.empty() ? nullptr : _weatherCityText.c_str();
   state.weatherIcon = _weatherIcon.empty() ? nullptr : _weatherIcon.c_str();
+  state.weatherTempC = _weatherTempC;
+  state.eyeTint = _notifyUntilMs > millis() ? 0xFD20 : _eyeTint;
+  state.notifyFlash = _notifyUntilMs > millis();
+  state.pomodoroRemainingSec = _pomodoroRemainingSec;
+  state.pomodoroTotalSec = _pomodoroTotalSec;
+  state.uptimeSec = _uptimeSec;
+  state.heapFree = _heapFree;
+  state.wifiRssi = _wifiRssi;
+  state.firmwareVersion = NOMA_FIRMWARE_VERSION;
+  state.calendarText = _calendarText.empty() ? nullptr : _calendarText.c_str();
+  state.minigameText = _minigameText.empty() ? nullptr : _minigameText.c_str();
+  state.transitionAlpha = _transitionAlpha;
+  state.serviceStatus = collectServiceStatus();
   state.ambientMode = _ambientMode;
   state.backgroundSpriteId =
       _backgroundSprite.empty() ? nullptr : _backgroundSprite.c_str();

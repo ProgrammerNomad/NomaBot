@@ -20,5 +20,5 @@ void RenderScheduler::render(const RenderState &state, DirtyFlags dirty) {
 
   _lastScene = SceneBuilder::build(state, *_loader, dirty);
   CharacterRenderer::drawScene(*_renderer, _lastScene, dirty, *_loader, *_cache, *_compositor,
-                               _bgCache);
+                               _bgCache, state);
 }

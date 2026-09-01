@@ -28,6 +28,10 @@ compiled/
 *.nomabundle
 firmware/data/characters/
 firmware/data/active_character.json
+firmware/data/wifi.json
+firmware/data/config.json
+/wifi.json
+/config.json
 
 # OS
 .DS_Store
