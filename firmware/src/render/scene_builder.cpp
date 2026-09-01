@@ -79,6 +79,14 @@ Scene SceneBuilder::build(const RenderState &state, PackLoader &loader, DirtyFla
     return scene;
   }
 
+  if (state.ambientMode == AmbientDisplayMode::PomodoroScreen ||
+      state.ambientMode == AmbientDisplayMode::StatsScreen) {
+    scene.expression.visible = false;
+    applyDirtyFlags(scene, dirty);
+    scene.nodeCount = sceneVisibleNodeCount(scene);
+    return scene;
+  }
+
   scene.expression.id = bodySprite;
   scene.expression.spriteId = bodySprite;
   scene.expression.x = 0;

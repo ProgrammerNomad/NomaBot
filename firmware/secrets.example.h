@@ -6,4 +6,5 @@
 #define WIFI_PASS "your_wifi_password"
 #define WEATHER_API_KEY "your_openweathermap_key"
 #define WEATHER_CITY "Mumbai,IN"
+#define TIMEZONE "IST-5:30"
 #define TIMEZONE_OFFSET_SEC 19800

@@ -38,9 +38,17 @@ public:
 
   void setActivity(const char *activity);
   void setWeatherDisplay(const char *icon, const char *tempLine, const char *conditionLine,
-                         const char *city);
+                         const char *city, float tempC = 20.0f);
   void setClock(const char *timeText, const char *dateText = nullptr);
   void setDisplayMode(AmbientDisplayMode mode);
+  void setPomodoro(unsigned long remainingSec, unsigned long totalSec);
+  void setStats(unsigned long uptimeSec, unsigned long heapFree, int wifiRssi,
+                const char *firmwareVersion);
+  void setCalendarText(const char *text);
+  void setMinigameText(const char *text);
+  void triggerNotify(unsigned long durationMs = 2000);
+  void setTransitionAlpha(uint8_t alpha);
+  void setEyeTint(uint16_t rgb565);
   AmbientDisplayMode displayMode() const { return _ambientMode; }
 
   RenderMode renderMode() const { return _renderMode; }
@@ -95,6 +103,17 @@ private:
   std::string _weatherConditionText;
   std::string _weatherCityText;
   std::string _weatherIcon;
+  float _weatherTempC = 20.0f;
+  uint16_t _eyeTint = 0x07FF;
+  unsigned long _notifyUntilMs = 0;
+  unsigned long _pomodoroRemainingSec = 0;
+  unsigned long _pomodoroTotalSec = 1500;
+  unsigned long _uptimeSec = 0;
+  unsigned long _heapFree = 0;
+  int _wifiRssi = 0;
+  std::string _calendarText;
+  std::string _minigameText;
+  uint8_t _transitionAlpha = 0;
   AmbientDisplayMode _ambientMode = AmbientDisplayMode::EyesAnim;
   unsigned long _lastFpsMs = 0;
   int _frameCount = 0;

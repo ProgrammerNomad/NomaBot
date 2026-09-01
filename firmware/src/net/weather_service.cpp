@@ -2,17 +2,13 @@
 
 #include <Arduino.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
 #include "character/character_runtime.h"
+#include "net/device_config.h"
 #include "net/wifi_service.h"
-
-#if __has_include("../../secrets.h")
-#include "../../secrets.h"
-#else
-#include "../../secrets.example.h"
-#endif
 
 extern WifiService gWifiService;
 
@@ -68,29 +64,41 @@ String urlEncodeCity(const char *city) {
 void WeatherService::begin(CharacterRuntime *runtime) {
   _runtime = runtime;
   _lastFetchMs = 0;
+  _lastSuccessMs = 0;
   _lastSuccess = false;
+  _lastTempC = 0.0f;
+}
+
+bool WeatherService::isStale() const {
+  if (!_lastSuccess) {
+    return true;
+  }
+  return millis() - _lastSuccessMs > 900000UL;
 }
 
 bool WeatherService::fetchWeather() {
   if (!gWifiService.connected() || !_runtime) {
     return false;
   }
-  if (strcmp(WEATHER_API_KEY, "your_openweathermap_key") == 0) {
+  const DeviceConfig &cfg = deviceConfig();
+  if (strcmp(cfg.weatherApiKey, "your_openweathermap_key") == 0) {
     return false;
   }
 
-  const String cityQuery = urlEncodeCity(WEATHER_CITY);
-  String url = "http://api.openweathermap.org/data/2.5/weather?q=";
+  const String cityQuery = urlEncodeCity(cfg.weatherCity);
+  String url = "https://api.openweathermap.org/data/2.5/weather?q=";
   url += cityQuery;
   url += "&appid=";
-  url += WEATHER_API_KEY;
+  url += cfg.weatherApiKey;
   url += "&units=metric";
 
   Serial.printf("Weather fetch: q=%s\n", cityQuery.c_str());
 
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
   http.setTimeout(15000);
-  if (!http.begin(url)) {
+  if (!http.begin(client, url)) {
     Serial.println("Weather: http.begin failed");
     return false;
   }
@@ -119,8 +127,11 @@ bool WeatherService::fetchWeather() {
   char line2[48];
   snprintf(line2, sizeof(line2), "%s", condition);
 
-  const String displayCity = normalizeCityQuery(WEATHER_CITY);
-  _runtime->setWeatherDisplay(icon, line1, line2, displayCity.c_str());
+  const String displayCity = normalizeCityQuery(cfg.weatherCity);
+  _runtime->setWeatherDisplay(icon, line1, line2, displayCity.c_str(), temp);
+  _lastTempC = temp;
+  _lastIcon = icon;
+  _lastSuccessMs = millis();
   Serial.printf("Weather: %s %s %s\n", line1, line2, displayCity.c_str());
   return true;
 }

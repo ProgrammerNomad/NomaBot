@@ -6,7 +6,6 @@
   "author": "NomaBot Project",
   "license": "MIT",
   "description": "Landscape eyes-only desk pet with weather and clock ambient bar.",
-  "min_firmware": "0.5.3",
-  "min_desktop": "0.5.3",
+  "min_firmware": "0.6.0",
   "hardware_profiles": ["lilygo_tdisplay_s3_landscape"]
 }

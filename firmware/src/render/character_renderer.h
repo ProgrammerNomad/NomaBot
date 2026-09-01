@@ -12,5 +12,5 @@ class CharacterRenderer {
 public:
   static void drawScene(IRenderer &renderer, const Scene &scene, DirtyFlags dirty,
                         PackLoader &loader, SpriteCache &cache, Compositor &compositor,
-                        BackgroundCache &bgCache);
+                        BackgroundCache &bgCache, const RenderState &state);
 };
