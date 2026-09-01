@@ -28,8 +28,8 @@ C = {
     "body": (248, 250, 252),
     "body_d": (203, 213, 225),
     "visor": (15, 23, 42),
-    "eye": (56, 189, 248),
-    "eye_hi": (224, 242, 254),
+    "eye": (80, 210, 255),
+    "eye_hi": (240, 250, 255),
     "outline": (30, 41, 59),
     "desk": (146, 64, 14),
     "desk_l": (180, 83, 9),
@@ -49,9 +49,15 @@ C = {
 
 
 def _draw_apartment_minimal(draw: ImageDraw.ImageDraw) -> None:
-    """Phase A placeholder — flat wall, no props."""
-    draw.rectangle([0, 0, W, H], fill=C["wall2"])
-    draw.rectangle([0, 200, W, H], fill=C["floor"])
+    """Phase A placeholder — soft wall gradient + desk hint."""
+    for y in range(H):
+        t = y / max(H - 1, 1)
+        r = int(C["wall"][0] + (C["wall2"][0] - C["wall"][0]) * t * 0.35)
+        g = int(C["wall"][1] + (C["wall2"][1] - C["wall"][1]) * t * 0.35)
+        b = int(C["wall"][2] + (C["wall2"][2] - C["wall"][2]) * t * 0.35)
+        draw.line([(0, y), (W, y)], fill=(r, g, b))
+    draw.rectangle([0, 198, W, 210], fill=C["desk"])
+    draw.rectangle([0, 210, W, H], fill=C["desk_l"])
 
 
 def _draw_apartment_v1(draw: ImageDraw.ImageDraw) -> None:
@@ -91,17 +97,26 @@ def _draw_helmet(draw: ImageDraw.ImageDraw, ox: int, oy: int, *, tilt: int = 0) 
 def _draw_robot_body(draw: ImageDraw.ImageDraw, ox: int, oy: int, pose: str) -> None:
     """Draw NomaBot at head anchor (ox, oy). Silhouette-first poses for 170x320 LCD."""
     tilt = 0
+    body_shift = 0
     if pose == "think":
         tilt = 11
     elif pose == "blink":
         tilt = 0
+    elif pose == "standing_breathe":
+        body_shift = 2
 
-    draw.rectangle([ox - 14, oy + 36, ox + 14, oy + 56], fill=C["body"], outline=C["outline"], width=2)
+    torso_y0 = oy + 8 + body_shift
+    torso_y1 = oy + 40 + body_shift
+    legs_y0 = oy + 36 + body_shift
+    legs_y1 = oy + 56 + body_shift
+
+    draw.rectangle([ox - 14, legs_y0, ox + 14, legs_y1], fill=C["body"], outline=C["outline"], width=2)
     draw.rounded_rectangle(
-        [ox - 18, oy + 8, ox + 18, oy + 40], radius=6, fill=C["body"], outline=C["outline"], width=2
+        [ox - 18, torso_y0, ox + 18, torso_y1], radius=6, fill=C["body"], outline=C["outline"], width=2
     )
-    _draw_helmet(draw, ox, oy, tilt=tilt)
+    _draw_helmet(draw, ox, oy + body_shift, tilt=tilt)
 
+    arm_y = oy + 24 + body_shift
     if pose in ("typing", "coding"):
         # Phase B: arms forward/down — clearly distinct from standing at 1m
         draw.line([ox - 18, oy + 20, ox - 36, oy + 42], fill=C["body_d"], width=5)
@@ -134,14 +149,17 @@ def _draw_robot_body(draw: ImageDraw.ImageDraw, ox: int, oy: int, pose: str) -> 
     elif pose == "stretch":
         draw.line([ox - 18, oy + 14, ox - 34, oy + 0], fill=C["body_d"], width=5)
         draw.line([ox + 18, oy + 14, ox + 34, oy + 0], fill=C["body_d"], width=5)
+    elif pose in ("standing_breathe",):
+        draw.line([ox - 18, arm_y + 2, ox - 27, oy + 44], fill=C["body_d"], width=4)
+        draw.line([ox + 18, arm_y + 2, ox + 27, oy + 44], fill=C["body_d"], width=4)
     else:
         # Standing / idle — arms hang lower than typing
-        draw.line([ox - 18, oy + 24, ox - 28, oy + 42], fill=C["body_d"], width=4)
-        draw.line([ox + 18, oy + 24, ox + 28, oy + 42], fill=C["body_d"], width=4)
+        draw.line([ox - 18, arm_y, ox - 28, oy + 42], fill=C["body_d"], width=4)
+        draw.line([ox + 18, arm_y, ox + 28, oy + 42], fill=C["body_d"], width=4)
 
     if pose == "blink":
         hx = ox + tilt
-        draw.rectangle([hx - 16, oy + 2, hx + 16, oy + 10], fill=C["visor"])
+        draw.rectangle([hx - 16, oy + 2 + body_shift, hx + 16, oy + 10 + body_shift], fill=C["visor"])
 
 
 def body_sprite(pose: str, name: str) -> None:
@@ -200,14 +218,26 @@ def face_sprite(expression: str) -> None:
     expression_sprite(expression)
 
 
-def write_clips(clips: dict[str, list[str]]) -> None:
+def write_clips(clips: dict[str, list[str]], *, durations: dict[str, list[int]] | None = None) -> None:
     ANIM_DIR.mkdir(parents=True, exist_ok=True)
     for clip_id, sprites in clips.items():
-        frames = [{"sprite": s, "duration_ms": 450} for s in sprites]
+        durs = (durations or {}).get(clip_id)
+        if durs and len(durs) == len(sprites):
+            frames = [{"sprite": s, "duration_ms": d} for s, d in zip(sprites, durs, strict=True)]
+        else:
+            frames = [{"sprite": s, "duration_ms": 450} for s in sprites]
         (ANIM_DIR / f"{clip_id}.json").write_text(
             json.dumps({"id": clip_id, "loop": True, "frames": frames}, indent=2),
             encoding="utf-8",
         )
+
+
+PROTOTYPE_CLIP_DURATIONS: dict[str, list[int]] = {
+    "idle": [300, 300],
+    "blink": [150, 300],
+    "coding": [250, 250, 250],
+    "think": [400, 400],
+}
 
 
 def _prune_prototype_assets(keep_bodies: set[str], keep_faces: set[str], keep_clips: set[str]) -> None:
@@ -274,7 +304,7 @@ def generate_prototype_v0() -> None:
     for pose, name in [
         ("standing", "body_stand"),
         ("standing", "body_idle_01"),
-        ("standing", "body_idle_02"),
+        ("standing_breathe", "body_idle_02"),
         ("typing", "body_typing_01"),
         ("typing", "body_typing_02"),
         ("think", "body_think"),
@@ -291,7 +321,8 @@ def generate_prototype_v0() -> None:
             "blink": ["body_blink_01", "body_stand"],
             "coding": ["body_typing_01", "body_typing_02", "body_typing_01"],
             "think": ["body_think", "body_think"],
-        }
+        },
+        durations=PROTOTYPE_CLIP_DURATIONS,
     )
     copy_prototype_refs()
     hero = draw_bg(minimal=True)
@@ -310,7 +341,7 @@ def generate_full() -> None:
     poses = [
         ("standing", "body_stand"),
         ("standing", "body_idle_01"),
-        ("standing", "body_idle_02"),
+        ("standing_breathe", "body_idle_02"),
         ("typing", "body_typing_01"),
         ("typing", "body_typing_02"),
         ("think", "body_think"),

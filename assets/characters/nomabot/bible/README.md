@@ -1,83 +1,36 @@
-# NomaBot Character Bible
+# Character Bible (Phase C — draft)
 
-> Frozen after Prototype Pack v0 passes on-device readability tests (Phase C).
-> Draft values below come from v0.5.2 LCD iteration — update after desk testing.
+Frozen from LCD-tested constants after Phase B exit gate. Do not expand until
+[`docs/PHASE_B_NOTES.md`](../../../docs/PHASE_B_NOTES.md) readability QA passes for 3+ desk days.
 
-## Hero
+## Proportions (Phase B — 2026-06-28)
 
-- Tiny explorer who loves coding
-- Orange explorer helmet (dominant silhouette at 32px)
-- Head anchor: **(85, 80)** — home position
-- Body sprites: 56×72 RGBA
+| Parameter | Value |
+|-----------|-------|
+| Body anchor | (85, 80) |
+| Expression offset | dx=0, dy=24 |
+| Think head tilt | 11 px |
+| Helmet width | ±21 px |
+| Typing arms | ±36, oy+42 |
+| Body colorkey | `0xF81F` on body + face PNGs |
+| Idle breathe | `body_idle_02` standing_breathe (+2px) |
+| Clip timing | idle 300ms, blink 150/300ms |
+| Pet mode | HUD hidden on LCD (`display.pet_mode`) |
 
-Reference: [prototype_v0/hero_home.png](../prototype_v0/hero_home.png)
+## v0 clips
 
-## Colors
+| Clip | Read |
+|------|------|
+| idle | Standing |
+| blink | Blink |
+| coding | Typing |
+| think | Thinking |
 
-From tested v0 sprites (see [STYLE_GUIDE.md](../../docs/STYLE_GUIDE.md) for full palette):
+## Expressions (v0)
 
-| Role | Hex |
-|------|-----|
-| Helmet | `#F97316` |
-| Body | `#F8FAFC` |
-| Visor | `#0F172A` |
-| Eyes | `#38BDF8` |
-| Outline | `#1E293B` |
+neutral, happy, thinking, blink — map in `config.json`.
 
-## Expressions (v0 → full)
+## Alive pet test
 
-| Emotion | Face sprite | Phase |
-|---------|-------------|-------|
-| neutral | face_neutral | v0 |
-| happy / excited | face_happy | v0 |
-| thinking / curious | face_thinking | v0 |
-| sleepy | face_sleepy | E |
-| surprised | face_surprised | E |
-| frustrated | face_angry | E |
-
-## Poses (Prototype v0)
-
-| Pose | Sprite | Sells |
-|------|--------|-------|
-| Standing | body_stand / body_idle_* | Home / breathing |
-| Typing | body_typing_* | Arms down on keyboard |
-| Thinking | body_think | Head tilt ↗ + hand on chin |
-| Blink | body_blink_01 | Closed visor strip |
-
-## Behavior → clip → visual
-
-| behavior_id | clip | Visual beat |
-|-------------|------|-------------|
-| breathing | idle | Stand at home, idle bob |
-| blink | blink | Visor closes briefly |
-| typing | coding | Arms alternate on desk |
-| think | think | Head tilt, hold 2–4s |
-| look_around | look_left | Body turns left |
-| coffee | coffee | Mug raised |
-| sleep | sleep | Slumped pose |
-
-Brain unchanged — mapping lives in [behavior.yaml](../behavior.yaml) and `behavior_clips`.
-
-## Animation rules
-
-1. HUD-hidden test must pass before adding behaviors
-2. Silhouette before micro-animation
-3. Return to home standing pose after each clip cycle
-
-## Apartment (Phase D)
-
-Six props at 170×320: window, desk, plant, laptop, coffee, shelf.
-
-Layout:
-
-```text
-Window
-────────────
-Plant    Shelf
-  🤖 home (85,80)
-Laptop   Coffee
-```
-
-## Accessories
-
-Orange helmet, compass badge, coffee mug, laptop — see [LORE.md](../../docs/LORE.md).
+Leave desktop + device running while coding. Pass = HUD-hidden 1m read + 60s video
+with at least one "why is he alive?" moment.

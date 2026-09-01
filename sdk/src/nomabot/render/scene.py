@@ -137,6 +137,7 @@ class SceneBuilder:
         expression_dx: int = 0,
         expression_dy: int = 24,
         expressions: dict[str, str] | None = None,
+        show_hud: bool = True,
         dirty: DirtyFlags = DirtyFlags.FULL,
     ) -> Scene:
         bg_sprite = state.background_sprite_id or default_background
@@ -176,7 +177,7 @@ class SceneBuilder:
             x=4,
             y=8,
             z=SCENE_Z_HUD,
-            visible=bool(label),
+            visible=bool(label) and show_hud,
         )
         scene.speech_bubble = SceneNode(
             id="overlay" if overlay else "speech_bubble",

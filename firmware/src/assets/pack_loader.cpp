@@ -184,6 +184,17 @@ bool PackLoader::loadConfig() {
     _defaultBgSprite = "bg_office";
   }
 
+  _hudEnabled = true;
+  if (doc["display"].is<JsonObject>()) {
+    JsonObject display = doc["display"].as<JsonObject>();
+    if (display["pet_mode"] | false) {
+      _hudEnabled = false;
+    }
+    if (display["hud"].is<bool>() && !display["hud"].as<bool>()) {
+      _hudEnabled = false;
+    }
+  }
+
   if (doc["anchors"]["body"].is<JsonObject>()) {
     _anchorX = doc["anchors"]["body"]["x"] | 85;
     _anchorY = doc["anchors"]["body"]["y"] | 80;

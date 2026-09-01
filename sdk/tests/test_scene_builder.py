@@ -78,6 +78,19 @@ def test_dirty_character_marks_character_and_expression() -> None:
     assert scene.background.dirty is False
 
 
+def test_pet_mode_hides_hud() -> None:
+    state = RenderState(
+        activity="coding",
+        behavior_label="Typing...",
+        background_sprite_id="bg_office",
+        body_sprite_id="body_typing_01",
+    )
+    scene = SceneBuilder.build(state, dirty=DirtyFlags.FULL, show_hud=False)
+    assert scene.hud.text == "Typing..."
+    assert scene.hud.visible is False
+    assert scene.node_count == 3
+
+
 def test_dirty_background_also_marks_character() -> None:
     state = RenderState(body_sprite_id="body_idle_01", background_sprite_id="bg_office")
     scene = SceneBuilder.build(state, dirty=DirtyFlags.BACKGROUND)

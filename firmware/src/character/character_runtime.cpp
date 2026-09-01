@@ -85,13 +85,21 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
       behaviorText += static_cast<char>(behaviorFile.read());
     }
     behaviorFile.close();
-    StaticJsonDocument<256> behaviorDoc;
-    if (!deserializeJson(behaviorDoc, behaviorText)) {
+    StaticJsonDocument<8192> behaviorDoc;
+    DeserializationError err = deserializeJson(behaviorDoc, behaviorText);
+    if (err) {
+      Serial.printf("behavior.json parse failed (%s) — defaulting to text mode\n", err.c_str());
+    } else {
       const char *mode = behaviorDoc["render_mode"] | "text";
       if (strcmp(mode, "sprite") == 0) {
         _renderMode = RenderMode::Sprite;
+        Serial.println("render_mode=sprite");
+      } else {
+        Serial.printf("render_mode=%s (text fallback)\n", mode);
       }
     }
+  } else {
+    Serial.println("behavior.json missing — defaulting to text mode");
   }
   _brain.loadFromPackPath(loader.rootPath().c_str());
   syncSpriteContext();

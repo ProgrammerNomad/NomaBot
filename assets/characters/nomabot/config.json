@@ -4,7 +4,9 @@
     "width": 170,
     "height": 320,
     "profile": "lilygo_tdisplay_s3",
-    "default_background": "office"
+    "default_background": "office",
+    "pet_mode": true,
+    "hud": false
   },
   "anchors": {
     "body": { "x": 85, "y": 80 },

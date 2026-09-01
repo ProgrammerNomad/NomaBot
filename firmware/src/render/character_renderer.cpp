@@ -132,7 +132,7 @@ void drawCharacterNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cac
   if (!node.visible || !node.spriteId || !node.spriteId[0]) {
     return;
   }
-  compositor.blitSprite(renderer, loader, cache, node.spriteId, node.x, node.y, false);
+  compositor.blitSprite(renderer, loader, cache, node.spriteId, node.x, node.y, true);
 }
 
 void drawExpressionNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,

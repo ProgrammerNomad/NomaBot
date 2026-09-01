@@ -4,11 +4,11 @@
   "frames": [
     {
       "sprite": "body_blink_01",
-      "duration_ms": 450
+      "duration_ms": 150
     },
     {
       "sprite": "body_stand",
-      "duration_ms": 450
+      "duration_ms": 300
     }
   ]
 }

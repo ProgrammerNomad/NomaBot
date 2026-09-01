@@ -41,7 +41,7 @@ void Compositor::render(IRenderer &renderer, PackLoader &loader, SpriteCache &ca
   }
 
   if (bodySpriteId && bodySpriteId[0]) {
-    blitSprite(renderer, loader, cache, bodySpriteId, anchorX, anchorY, false);
+    blitSprite(renderer, loader, cache, bodySpriteId, anchorX, anchorY, true);
   }
 
   if (animationLabel && animationLabel[0]) {

@@ -23,24 +23,60 @@
 
 ---
 
+## P0 fix — sprite render mode (2026-06-28)
+
+**Bug:** `character_runtime.cpp` used `StaticJsonDocument<256>` for ~6KB `behavior.json` → parse fail → **text mode only** → no visible animations/emotes.
+
+**Fix:** Buffer increased to **8192**; serial logs `render_mode=sprite` on boot.
+
+After flash, confirm diagnostics **`render_mode`: `sprite`** before Phase B art tuning.
+
+---
+
+## Desk pet loop (alive test)
+
+1. Close desktop, flash firmware + LittleFS (COM3)
+2. `uv run python -m nomabot_desktop --port COM3 --dev`
+3. Work in Cursor — activity should follow coding/idle
+4. Dev panel: force idle ↔ coding — pose must change
+5. Trigger build success/fail (dev panel) — excited/frustrated + overlay message
+6. Record 60s video; log pass/fail below
+
+---
+
+## LCD Visual Polish (2026-09-01)
+
+| Change | Detail | LCD verify |
+|--------|--------|------------|
+| Body colorkey | `body/` PNGs compile with `0xF81F`; firmware/emulator body blit keyed | No black halo around robot |
+| Idle breathe | `body_idle_02` = `standing_breathe` (+2px torso, relaxed arms) | Breathing visible at 1m |
+| Clip timing | idle 300ms, blink 150/300ms, coding 250ms | Motion registers in 60s video |
+| Brighter eyes | `eye` (80,210,255), `eye_hi` (240,250,255) | Visor contrast on RGB565 |
+| Pet mode | `display.pet_mode: true`, `hud: false` | Character-only view on LCD |
+| Soft bg | Wall gradient + desk band y=198–210 | Reads “at desk”, not debug panel |
+
+**Expression alignment (unchanged after polish pass):** `dy=24`, `cy=11` — pending on-device confirm.
+
+---
+
 ## Iteration log
 
 | Date | Change | Constant | Pass/Fail | Notes (1m / HUD-hidden / video) |
 |------|--------|----------|-----------|----------------------------------|
-| 2026-06-28 | Baseline pruned v0 on device | dy=28, cy=10, tilt=8 | Partial | User: alignment/proportions off; poses mostly OK |
+| 2026-06-28 | P0 render_mode buffer 256→8192 | firmware fix | Pending LCD | Unblocks sprite animations |
 | 2026-06-28 | Expression anchor | dy **28→24** | Pending LCD | Geometry: align eyes to visor center |
 | 2026-06-28 | Eye row in sprite | cy **10→11** | Pending LCD | Fine-tune within visor band |
 | 2026-06-28 | Think silhouette | tilt **8→11**, hand higher | Pending LCD | HUD-hidden think read |
 | 2026-06-28 | Typing vs standing | arms ±36 oy+42 vs hang oy+42 | Pending LCD | 1m silhouette contrast |
 | 2026-06-28 | Blink read | visor hx±16 close | Pending LCD | 60s video: blink register |
-| 2026-06-28 | Helmet at 1m | ellipse ±21 | Pending LCD | Head presence at distance |
+| 2026-09-01 | LCD visual polish pass | body colorkey, breathe idle, pet_mode | Pending LCD | 60s video + HUD-hidden 1m test |
 
 ---
 
 ## Structural QA (run once per flash)
 
 - [ ] One visor, one set of eyes
-- [ ] No black box around expression
+- [ ] No black box around **body** or expression
 - [ ] `diagnostics`: `clip` and `body_sprite_id` change idle ↔ coding
 
 ## Readability QA (repeat until pass)
@@ -54,7 +90,7 @@
 
 | Activity | Expected clips | Expected silhouette |
 |----------|------------------|---------------------|
-| idle | idle, blink | Standing arms / visor close |
+| idle | idle, blink | Standing ↔ breathe / visor close |
 | coding | coding, think | Typing arms / head tilt |
 
 ---

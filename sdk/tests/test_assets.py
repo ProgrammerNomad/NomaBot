@@ -48,6 +48,19 @@ def test_compile_nomabot(nomabot_source, tmp_path):
     assert report["memory_human"].endswith("KB")
 
 
+def test_body_png_uses_colorkey_for_transparent_pixels(nomabot_source, tmp_path) -> None:
+    import struct
+
+    from nomabot.assets.compiler import SPRITE_COLORKEY, _png_to_rgb565
+
+    body_png = nomabot_source / "sprites" / "body" / "body_idle_01.png"
+    if not body_png.exists():
+        pytest.skip("Run scripts/generate_living_nomabot_art.py first")
+    data = _png_to_rgb565(body_png, use_colorkey=True)
+    assert len(data) >= 2
+    assert struct.unpack_from("<H", data, 0)[0] == SPRITE_COLORKEY
+
+
 def test_expression_png_uses_colorkey_for_transparent_pixels(nomabot_source, tmp_path) -> None:
     import struct
 
@@ -59,3 +72,36 @@ def test_expression_png_uses_colorkey_for_transparent_pixels(nomabot_source, tmp
     data = _png_to_rgb565(face_png, use_colorkey=True)
     assert len(data) >= 2
     assert struct.unpack_from("<H", data, 0)[0] == SPRITE_COLORKEY
+
+
+def test_idle_clip_uses_distinct_body_frames(nomabot_source) -> None:
+    import hashlib
+
+    idle01 = nomabot_source / "sprites" / "body" / "body_idle_01.png"
+    idle02 = nomabot_source / "sprites" / "body" / "body_idle_02.png"
+    idle_clip = nomabot_source / "animations" / "idle.json"
+    if not idle01.exists() or not idle02.exists() or not idle_clip.exists():
+        pytest.skip("Run scripts/generate_living_nomabot_art.py first")
+
+    clip = json.loads(idle_clip.read_text(encoding="utf-8"))
+    sprite_ids = [frame["sprite"] for frame in clip["frames"]]
+    assert "body_idle_01" in sprite_ids
+    assert "body_idle_02" in sprite_ids
+    assert sprite_ids[0] != sprite_ids[1]
+
+    h1 = hashlib.sha256(idle01.read_bytes()).hexdigest()
+    h2 = hashlib.sha256(idle02.read_bytes()).hexdigest()
+    assert h1 != h2
+
+
+def test_idle_clip_frame_timing(nomabot_source) -> None:
+    idle_clip = nomabot_source / "animations" / "idle.json"
+    blink_clip = nomabot_source / "animations" / "blink.json"
+    if not idle_clip.exists() or not blink_clip.exists():
+        pytest.skip("Run scripts/generate_living_nomabot_art.py first")
+
+    idle = json.loads(idle_clip.read_text(encoding="utf-8"))
+    blink = json.loads(blink_clip.read_text(encoding="utf-8"))
+    assert all(frame["duration_ms"] == 300 for frame in idle["frames"])
+    assert blink["frames"][0]["duration_ms"] == 150
+    assert blink["frames"][1]["duration_ms"] == 300

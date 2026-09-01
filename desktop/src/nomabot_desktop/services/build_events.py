@@ -40,7 +40,7 @@ class BuildEventService:
                 "overlay.show",
                 OverlayShow(
                     overlay_id="build_ok",
-                    text=payload.message or "Build OK",
+                    text=payload.message or "Nice build!",
                     priority=Priority.HIGH,
                 ),
             )
@@ -59,7 +59,7 @@ class BuildEventService:
                 "overlay.show",
                 OverlayShow(
                     overlay_id="build_failed",
-                    text=payload.message or "Build failed",
+                    text=payload.message or "Oof — build broke",
                     priority=Priority.HIGH,
                 ),
             )

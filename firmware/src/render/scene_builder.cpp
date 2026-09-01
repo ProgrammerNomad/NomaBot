@@ -91,7 +91,7 @@ Scene SceneBuilder::build(const RenderState &state, PackLoader &loader, DirtyFla
   scene.hud.x = 4;
   scene.hud.y = 8;
   scene.hud.z = kSceneZHud;
-  scene.hud.visible = label[0] != '\0';
+  scene.hud.visible = label[0] != '\0' && loader.hudEnabled();
 
   const char *overlay = state.overlayText ? state.overlayText : "";
   scene.speechBubble.id = overlay[0] ? "overlay" : "speech_bubble";

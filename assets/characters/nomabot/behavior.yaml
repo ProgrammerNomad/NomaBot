@@ -99,16 +99,42 @@ emotions:
           weight: 40
           clip: think
 
+  excited:
+    idle:
+      behaviors:
+        - id: breathing
+          label: "Breathing..."
+          weight: 40
+          clip: idle
+        - id: blink
+          label: "Blink"
+          weight: 30
+          clip: blink
+        - id: read
+          label: "Reading..."
+          weight: 30
+          clip: think
+    coding:
+      behaviors:
+        - id: typing
+          label: "Typing..."
+          weight: 80
+          clip: coding
+        - id: think
+          label: "Thinking..."
+          weight: 20
+          clip: think
+
   frustrated:
     coding:
       behaviors:
         - id: think
           label: "Thinking..."
-          weight: 50
+          weight: 70
           clip: think
         - id: typing_slow
           label: "Typing slowly..."
-          weight: 50
+          weight: 30
           clip: coding
 
   sleepy:
@@ -122,18 +148,6 @@ emotions:
           label: "Breathing..."
           weight: 40
           clip: idle
-
-  excited:
-    idle:
-      behaviors:
-        - id: breathing
-          label: "Breathing..."
-          weight: 50
-          clip: idle
-        - id: blink
-          label: "Blink"
-          weight: 50
-          clip: blink
 
 goals:
   focus:

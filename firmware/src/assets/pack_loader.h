@@ -72,6 +72,7 @@ public:
   int expressionDy() const { return _expressionDy; }
   int expressionAnchorX() const { return _anchorX + _expressionDx; }
   int expressionAnchorY() const { return _anchorY + _expressionDy; }
+  bool hudEnabled() const { return _hudEnabled; }
 
   void listDirectory(const std::string &path) const;
 
@@ -87,6 +88,7 @@ private:
   int _anchorY = 80;
   int _expressionDx = 0;
   int _expressionDy = 24;
+  bool _hudEnabled = true;
   std::string _defaultExpressionSprite;
   std::vector<std::pair<std::string, std::string>> _expressions;
   std::vector<SpriteMeta> _sprites;

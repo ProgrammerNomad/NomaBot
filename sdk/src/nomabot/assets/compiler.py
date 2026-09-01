@@ -113,7 +113,7 @@ def compile_pack(source: Path, output: Path, profile_id: str) -> dict:
             out_rel = rel.with_suffix(".bin")
             out_bin = sprites_out / out_rel
             out_bin.parent.mkdir(parents=True, exist_ok=True)
-            use_colorkey = rel.parts and rel.parts[0] == "face"
+            use_colorkey = rel.parts and rel.parts[0] in ("body", "face")
             data = _png_to_rgb565(png, use_colorkey=use_colorkey)
             out_bin.write_bytes(data)
             if Image:

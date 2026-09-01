@@ -138,6 +138,7 @@ class EmulatorCanvas(QWidget):
                 anchor_y=self._state.anchor_y,
                 expression_dx=0,
                 expression_dy=24,
+                show_hud=False,
                 dirty=dirty,
             )
             self.update()
@@ -278,9 +279,7 @@ class EmulatorCanvas(QWidget):
             if body_img and body_meta:
                 ax = scene.character.x - body_meta["width"] // 2
                 ay = scene.character.y
-                buf_painter = QPainter(target)
-                buf_painter.drawImage(ax, ay, body_img)
-                buf_painter.end()
+                _blit_sprite_colorkey(target, body_img, ax, ay)
 
         if scene.expression.dirty and scene.expression.visible and scene.expression.sprite_id:
             expr_img, expr_meta = self._load_sprite_image(scene.expression.sprite_id)
