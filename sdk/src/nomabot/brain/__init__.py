@@ -152,7 +152,10 @@ class Brain(BehaviorEngine):
     def _update_curiosity(self, now: float) -> None:
         if self._last_curiosity == 0:
             self._last_curiosity = now
-        if now - self._last_curiosity > 45 and random.randint(0, 99) < self.personality.curiosity // 2:
+        if (
+            now - self._last_curiosity > 45
+            and random.randint(0, 99) < self.personality.curiosity // 2
+        ):
             self.curiosity_active = True
             self._last_curiosity = now
             self.behavior_label = "I wonder..."

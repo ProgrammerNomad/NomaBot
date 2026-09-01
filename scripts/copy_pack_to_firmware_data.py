@@ -47,9 +47,7 @@ def main() -> int:
         "uuid": manifest.get("uuid"),
     }
     data_root.mkdir(parents=True, exist_ok=True)
-    (data_root / "active_character.json").write_text(
-        json.dumps(active, indent=2), encoding="utf-8"
-    )
+    (data_root / "active_character.json").write_text(json.dumps(active, indent=2), encoding="utf-8")
     print(f"Copied {compiled} -> {dest}")
     print(f"Wrote {data_root / 'active_character.json'}")
     return 0

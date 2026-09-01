@@ -17,7 +17,6 @@ static PackLoader packLoader;
 static CharacterRuntime characterRuntime;
 static ProtocolHandler protocol;
 static String serialBuffer;
-static String activeCharacterId = "eyes";
 static bool bootOk = false;
 static const char *bootFsStatus = "FAIL";
 static const char *bootPackStatus = "FAIL";
@@ -29,8 +28,6 @@ static DisplayModeController gDisplayMode;
 
 static void emitLine(const std::string &line) { Serial.print(line.c_str()); }
 
-#define RECORD_CMD(name, detail) gCommandHistory.record(name, detail, millis())
-
 static void showBootError(const char *label) {
   renderer.fillScreen(0xF800);
   renderer.drawText(4, 20, label, 0xFFFF);
@@ -38,72 +35,16 @@ static void showBootError(const char *label) {
   renderer.drawText(4, 52, "Press RST to retry", 0xFFFF);
 }
 
-static bool eyesStandalone() { return bootOk && packLoader.eyesOnlyMode(); }
-
-static ProtocolResponse makeOk(const std::string &id, const char *cmd) {
-  JsonDocument data;
-  data["ok"] = true;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = cmd;
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
 static void printBootBanner() {
-  const char *mode =
-      bootOk ? renderModeName(characterRuntime.renderMode()) : "ERROR";
-  Serial.printf(
-      "NomaBot FW %s | FS: %s | Pack: %s | Character: %s | render_mode=%s\n",
-      NOMA_FIRMWARE_VERSION, bootFsStatus, bootPackStatus,
-      bootOk ? activeCharacterId.c_str() : "none", mode);
-}
-
-static bool loadActiveCharacter() {
-  File f = LittleFS.open("/active_character.json", "r");
-  if (!f) {
-    return false;
-  }
-  std::string text;
-  while (f.available()) {
-    text += static_cast<char>(f.read());
-  }
-  f.close();
-
-  JsonDocument doc;
-  if (deserializeJson(doc, text)) {
-    return false;
-  }
-  const char *id = doc["character_id"] | "eyes";
-  activeCharacterId = id;
-  return true;
-}
-
-static bool persistActiveCharacter(const char *characterId, const char *uuid) {
-  JsonDocument doc;
-  doc["character_id"] = characterId;
-  if (uuid && uuid[0]) {
-    doc["uuid"] = uuid;
-  }
-  File f = LittleFS.open("/active_character.json", "w");
-  if (!f) {
-    return false;
-  }
-  serializeJson(doc, f);
-  f.close();
-  return true;
+  Serial.printf("Eyes Ambient FW %s | FS: %s | Pack: %s | render_mode=%s\n",
+                NOMA_FIRMWARE_VERSION, bootFsStatus, bootPackStatus,
+                bootOk ? renderModeName(characterRuntime.renderMode()) : "ERROR");
 }
 
 static bool bootCharacter() {
-  loadActiveCharacter();
-  if (!characterRuntime.loadCharacter(packLoader, activeCharacterId.c_str())) {
+  if (!characterRuntime.loadCharacter(packLoader, "eyes")) {
     const char *label = packLoadErrorLabel(packLoader.lastError());
-    Serial.printf("Pack load failed: %s (%s)\n", activeCharacterId.c_str(), label);
+    Serial.printf("Pack load failed: eyes (%s)\n", label);
     bootPackStatus = "FAIL";
     return false;
   }
@@ -116,48 +57,14 @@ static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
   JsonDocument data;
   data["protocol"] = 1;
   data["firmware"] = NOMA_FIRMWARE_VERSION;
-  data["firmware_version"] = NOMA_FIRMWARE_VERSION;
   data["board"] = "LILYGO_T_DISPLAY_S3";
-  data["device_id"] = "lilygo-tdisplay-s3";
-#if defined(ESP32) && defined(ESP32S3)
-  uint64_t mac = ESP.getEfuseMac();
-  char serialBuf[24];
-  snprintf(serialBuf, sizeof(serialBuf), "%02X:%02X:%02X:%02X:%02X:%02X",
-           (uint8_t)(mac >> 40), (uint8_t)(mac >> 32), (uint8_t)(mac >> 24),
-           (uint8_t)(mac >> 16), (uint8_t)(mac >> 8), (uint8_t)(mac));
-  data["serial"] = serialBuf;
-#else
-  data["serial"] = "unknown";
-#endif
+  data["character_id"] = "eyes";
+  data["render_mode"] = bootOk ? renderModeName(characterRuntime.renderMode()) : "error";
   JsonObject display = data["display"].to<JsonObject>();
   display["width"] = renderer.width();
   display["height"] = renderer.height();
-  display["fps"] = characterRuntime.fps() > 0 ? characterRuntime.fps() : 20;
   JsonArray caps = data["caps"].to<JsonArray>();
   caps.add("diagnostics");
-  if (!eyesStandalone()) {
-    caps.add("play_animation");
-    caps.add("show_message");
-    caps.add("set_background");
-    caps.add("set_state");
-    caps.add("set_activity");
-    caps.add("set_emotion");
-    caps.add("set_life_mode");
-    caps.add("trigger_habit");
-    caps.add("set_season");
-    caps.add("set_weather");
-    caps.add("set_clock");
-    caps.add("load_character");
-  }
-
-  const PackInfo *info = characterRuntime.packInfo();
-  if (info) {
-    data["character_id"] = characterRuntime.characterId();
-    data["pack_uuid"] = info->uuid;
-  } else {
-    data["character_id"] = "eyes";
-  }
-  data["render_mode"] = bootOk ? renderModeName(characterRuntime.renderMode()) : "error";
 
   JsonDocument doc;
   doc["v"] = 1;
@@ -186,259 +93,10 @@ static ProtocolResponse handlePing(const std::string &id, JsonObject) {
   return {out + "\n", true};
 }
 
-static ProtocolResponse handlePlayAnimation(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "play_animation");
-  }
-  const char *animation = params["animation"] | "idle";
-  characterRuntime.playAnimation(animation);
-  RECORD_CMD("play_animation", animation);
-  JsonDocument data;
-  data["ok"] = true;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "play_animation";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static ProtocolResponse handleShowMessage(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "show_message");
-  }
-  const char *overlayId = params["id"] | "anonymous";
-  const char *text = params["text"] | "";
-  int priority = params["priority"] | 2;
-  unsigned long durationMs = params["duration_ms"] | 5000UL;
-  characterRuntime.setMessage(overlayId, text, priority, durationMs);
-  RECORD_CMD("show_message", overlayId);
-  JsonDocument data;
-  data["ok"] = true;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "show_message";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static ProtocolResponse handleSetState(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "set_state");
-  }
-  const char *state = params["state"] | "idle";
-  characterRuntime.applyActivityCommand(state);
-  RECORD_CMD("set_state", state);
-  JsonDocument data;
-  data["ok"] = true;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "set_state";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static ProtocolResponse handleSetActivity(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "set_activity");
-  }
-  const char *activity = params["activity"] | "idle";
-  characterRuntime.applyActivityCommand(activity);
-  RECORD_CMD("set_activity", activity);
-  JsonDocument data;
-  data["ok"] = true;
-  data["activity"] = activity;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "set_activity";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static ProtocolResponse handleSetEmotion(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "set_emotion");
-  }
-  const char *emotion = params["emotion"] | "neutral";
-  characterRuntime.setEmotion(emotion);
-  RECORD_CMD("set_emotion", emotion);
-  JsonDocument data;
-  data["ok"] = true;
-  data["emotion"] = emotion;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "set_emotion";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static ProtocolResponse handleSetLifeMode(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "set_life_mode");
-  }
-  const char *mode = params["mode"] | "work";
-  characterRuntime.setLifeMode(mode);
-  RECORD_CMD("set_life_mode", mode);
-  JsonDocument data;
-  data["ok"] = true;
-  data["mode"] = mode;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "set_life_mode";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static ProtocolResponse handleTriggerHabit(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "trigger_habit");
-  }
-  const char *habit = params["habit"] | "";
-  characterRuntime.triggerHabit(habit);
-  RECORD_CMD("trigger_habit", habit);
-  JsonDocument data;
-  data["ok"] = true;
-  data["habit"] = habit;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "trigger_habit";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static ProtocolResponse handleSetSeason(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "set_season");
-  }
-  const char *season = params["season"] | "spring";
-  characterRuntime.setSeason(season);
-  RECORD_CMD("set_season", season);
-  JsonDocument data;
-  data["ok"] = true;
-  data["season"] = season;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "set_season";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static ProtocolResponse handleSetWeather(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "set_weather");
-  }
-  const char *icon = params["icon"] | "cloud";
-  const char *condition = params["condition"] | "";
-  float tempC = params["temp_c"] | 0.0f;
-  const char *city = params["city"] | "";
-  char textBuf[96];
-  if (city[0]) {
-    snprintf(textBuf, sizeof(textBuf), "%.0fC %s  %s", tempC, condition, city);
-  } else {
-    snprintf(textBuf, sizeof(textBuf), "%.0fC %s", tempC, condition);
-  }
-  characterRuntime.setWeather(icon, textBuf);
-  RECORD_CMD("set_weather", icon);
-  JsonDocument data;
-  data["ok"] = true;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "set_weather";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static ProtocolResponse handleSetClock(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "set_clock");
-  }
-  const char *timeText = params["time"] | "";
-  characterRuntime.setClock(timeText);
-  RECORD_CMD("set_clock", timeText);
-  JsonDocument data;
-  data["ok"] = true;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "set_clock";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static ProtocolResponse handleSetBackground(const std::string &id, JsonObject params) {
-  if (eyesStandalone()) {
-    return makeOk(id, "set_background");
-  }
-  const char *bg = params["background"] | "office";
-  characterRuntime.setBackground(bg);
-  RECORD_CMD("set_background", bg);
-  JsonDocument data;
-  data["ok"] = true;
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "set_background";
-  doc["ok"] = true;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
 static ProtocolResponse handleGetStatus(const std::string &id, JsonObject) {
   JsonDocument data;
   data["firmware_version"] = NOMA_FIRMWARE_VERSION;
-  data["active_animation"] = characterRuntime.currentAnimation();
-  data["activity"] = characterRuntime.currentActivity();
+  data["animation"] = characterRuntime.currentAnimation();
   data["behavior"] = characterRuntime.currentBehavior();
   data["fps"] = characterRuntime.fps();
   JsonDocument doc;
@@ -453,83 +111,6 @@ static ProtocolResponse handleGetStatus(const std::string &id, JsonObject) {
   return {out + "\n", true};
 }
 
-static ProtocolResponse handleLoadCharacter(const std::string &id, JsonObject params) {
-  const char *characterId = params["character_id"] | "eyes";
-  characterRuntime.unload();
-  packLoader.unload();
-
-  JsonDocument data;
-  bool ok = false;
-  if (packLoader.mountFilesystem() && characterRuntime.loadCharacter(packLoader, characterId)) {
-    ok = true;
-    activeCharacterId = characterId;
-    bootOk = true;
-    bootPackStatus = "OK";
-    const PackInfo *info = characterRuntime.packInfo();
-    persistActiveCharacter(characterId, info ? info->uuid.c_str() : nullptr);
-    data["pack_id"] = info ? info->packId : characterId;
-    data["uuid"] = info ? info->uuid : "";
-    if (info) {
-      JsonObject version = data["version"].to<JsonObject>();
-      version["major"] = info->version.major;
-      version["minor"] = info->version.minor;
-      version["patch"] = info->version.patch;
-      JsonObject display = data["display"].to<JsonObject>();
-      display["profile"] = info->profile;
-      display["width"] = info->displayWidth;
-      display["height"] = info->displayHeight;
-    }
-    characterRuntime.present();
-    data["render_mode"] = renderModeName(characterRuntime.renderMode());
-  } else {
-    bootOk = false;
-    bootPackStatus = "FAIL";
-    const char *label = packLoadErrorLabel(packLoader.lastError());
-    data["error"] = label;
-    data["render_mode"] = "error";
-    showBootError("PACK LOAD FAIL");
-    Serial.printf("load_character failed: %s (%s)\n", characterId, label);
-  }
-
-  JsonDocument doc;
-  doc["v"] = 1;
-  doc["id"] = id;
-  doc["type"] = "response";
-  doc["cmd"] = "load_character";
-  doc["ok"] = ok;
-  doc["data"] = data;
-  std::string out;
-  serializeJson(doc, out);
-  return {out + "\n", true};
-}
-
-static void appendDirtyLast(JsonArray arr, DirtyFlags flags) {
-  if (hasDirty(flags, DirtyHeader)) {
-    arr.add("Header");
-  }
-  if (hasDirty(flags, DirtyMeta)) {
-    arr.add("Meta");
-  }
-  if (hasDirty(flags, DirtyEnergy)) {
-    arr.add("Energy");
-  }
-  if (hasDirty(flags, DirtyBehavior)) {
-    arr.add("Behavior");
-  }
-  if (hasDirty(flags, DirtyMessage)) {
-    arr.add("Message");
-  }
-  if (hasDirty(flags, DirtyCharacter)) {
-    arr.add("Character");
-  }
-  if (hasDirty(flags, DirtyBackground)) {
-    arr.add("Background");
-  }
-  if (flags == DirtyFull) {
-    arr.add("Full");
-  }
-}
-
 static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
   unsigned long now = millis();
   JsonDocument data;
@@ -537,53 +118,14 @@ static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
 #if defined(ESP32)
   data["heap_free"] = ESP.getFreeHeap();
   data["psram_free"] = ESP.getFreePsram();
-#else
-  data["heap_free"] = 0;
-  data["psram_free"] = 0;
 #endif
-  data["character_id"] = characterRuntime.characterId();
-  const PackInfo *info = characterRuntime.packInfo();
-  data["uuid"] = info ? info->uuid : "";
-  data["life_mode"] = characterRuntime.lifeMode();
-  data["activity"] = characterRuntime.currentActivity();
-  data["emotion"] = characterRuntime.currentEmotion();
   data["behavior"] = characterRuntime.currentBehavior();
-  data["behavior_label"] = characterRuntime.brain().behaviorLabel();
   data["clip"] = characterRuntime.brain().clipForBehavior();
-  data["render_mode"] =
-      bootOk ? renderModeName(characterRuntime.renderMode()) : "error";
-  data["time_in_behavior_sec"] = characterRuntime.timeInBehaviorSec(now);
-  data["next_behavior"] = characterRuntime.nextBehavior();
   data["animation"] = characterRuntime.currentAnimation();
   data["frame"] = characterRuntime.currentFrame();
-  data["state"] = characterRuntime.currentActivity();
-  data["energy"] = characterRuntime.energy();
-  data["boredom"] = characterRuntime.boredom();
-  data["goal"] = characterRuntime.goal();
-  data["goal_progress"] = characterRuntime.goalProgress();
-  JsonObject shortMem = data["short_memory"].to<JsonObject>();
-  int coffeeAgo = characterRuntime.lastCoffeeMinAgo(now);
-  if (coffeeAgo >= 0) {
-    shortMem["last_coffee_min_ago"] = coffeeAgo;
-  }
-  data["last_command_source"] = characterRuntime.lastCommandSource();
+  data["time_in_behavior_sec"] = characterRuntime.timeInBehaviorSec(now);
+  data["next_behavior"] = characterRuntime.nextBehavior();
   data["render_count"] = characterRuntime.renderCount();
-  data["last_render_ms"] = characterRuntime.lastRenderMs();
-  data["brain_tick_ms"] = characterRuntime.lastBrainTickMs();
-  data["render_ms"] = characterRuntime.lastRenderMs();
-  data["queue_depth"] = characterRuntime.overlayQueueDepth();
-  SceneDiagnostics sceneDiag = characterRuntime.lastSceneDiagnostics();
-  data["scene"] = sceneDiag.scene ? sceneDiag.scene : "";
-  data["body"] = sceneDiag.body ? sceneDiag.body : "";
-  data["eyes"] = sceneDiag.eyes ? sceneDiag.eyes : "";
-  data["overlay"] = sceneDiag.overlay ? sceneDiag.overlay : "";
-  data["render_objects"] = sceneDiag.renderObjects;
-  if (const char *bodySprite = characterRuntime.bodySpriteId()) {
-    data["body_sprite_id"] = bodySprite;
-  }
-  data["clip_frame_index"] = characterRuntime.currentFrame();
-  JsonArray dirtyLast = data["dirty_last"].to<JsonArray>();
-  appendDirtyLast(dirtyLast, characterRuntime.lastDirtyFlags());
   JsonArray history = data["command_history"].to<JsonArray>();
   gCommandHistory.appendToJson(history);
 
@@ -602,19 +144,7 @@ static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
 static void registerProtocolHandlers() {
   protocol.registerCommand("hello", handleHello);
   protocol.registerCommand("ping", handlePing);
-  protocol.registerCommand("play_animation", handlePlayAnimation);
-  protocol.registerCommand("show_message", handleShowMessage);
   protocol.registerCommand("get_status", handleGetStatus);
-  protocol.registerCommand("set_background", handleSetBackground);
-  protocol.registerCommand("set_state", handleSetState);
-  protocol.registerCommand("set_activity", handleSetActivity);
-  protocol.registerCommand("set_emotion", handleSetEmotion);
-  protocol.registerCommand("set_life_mode", handleSetLifeMode);
-  protocol.registerCommand("trigger_habit", handleTriggerHabit);
-  protocol.registerCommand("set_season", handleSetSeason);
-  protocol.registerCommand("set_weather", handleSetWeather);
-  protocol.registerCommand("set_clock", handleSetClock);
-  protocol.registerCommand("load_character", handleLoadCharacter);
   protocol.registerCommand("diagnostics", handleDiagnostics);
 }
 
@@ -625,8 +155,7 @@ void setup() {
   characterRuntime.begin(&renderer);
   registerProtocolHandlers();
 
-  bool fsMounted = packLoader.mountFilesystem();
-  if (fsMounted) {
+  if (packLoader.mountFilesystem()) {
     bootFsStatus = "OK";
     bootOk = bootCharacter();
     if (!bootOk) {
@@ -668,18 +197,14 @@ void loop() {
   unsigned long now = millis();
   usbPoll();
   if (bootOk) {
-    if (eyesStandalone()) {
-      gWifiService.tick();
-      gClockService.tick();
-      gWeatherService.tick();
-      gDisplayMode.tick(now);
-      if (gDisplayMode.consumeChanged()) {
-        characterRuntime.setDisplayMode(gDisplayMode.current());
-      }
-      if (gDisplayMode.isEyesMode()) {
-        characterRuntime.tick(now);
-      }
-    } else {
+    gWifiService.tick();
+    gClockService.tick();
+    gWeatherService.tick();
+    gDisplayMode.tick(now);
+    if (gDisplayMode.consumeChanged()) {
+      characterRuntime.setDisplayMode(gDisplayMode.current());
+    }
+    if (gDisplayMode.isEyesMode()) {
       characterRuntime.tick(now);
     }
     characterRuntime.present();

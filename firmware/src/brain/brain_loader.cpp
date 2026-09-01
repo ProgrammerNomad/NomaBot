@@ -44,12 +44,7 @@ bool brainLoadFromJson(Brain &brain, const char *jsonPath) {
   JsonObject personality = doc["personality"].as<JsonObject>();
   if (!personality.isNull()) {
     traits.energy = personality["energy"] | traits.energy;
-    traits.coffeeLove = personality["coffee_love"] | traits.coffeeLove;
     traits.curiosity = personality["curiosity"] | traits.curiosity;
-    traits.sleepiness = personality["sleepiness"] | traits.sleepiness;
-    traits.optimism = personality["optimism"] | traits.optimism;
-    traits.patience = personality["patience"] | traits.patience;
-    traits.playfulness = personality["playfulness"] | traits.playfulness;
     brain.setPersonality(traits);
   }
 

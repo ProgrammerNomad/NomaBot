@@ -4,10 +4,13 @@ from nomabot.protocol.commands import SetClockParams, SetWeatherParams, validate
 
 
 def test_set_weather_params_valid() -> None:
-    assert validate_command_params(
-        "set_weather",
-        {"temp_c": 28.5, "condition": "Clear", "icon": "sun", "city": "Mumbai,IN"},
-    ) == []
+    assert (
+        validate_command_params(
+            "set_weather",
+            {"temp_c": 28.5, "condition": "Clear", "icon": "sun", "city": "Mumbai,IN"},
+        )
+        == []
+    )
 
 
 def test_set_clock_params_valid() -> None:
