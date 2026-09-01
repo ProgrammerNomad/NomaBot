@@ -5,6 +5,8 @@
 #include <FS.h>
 #include <LittleFS.h>
 
+#include "ambient/display_mode.h"
+
 const char *characterLoadErrorLabel(CharacterLoadError err) {
   switch (err) {
   case CharacterLoadError::Graph:
@@ -22,25 +24,12 @@ void CharacterRuntime::begin(IRenderer *renderer) {
   _brain.useDefaults();
   PersonalityTraits traits;
   _brain.setPersonality(traits);
-  _brain.setLifeMode("work");
   _brain.setActivity("idle");
-  invalidateRender(DirtyFull);
-}
-
-void CharacterRuntime::useBehaviorDefaults() {
-  _brain.useDefaults();
-  _brain.setLifeMode("work");
-  _brain.setActivity("idle");
-  _renderMode = RenderMode::Text;
   invalidateRender(DirtyFull);
 }
 
 void CharacterRuntime::invalidateRender(DirtyFlags flags) {
   _dirtyTracker.invalidate(flags);
-}
-
-bool CharacterRuntime::textModeActive() const {
-  return _renderMode == RenderMode::Text || _loader == nullptr;
 }
 
 void CharacterRuntime::syncSpriteContext() {
@@ -59,58 +48,31 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
   _assets.bind(&loader);
   _characterId = characterId;
 
-  bool graphOk = false;
   if (!loader.graphText().empty()) {
-    graphOk = _graph.loadFromText(loader.graphText());
-  } else {
-    graphOk = _graph.loadFromPack(loader.rootPath());
-  }
-
-  if (!graphOk) {
-    Serial.println("Animation graph load failed — using idle/coding defaults");
+    if (!_graph.loadFromText(loader.graphText())) {
+      _graph.applyDefaults();
+    }
+  } else if (!_graph.loadFromPack(loader.rootPath())) {
     _graph.applyDefaults();
   }
 
   _backgroundSprite = loader.defaultBackgroundSprite();
-  _renderMode = RenderMode::Text;
+  _renderMode = RenderMode::Eyes;
 
-  std::string behaviorPath = loader.rootPath() + "/behavior.json";
-  File behaviorFile = LittleFS.open(behaviorPath.c_str(), "r");
-  if (!behaviorFile && !behaviorPath.empty() && behaviorPath[0] == '/') {
-    behaviorFile = LittleFS.open(behaviorPath.c_str() + 1, "r");
-  }
-  if (behaviorFile) {
-    std::string behaviorText;
-    while (behaviorFile.available()) {
-      behaviorText += static_cast<char>(behaviorFile.read());
-    }
-    behaviorFile.close();
-    StaticJsonDocument<8192> behaviorDoc;
-    DeserializationError err = deserializeJson(behaviorDoc, behaviorText);
-    if (err) {
-      Serial.printf("behavior.json parse failed (%s) — defaulting to text mode\n", err.c_str());
-    } else {
-      const char *mode = behaviorDoc["render_mode"] | "text";
-      if (strcmp(mode, "sprite") == 0) {
-        _renderMode = RenderMode::Sprite;
-        Serial.println("render_mode=sprite");
-      } else {
-        Serial.printf("render_mode=%s (text fallback)\n", mode);
-      }
-    }
-  } else {
-    Serial.println("behavior.json missing — defaulting to text mode");
+  if (_renderer) {
+    _renderer->setRotation(1);
   }
   _brain.loadFromPackPath(loader.rootPath().c_str());
   syncSpriteContext();
   syncClipFromBehavior();
   invalidateRender(DirtyFull);
+  Serial.println("render_mode=eyes");
   return true;
 }
 
 void CharacterRuntime::unload() {
   _cache.clear();
-  _characterId = "nomabot";
+  _characterId = "eyes";
   _activeClipId.clear();
   _bodySpriteId.clear();
   _loader = nullptr;
@@ -119,6 +81,9 @@ void CharacterRuntime::unload() {
   _lastLoadError = CharacterLoadError::None;
   _overrideAnimation = false;
   _lastClipFrame = -1;
+  if (_renderer) {
+    _renderer->setRotation(0);
+  }
   syncSpriteContext();
   invalidateRender(DirtyFull);
 }
@@ -135,12 +100,18 @@ void CharacterRuntime::applyClip(const char *animationId) {
   if (!clip) {
     clip = _assets.getAnimation("idle");
   }
+  if (!clip) {
+    return;
+  }
+  if (_activeClipId == clip->id) {
+    return;
+  }
   _clipPlayer.setClip(clip);
-  _activeClipId = clip ? clip->id : "";
+  _activeClipId = clip->id;
 }
 
 void CharacterRuntime::syncClipFromBehavior() {
-  if (_overrideAnimation || textModeActive()) {
+  if (_overrideAnimation || !_loader) {
     return;
   }
   applyClip(_brain.clipForBehavior());
@@ -150,67 +121,21 @@ void CharacterRuntime::syncClipFromBehavior() {
   }
 }
 
-void CharacterRuntime::noteCommandSource(const char *source) {
-  if (source && source[0]) {
-    _lastCommandSource = source;
-  }
-}
-
-void CharacterRuntime::setLifeMode(const char *mode) {
-  noteCommandSource("protocol");
-  _brain.setLifeMode(mode);
-  _dirtyTracker.forceDirty(DirtyHeader);
-}
-
 void CharacterRuntime::setActivity(const char *activity) {
-  applyActivityCommand(activity, "protocol");
-}
-
-void CharacterRuntime::applyActivityCommand(const char *activity, const char *source) {
   if (!activity || !activity[0]) {
     return;
   }
-  noteCommandSource(source ? source : "protocol");
   _overrideAnimation = false;
   if (strcmp(activity, _brain.activity()) == 0) {
     _brain.forceBehaviorPick();
     syncClipFromBehavior();
-    _dirtyTracker.forceDirty(DirtyBehavior | DirtyMeta | DirtyCharacter);
+    _dirtyTracker.forceDirty(DirtyBehavior | DirtyCharacter);
   } else {
     _brain.setActivity(activity);
     syncClipFromBehavior();
-    _dirtyTracker.forceDirty(DirtyHeader | DirtyMeta | DirtyBehavior | DirtyCharacter);
+    _dirtyTracker.forceDirty(DirtyBehavior | DirtyCharacter);
   }
 }
-
-void CharacterRuntime::setEmotion(const char *emotion) {
-  noteCommandSource("protocol");
-  _brain.setEmotion(emotion);
-  syncClipFromBehavior();
-  _dirtyTracker.forceDirty(DirtyMeta | DirtyBehavior | DirtyCharacter);
-}
-
-void CharacterRuntime::setSeason(const char *season) {
-  noteCommandSource("protocol");
-  _brain.setSeason(season);
-  _dirtyTracker.forceDirty(DirtyMeta);
-}
-
-void CharacterRuntime::triggerHabit(const char *habitId) {
-  noteCommandSource("protocol");
-  _brain.triggerHabit(habitId);
-  syncClipFromBehavior();
-  _dirtyTracker.forceDirty(DirtyBehavior | DirtyMeta | DirtyHeader | DirtyCharacter);
-}
-
-void CharacterRuntime::playAnimation(const char *animationId) {
-  noteCommandSource("protocol");
-  _overrideAnimation = true;
-  applyClip(animationId);
-  _dirtyTracker.forceDirty(DirtyCharacter | DirtyBehavior);
-}
-
-void CharacterRuntime::setState(const char *state) { setActivity(state); }
 
 const char *CharacterRuntime::currentAnimation() const {
   if (_overrideAnimation && !_activeClipId.empty()) {
@@ -219,39 +144,46 @@ const char *CharacterRuntime::currentAnimation() const {
   return _brain.behaviorId();
 }
 
-void CharacterRuntime::setMessage(const char *id, const char *text, int priority,
-                                  unsigned long durationMs) {
-  noteCommandSource("protocol");
-  _overlays.push(id, text, priority, durationMs, millis());
-  _dirtyTracker.forceDirty(DirtyMessage);
+void CharacterRuntime::setWeatherDisplay(const char *icon, const char *tempLine,
+                                         const char *conditionLine, const char *city) {
+  _weatherIcon = icon ? icon : "";
+  _weatherText = tempLine ? tempLine : "";
+  _weatherConditionText = conditionLine ? conditionLine : "";
+  _weatherCityText = city ? city : "";
+  if (_ambientMode == AmbientDisplayMode::WeatherScreen) {
+    _dirtyTracker.forceDirty(DirtyBehavior | DirtyCharacter | DirtyBackground);
+  }
 }
 
-void CharacterRuntime::setBackground(const char *backgroundKey) {
-  if (!backgroundKey) {
+void CharacterRuntime::setClock(const char *timeText, const char *dateText) {
+  _clockText = timeText ? timeText : "";
+  _clockDateText = dateText ? dateText : "";
+  if (_ambientMode == AmbientDisplayMode::ClockScreen) {
+    _dirtyTracker.forceDirty(DirtyBehavior | DirtyBackground);
+  }
+}
+
+void CharacterRuntime::setDisplayMode(AmbientDisplayMode mode) {
+  if (_ambientMode == mode) {
     return;
   }
-  noteCommandSource("protocol");
-  if (strcmp(backgroundKey, "office") == 0 && _loader) {
-    _backgroundSprite = _loader->defaultBackgroundSprite();
-  } else {
-    _backgroundSprite = backgroundKey;
-  }
-  _dirtyTracker.forceDirty(DirtyBackground);
+  _ambientMode = mode;
+  invalidateRender(DirtyFull);
 }
 
 RenderState CharacterRuntime::buildRenderState() const {
   RenderState state;
-  state.lifeMode = _brain.lifeMode();
   state.activity = _brain.activity();
-  state.emotion = _brain.emotion();
-  state.goal = _brain.goal();
-  state.goalProgress = _brain.goalProgress();
   state.behaviorId = _brain.behaviorId();
   state.behaviorLabel = _brain.behaviorLabel();
-  state.energy = _brain.energy();
-  state.displayEnergy = quantizeEnergy(state.energy);
-  state.curiosity = _brain.curiosityActive();
-  state.overlayText = _overlays.activeText();
+  state.clockText = _clockText.empty() ? nullptr : _clockText.c_str();
+  state.clockDateText = _clockDateText.empty() ? nullptr : _clockDateText.c_str();
+  state.weatherText = _weatherText.empty() ? nullptr : _weatherText.c_str();
+  state.weatherConditionText =
+      _weatherConditionText.empty() ? nullptr : _weatherConditionText.c_str();
+  state.weatherCityText = _weatherCityText.empty() ? nullptr : _weatherCityText.c_str();
+  state.weatherIcon = _weatherIcon.empty() ? nullptr : _weatherIcon.c_str();
+  state.ambientMode = _ambientMode;
   state.backgroundSpriteId =
       _backgroundSprite.empty() ? nullptr : _backgroundSprite.c_str();
   state.bodySpriteId = _bodySpriteId.empty() ? nullptr : _bodySpriteId.c_str();
@@ -262,21 +194,20 @@ RenderState CharacterRuntime::buildRenderState() const {
 DirtyFlags CharacterRuntime::collectDirtyFlags() {
   RenderState state = buildRenderState();
   DirtyFlags dirty = _dirtyTracker.collectDirtyFlags(state);
-  if (!textModeActive() && _lastClipFrame >= 0 &&
-      state.clipFrameIndex != _lastClipFrame) {
+  if (_loader && _lastClipFrame >= 0 && state.clipFrameIndex != _lastClipFrame) {
     dirty = dirty | DirtyCharacter;
   }
   return dirty;
 }
 
 void CharacterRuntime::render(DirtyFlags dirty) {
-  if (!anyDirty(dirty) || !_renderer) {
+  if (!anyDirty(dirty) || !_renderer || !_loader) {
     return;
   }
 
   unsigned long renderStart = millis();
   RenderState state = buildRenderState();
-  _scheduler.render(state, dirty, textModeActive());
+  _scheduler.render(state, dirty);
   _dirtyTracker.commitRendered(state);
   _lastClipFrame = state.clipFrameIndex;
   _lastDirtyFlags = dirty;
@@ -294,20 +225,16 @@ void CharacterRuntime::present() {
 
 void CharacterRuntime::tick(unsigned long nowMs) {
   unsigned long tickStart = millis();
-  if (_overlays.tick(nowMs)) {
-    _dirtyTracker.notePending(DirtyMessage);
-  }
   if (!_overrideAnimation) {
     _brain.update(nowMs);
-    if (!textModeActive()) {
-      syncClipFromBehavior();
-    }
+    syncClipFromBehavior();
   }
-  if (_loader && !textModeActive()) {
+  if (_loader) {
     _clipPlayer.tick(nowMs);
     const char *sprite = _clipPlayer.currentSpriteId();
-    if (sprite) {
+    if (sprite && _bodySpriteId != sprite) {
       _bodySpriteId = sprite;
+      _dirtyTracker.forceDirty(DirtyCharacter);
     }
   }
   updateFps(nowMs);

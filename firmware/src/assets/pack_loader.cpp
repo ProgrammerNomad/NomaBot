@@ -185,6 +185,8 @@ bool PackLoader::loadConfig() {
   }
 
   _hudEnabled = true;
+  _eyesOnlyMode = false;
+  _landscapeOrientation = false;
   if (doc["display"].is<JsonObject>()) {
     JsonObject display = doc["display"].as<JsonObject>();
     if (display["pet_mode"] | false) {
@@ -192,6 +194,14 @@ bool PackLoader::loadConfig() {
     }
     if (display["hud"].is<bool>() && !display["hud"].as<bool>()) {
       _hudEnabled = false;
+    }
+    const char *mode = display["display_mode"] | "";
+    if (strcmp(mode, "eyes_only") == 0) {
+      _eyesOnlyMode = true;
+    }
+    const char *orient = display["orientation"] | "";
+    if (strcmp(orient, "landscape") == 0) {
+      _landscapeOrientation = true;
     }
   }
 

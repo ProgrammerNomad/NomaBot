@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "ambient/display_mode.h"
+
 struct RenderState {
   const char *lifeMode = "work";
   const char *activity = "idle";
@@ -14,6 +16,13 @@ struct RenderState {
   int displayEnergy = 80;
   bool curiosity = false;
   const char *overlayText = "";
+  const char *clockText = "";
+  const char *clockDateText = "";
+  const char *weatherText = "";
+  const char *weatherConditionText = "";
+  const char *weatherCityText = "";
+  const char *weatherIcon = "";
+  AmbientDisplayMode ambientMode = AmbientDisplayMode::EyesAnim;
   const char *backgroundSpriteId = nullptr;
   const char *bodySpriteId = nullptr;
   int clipFrameIndex = 0;
@@ -41,7 +50,7 @@ enum DirtyFlags : uint8_t {
 
 // M5 active: DirtyCharacter covers the whole character entity.
 // Reserved M6+ (see docs/SCENE_SPEC.md): DirtyBody, DirtyEyes, DirtyAccessory,
-// DirtyBubble, DirtyHud — reuse bits only after ADR; not implemented in M5.
+// DirtyBubble, DirtyHud - reuse bits only after ADR; not implemented in M5.
 
 inline DirtyFlags operator|(DirtyFlags a, DirtyFlags b) {
   return static_cast<DirtyFlags>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));

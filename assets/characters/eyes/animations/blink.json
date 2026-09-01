@@ -1,0 +1,14 @@
+{
+  "id": "blink",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "eyes_blink",
+      "duration_ms": 120
+    },
+    {
+      "sprite": "eyes_neutral",
+      "duration_ms": 350
+    }
+  ]
+}

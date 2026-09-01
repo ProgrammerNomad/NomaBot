@@ -37,5 +37,14 @@ Thumbs.db
 logs/
 *.log
 
-# Local config
+# Secrets / credentials (never commit)
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets.json
+firmware/secrets.h
+**/secrets.h
+!**/secrets.example.h

@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from nomabot.render import DirtyFlags, RenderState, has_dirty
 
 SCENE_Z_BACKGROUND = 0
+SCENE_Z_AMBIENT = 5
 SCENE_Z_CHARACTER = 10
 SCENE_Z_EXPRESSION = 11
 SCENE_Z_PROP = 20
@@ -20,6 +21,16 @@ DEFAULT_EXPRESSIONS: dict[str, str] = {
     "frustrated": "face_angry",
     "sleepy": "face_sleepy",
     "curious": "face_thinking",
+}
+
+EYES_EXPRESSIONS: dict[str, str] = {
+    "neutral": "eyes_neutral",
+    "happy": "eyes_happy",
+    "excited": "eyes_happy",
+    "frustrated": "eyes_focus",
+    "sleepy": "eyes_sleepy",
+    "curious": "eyes_look_left",
+    "rainy": "eyes_rain",
 }
 
 
@@ -39,6 +50,7 @@ class SceneNode:
 class Scene:
     scene_id: str = "office"
     background: SceneNode = field(default_factory=SceneNode)
+    ambient_bar: SceneNode = field(default_factory=SceneNode)
     character: SceneNode = field(default_factory=SceneNode)
     expression: SceneNode = field(default_factory=SceneNode)
     hud: SceneNode = field(default_factory=SceneNode)
@@ -73,6 +85,7 @@ def scene_visible_node_count(scene: Scene) -> int:
     count = 0
     for node in (
         scene.background,
+        scene.ambient_bar,
         scene.character,
         scene.expression,
         scene.hud,
@@ -101,6 +114,7 @@ def apply_dirty_flags(scene: Scene, dirty: DirtyFlags) -> None:
     if dirty == DirtyFlags.FULL:
         for node in (
             scene.background,
+            scene.ambient_bar,
             scene.character,
             scene.expression,
             scene.hud,
@@ -110,14 +124,16 @@ def apply_dirty_flags(scene: Scene, dirty: DirtyFlags) -> None:
         return
 
     _mark_node_dirty(scene.background, has_dirty(dirty, DirtyFlags.BACKGROUND))
+    _mark_node_dirty(scene.ambient_bar, has_dirty(dirty, DirtyFlags.BEHAVIOR))
     _mark_node_dirty(scene.character, has_dirty(dirty, DirtyFlags.CHARACTER))
     _mark_node_dirty(scene.expression, has_dirty(dirty, DirtyFlags.CHARACTER))
     _mark_node_dirty(scene.hud, has_dirty(dirty, DirtyFlags.BEHAVIOR))
     if has_dirty(dirty, DirtyFlags.MESSAGE):
         scene.speech_bubble.dirty = True
 
-    if has_dirty(dirty, DirtyFlags.BACKGROUND) and scene.character.visible:
-        scene.character.dirty = True
+    if has_dirty(dirty, DirtyFlags.BACKGROUND):
+        if scene.character.visible:
+            scene.character.dirty = True
         if scene.expression.visible:
             scene.expression.dirty = True
     if has_dirty(dirty, DirtyFlags.CHARACTER) and scene.expression.visible:
@@ -138,13 +154,15 @@ class SceneBuilder:
         expression_dy: int = 24,
         expressions: dict[str, str] | None = None,
         show_hud: bool = True,
+        eyes_only: bool = False,
         dirty: DirtyFlags = DirtyFlags.FULL,
     ) -> Scene:
+        expr_map = expressions or (EYES_EXPRESSIONS if eyes_only else DEFAULT_EXPRESSIONS)
         bg_sprite = state.background_sprite_id or default_background
-        body_sprite = state.body_sprite_id or "body_idle_01"
+        body_sprite = state.body_sprite_id or ("eyes_neutral" if eyes_only else "body_idle_01")
         label = state.behavior_label or ""
         overlay = state.overlay_text or ""
-        face_sprite = expression_for_emotion(state.emotion, expressions)
+        face_sprite = expression_for_emotion(state.emotion, expr_map)
 
         scene = Scene(scene_id=scene_id_from_background(bg_sprite))
         scene.background = SceneNode(
@@ -155,22 +173,46 @@ class SceneBuilder:
             z=SCENE_Z_BACKGROUND,
             visible=bool(bg_sprite),
         )
-        scene.character = SceneNode(
-            id=body_sprite,
-            sprite_id=body_sprite,
-            x=anchor_x,
-            y=anchor_y,
-            z=SCENE_Z_CHARACTER,
-            visible=bool(body_sprite),
+        clock = state.clock_text or ""
+        weather = state.weather_text or ""
+        scene.ambient_bar = SceneNode(
+            id=clock or None,
+            sprite_id=state.weather_icon,
+            text=weather or None,
+            x=4,
+            y=6,
+            z=SCENE_Z_AMBIENT,
+            visible=eyes_only and bool(clock or weather),
         )
-        scene.expression = SceneNode(
-            id=face_sprite,
-            sprite_id=face_sprite,
-            x=anchor_x + expression_dx,
-            y=anchor_y + expression_dy,
-            z=SCENE_Z_EXPRESSION,
-            visible=bool(face_sprite),
-        )
+
+        if eyes_only:
+            scene.character = SceneNode(visible=False)
+            scene.expression = SceneNode(
+                id=body_sprite,
+                sprite_id=body_sprite,
+                x=0,
+                y=0,
+                z=SCENE_Z_EXPRESSION,
+                visible=bool(body_sprite),
+            )
+        else:
+            scene.character = SceneNode(
+                id=body_sprite,
+                sprite_id=body_sprite,
+                x=anchor_x,
+                y=anchor_y,
+                z=SCENE_Z_CHARACTER,
+                visible=bool(body_sprite),
+            )
+            scene.expression = SceneNode(
+                id=face_sprite,
+                sprite_id=face_sprite,
+                x=anchor_x + expression_dx,
+                y=anchor_y + expression_dy,
+                z=SCENE_Z_EXPRESSION,
+                visible=bool(face_sprite),
+            )
+
         scene.hud = SceneNode(
             id="hud",
             text=label,

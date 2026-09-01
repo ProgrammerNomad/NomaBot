@@ -9,99 +9,52 @@ from nomabot.assets.compiler import compile_pack
 
 
 @pytest.fixture
-def nomabot_source(tmp_path):
+def eyes_source() -> Path:
     root = Path(__file__).resolve().parents[2]
-    src = root / "assets" / "characters" / "nomabot"
-    sprites = src / "sprites" / "body" / "body_idle_01.png"
-    if not sprites.exists():
-        pytest.skip("Run scripts/generate_placeholder_sprites.py first")
+    src = root / "assets" / "characters" / "eyes"
+    if not (src / "sprites" / "eyes" / "eyes_neutral.png").exists():
+        pytest.skip("Run scripts/generate_eyes_art.py first")
     return src
 
 
-def test_compile_nomabot(nomabot_source, tmp_path):
+def test_compile_eyes(eyes_source: Path, tmp_path: Path) -> None:
     out = tmp_path / "compiled"
-    report = compile_pack(nomabot_source, out, "lilygo_tdisplay_s3")
+    report = compile_pack(eyes_source, out, "lilygo_tdisplay_s3_landscape")
     assert (out / "manifest.json").exists()
     assert (out / "asset_report.json").exists()
     assert (out / "sprites").exists()
 
     manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["pack_id"] == "nomabot"
-    assert manifest["uuid"] == "a6d1e8f0-4c2b-4f91-9c3d-8e1a2b4c6d8e"
-    assert manifest["version"] == {"major": 0, "minor": 3, "patch": 0}
-    assert manifest["protocol_min"] == 1
-    assert manifest["hash"] is None
-    assert manifest["signature"] is None
-    assert manifest["display"]["width"] == 170
-    assert manifest["config_ref"] == "config.json"
-    assert manifest["graph_ref"] == "animation_graph.json"
+    assert manifest["pack_id"] == "eyes"
+    assert manifest["display"]["width"] == 320
+    assert manifest["display"]["height"] == 170
 
     ids = {s["id"] for s in manifest["sprites"]}
-    assert "bg_office" in ids
-    assert "body_idle_01" in ids
-    assert "body_typing_01" in ids
-    assert "face_neutral" in ids
-    assert "body/idle_01" not in ids
+    assert "bg_dark" in ids
+    assert "eyes_neutral" in ids
+    assert "eyes_blink" in ids
 
     assert report["sprites"] == len(manifest["sprites"])
     assert report["frames"] >= 4
     assert report["memory_human"].endswith("KB")
 
 
-def test_body_png_uses_colorkey_for_transparent_pixels(nomabot_source, tmp_path) -> None:
+def test_eyes_png_uses_colorkey_for_transparent_pixels(eyes_source: Path) -> None:
     import struct
 
     from nomabot.assets.compiler import SPRITE_COLORKEY, _png_to_rgb565
 
-    body_png = nomabot_source / "sprites" / "body" / "body_idle_01.png"
-    if not body_png.exists():
-        pytest.skip("Run scripts/generate_living_nomabot_art.py first")
-    data = _png_to_rgb565(body_png, use_colorkey=True)
+    eyes_png = eyes_source / "sprites" / "eyes" / "eyes_neutral.png"
+    data = _png_to_rgb565(eyes_png, use_colorkey=True)
     assert len(data) >= 2
     assert struct.unpack_from("<H", data, 0)[0] == SPRITE_COLORKEY
 
 
-def test_expression_png_uses_colorkey_for_transparent_pixels(nomabot_source, tmp_path) -> None:
-    import struct
-
-    from nomabot.assets.compiler import SPRITE_COLORKEY, _png_to_rgb565
-
-    face_png = nomabot_source / "sprites" / "face" / "face_neutral.png"
-    if not face_png.exists():
-        pytest.skip("Run scripts/generate_living_nomabot_art.py first")
-    data = _png_to_rgb565(face_png, use_colorkey=True)
-    assert len(data) >= 2
-    assert struct.unpack_from("<H", data, 0)[0] == SPRITE_COLORKEY
-
-
-def test_idle_clip_uses_distinct_body_frames(nomabot_source) -> None:
-    import hashlib
-
-    idle01 = nomabot_source / "sprites" / "body" / "body_idle_01.png"
-    idle02 = nomabot_source / "sprites" / "body" / "body_idle_02.png"
-    idle_clip = nomabot_source / "animations" / "idle.json"
-    if not idle01.exists() or not idle02.exists() or not idle_clip.exists():
-        pytest.skip("Run scripts/generate_living_nomabot_art.py first")
-
+def test_idle_clip_has_motion_frames(eyes_source: Path) -> None:
+    idle_clip = eyes_source / "animations" / "idle.json"
+    if not idle_clip.exists():
+        pytest.skip("idle clip missing")
     clip = json.loads(idle_clip.read_text(encoding="utf-8"))
-    sprite_ids = [frame["sprite"] for frame in clip["frames"]]
-    assert "body_idle_01" in sprite_ids
-    assert "body_idle_02" in sprite_ids
-    assert sprite_ids[0] != sprite_ids[1]
-
-    h1 = hashlib.sha256(idle01.read_bytes()).hexdigest()
-    h2 = hashlib.sha256(idle02.read_bytes()).hexdigest()
-    assert h1 != h2
-
-
-def test_idle_clip_frame_timing(nomabot_source) -> None:
-    idle_clip = nomabot_source / "animations" / "idle.json"
-    blink_clip = nomabot_source / "animations" / "blink.json"
-    if not idle_clip.exists() or not blink_clip.exists():
-        pytest.skip("Run scripts/generate_living_nomabot_art.py first")
-
-    idle = json.loads(idle_clip.read_text(encoding="utf-8"))
-    blink = json.loads(blink_clip.read_text(encoding="utf-8"))
-    assert all(frame["duration_ms"] == 300 for frame in idle["frames"])
-    assert blink["frames"][0]["duration_ms"] == 150
-    assert blink["frames"][1]["duration_ms"] == 300
+    sprite_ids = {frame["sprite"] for frame in clip["frames"]}
+    assert "eyes_neutral" in sprite_ids
+    assert len(sprite_ids) > 1

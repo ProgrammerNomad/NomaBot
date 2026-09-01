@@ -1,0 +1,31 @@
+render_mode: eyes
+
+activities:
+  idle:
+    behaviors:
+      - id: idle
+        label: ""
+        weight: 50
+        clip: idle
+        duration: { min: 3, max: 8 }
+      - id: blink
+        label: ""
+        weight: 30
+        clip: blink
+        duration: { min: 1, max: 3 }
+      - id: look_l
+        label: ""
+        weight: 10
+        clip: look_left
+        duration: { min: 2, max: 5 }
+      - id: look_r
+        label: ""
+        weight: 10
+        clip: look_right
+        duration: { min: 2, max: 5 }
+
+behavior_clips:
+  idle: idle
+  blink: blink
+  look_l: look_left
+  look_r: look_right

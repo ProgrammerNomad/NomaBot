@@ -1,5 +1,8 @@
 #include "character_renderer.h"
 
+#include "ambient/display_mode.h"
+#include "renderer/renderer.hpp"
+
 namespace {
 
 constexpr int kHudBandHeight = 18;
@@ -20,6 +23,43 @@ int textWidthEstimate(const char *text) {
     len++;
   }
   return len * 6;
+}
+
+uint8_t fitTextScale(const char *text, int maxWidth, uint8_t preferredScale) {
+  if (!text || !text[0] || maxWidth <= 16) {
+    return 1;
+  }
+  int len = 0;
+  while (text[len]) {
+    len++;
+  }
+  if (len <= 0) {
+    return 1;
+  }
+  int maxScale = (maxWidth - 16) / (len * 6);
+  if (maxScale < 1) {
+    return 1;
+  }
+  if (maxScale > 255) {
+    maxScale = 255;
+  }
+  if (preferredScale > static_cast<uint8_t>(maxScale)) {
+    return static_cast<uint8_t>(maxScale);
+  }
+  return preferredScale > 0 ? preferredScale : 1;
+}
+
+int centeredTextX(IRenderer &renderer, const char *text, uint8_t scale) {
+  int tw = textWidthEstimate(text) * scale;
+  int x = (renderer.width() - tw) / 2;
+  return x < 4 ? 4 : x;
+}
+
+void drawScaledLine(IRenderer &renderer, const char *text, int y, uint16_t color, uint8_t scale) {
+  if (!text || !text[0]) {
+    return;
+  }
+  renderer.drawTextScale(centeredTextX(renderer, text, scale), y, text, color, scale);
 }
 
 void fillRoundedRect(IRenderer &renderer, int x, int y, int w, int h, int r, uint16_t color) {
@@ -122,9 +162,16 @@ void drawBackgroundNode(IRenderer &renderer, PackLoader &loader, SpriteCache &ca
   }
 
   renderer.blitRGB565(bgPixels, 0, 0, bgMeta->width, bgMeta->height);
-  captureFootprint(loader, cache, bgCache, node.spriteId, scene.character.x, scene.character.y,
-                   scene.character.spriteId, scene.expression.spriteId, scene.expression.x,
-                   scene.expression.y);
+  const char *bodySpriteId = scene.character.spriteId;
+  int bodyX = scene.character.x;
+  int bodyY = scene.character.y;
+  if ((!bodySpriteId || !bodySpriteId[0]) && scene.expression.visible) {
+    bodySpriteId = scene.expression.spriteId;
+    bodyX = scene.expression.x;
+    bodyY = scene.expression.y;
+  }
+  captureFootprint(loader, cache, bgCache, node.spriteId, bodyX, bodyY, bodySpriteId,
+                   scene.expression.spriteId, scene.expression.x, scene.expression.y);
 }
 
 void drawCharacterNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
@@ -140,7 +187,36 @@ void drawExpressionNode(IRenderer &renderer, PackLoader &loader, SpriteCache &ca
   if (!node.visible || !node.spriteId || !node.spriteId[0]) {
     return;
   }
+  const SpriteMeta *meta = loader.findSprite(node.spriteId);
+  if (meta && meta->width >= renderer.width() - 2) {
+    const uint16_t *pixels = cache.get(node.spriteId, loader, meta);
+    if (pixels) {
+      renderer.blitRGB565ColorKey(pixels, 0, 0, meta->width, meta->height, kSpriteColorKey);
+    }
+    return;
+  }
   compositor.blitSprite(renderer, loader, cache, node.spriteId, node.x, node.y, true);
+}
+
+void drawAmbientBarNode(IRenderer &renderer, const SceneNode &node, const RenderState *state) {
+  (void)state;
+  if (!node.visible) {
+    return;
+  }
+  constexpr int kBarH = 22;
+  renderer.fillRect(0, 0, renderer.width(), kBarH, 0x2949);
+  const char *clock = node.id ? node.id : "";
+  if (clock[0]) {
+    renderer.drawText(6, 6, clock, kTextColor);
+  }
+  if (node.text && node.text[0]) {
+    int tw = textWidthEstimate(node.text);
+    int x = renderer.width() - tw - 8;
+    if (x < 80) {
+      x = 80;
+    }
+    renderer.drawText(x, 6, node.text, kTextColor);
+  }
 }
 
 void drawHudNode(IRenderer &renderer, const SceneNode &node) {
@@ -204,13 +280,55 @@ void drawSpeechBubbleNode(IRenderer &renderer, PackLoader &loader, SpriteCache &
   renderer.drawText(bx + kBubblePadX, by + kBubblePadY + 8, node.text, kBubbleBorder);
 }
 
+void drawLargeCenteredText(IRenderer &renderer, const char *line1, const char *line2,
+                           const char *line3) {
+  renderer.fillScreen(kHudClearColor);
+  int w = renderer.width();
+  int h = renderer.height();
+  const bool threeLines = line3 && line3[0];
+
+  if (line1 && line1[0]) {
+    uint8_t scale1 = fitTextScale(line1, w, threeLines ? 7 : 8);
+    int lineH1 = 8 * scale1;
+    int y1 = threeLines ? h / 6 : static_cast<int>(h * 0.28f);
+    drawScaledLine(renderer, line1, y1, 0x07FF, scale1);
+    if (line2 && line2[0]) {
+      uint8_t scale2 = fitTextScale(line2, w, threeLines ? 3 : 3);
+      int y2 = threeLines ? y1 + lineH1 + 8 : static_cast<int>(h * 0.62f);
+      drawScaledLine(renderer, line2, y2, kTextColor, scale2);
+    }
+    if (line3 && line3[0]) {
+      uint8_t scale3 = fitTextScale(line3, w, 2);
+      int y3 = static_cast<int>(h * 0.72f);
+      drawScaledLine(renderer, line3, y3, kTextColor, scale3);
+    }
+    return;
+  }
+
+  if (line2 && line2[0]) {
+    uint8_t scale2 = fitTextScale(line2, w, 3);
+    drawScaledLine(renderer, line2, h / 2 - 12, kTextColor, scale2);
+  }
+}
+
 }  // namespace
 
 void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, DirtyFlags dirty,
                                   PackLoader &loader, SpriteCache &cache, Compositor &compositor,
                                   BackgroundCache &bgCache) {
+  if (scene.ambientMode == AmbientDisplayMode::ClockScreen ||
+      scene.ambientMode == AmbientDisplayMode::WeatherScreen) {
+    if (dirty == DirtyFull || hasDirty(dirty, DirtyBackground) || hasDirty(dirty, DirtyBehavior)) {
+      drawLargeCenteredText(renderer, scene.largeLine1, scene.largeLine2, scene.largeLine3);
+    }
+    return;
+  }
+
   if (dirty == DirtyFull) {
     drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background, scene);
+    if (scene.ambientBar.visible) {
+      drawAmbientBarNode(renderer, scene.ambientBar, nullptr);
+    }
     drawCharacterNode(renderer, loader, cache, compositor, scene.character);
     drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
     if (scene.hud.visible) {
@@ -222,24 +340,42 @@ void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, Dirty
     return;
   }
 
+  bool fullScreenEyes = false;
+  if (scene.expression.visible && scene.expression.spriteId) {
+    const SpriteMeta *eyeMeta = loader.findSprite(scene.expression.spriteId);
+    fullScreenEyes = eyeMeta && eyeMeta->width >= renderer.width() - 2;
+  }
+
   if (scene.background.dirty) {
     drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background, scene);
+    if (fullScreenEyes && scene.expression.visible) {
+      drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
+    }
   }
 
   if (scene.character.dirty || scene.expression.dirty) {
-    if (!scene.background.dirty) {
+    if (fullScreenEyes && scene.expression.dirty && !scene.background.dirty) {
+      drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background, scene);
+      drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
+    } else if (!scene.background.dirty) {
       bgCache.restore(renderer);
     }
-    if (scene.character.dirty) {
-      drawCharacterNode(renderer, loader, cache, compositor, scene.character);
-    }
-    if (scene.expression.dirty) {
-      drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
+    if (!fullScreenEyes || !scene.expression.dirty) {
+      if (scene.character.dirty) {
+        drawCharacterNode(renderer, loader, cache, compositor, scene.character);
+      }
+      if (scene.expression.dirty && !fullScreenEyes) {
+        drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
+      }
     }
   }
 
   if (scene.hud.dirty) {
     drawHudNode(renderer, scene.hud);
+  }
+
+  if (scene.ambientBar.dirty) {
+    drawAmbientBarNode(renderer, scene.ambientBar, nullptr);
   }
 
   if (scene.speechBubble.dirty) {

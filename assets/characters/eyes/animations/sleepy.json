@@ -1,0 +1,14 @@
+{
+  "id": "sleepy",
+  "loop": true,
+  "frames": [
+    {
+      "sprite": "eyes_sleepy",
+      "duration_ms": 500
+    },
+    {
+      "sprite": "eyes_blink",
+      "duration_ms": 150
+    }
+  ]
+}

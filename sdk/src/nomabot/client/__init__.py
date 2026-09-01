@@ -42,9 +42,7 @@ class NomaClient:
         await self._transport.connect()
         self._connected = True
         self._transport.on_receive(self._on_bytes)
-        return await self.send_command(
-            build_command("hello", HelloParams(client_version="0.1.0"))
-        )
+        return await self.send_command(build_command("hello", HelloParams(client_version="0.1.0")))
 
     async def disconnect(self) -> None:
         self._connected = False
@@ -98,9 +96,7 @@ class NomaClient:
         )
 
     async def set_state(self, state: str) -> Envelope:
-        return await self.send_command(
-            build_command("set_state", SetStateParams(state=state))
-        )
+        return await self.send_command(build_command("set_state", SetStateParams(state=state)))
 
     async def set_activity(self, activity: str) -> Envelope:
         return await self.send_command(
@@ -113,9 +109,7 @@ class NomaClient:
         )
 
     async def set_life_mode(self, mode: str) -> Envelope:
-        return await self.send_command(
-            build_command("set_life_mode", SetLifeModeParams(mode=mode))
-        )
+        return await self.send_command(build_command("set_life_mode", SetLifeModeParams(mode=mode)))
 
     async def get_status(self) -> Envelope:
         return await self.send_command(build_command("get_status"))

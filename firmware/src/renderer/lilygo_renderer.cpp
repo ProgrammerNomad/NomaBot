@@ -102,6 +102,17 @@ void LilygoRenderer::drawText(int x, int y, const char *text, uint16_t color) {
   _gfx.print(text);
 }
 
+void LilygoRenderer::drawTextScale(int x, int y, const char *text, uint16_t color, uint8_t scale) {
+  _gfx.setTextColor(color);
+  _gfx.setTextSize(scale > 0 ? scale : 1);
+  _gfx.setCursor(x, y);
+  _gfx.print(text);
+}
+
 int LilygoRenderer::width() const { return _gfx.width(); }
 
 int LilygoRenderer::height() const { return _gfx.height(); }
+
+void LilygoRenderer::setRotation(int rotation) {
+  _gfx.setRotation(rotation & 3);
+}

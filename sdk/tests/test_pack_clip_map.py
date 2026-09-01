@@ -1,4 +1,4 @@
-"""Pack clip map tests — behavior.json clip resolution."""
+"""Pack clip map tests - behavior.json clip resolution."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-BEHAVIOR_JSON = ROOT / "compiled" / "nomabot" / "behavior.json"
+BEHAVIOR_JSON = ROOT / "compiled" / "eyes" / "behavior.json"
 
 
 def _load_clip_map(data: dict) -> dict[str, str]:
@@ -38,26 +38,26 @@ def _load_clip_map(data: dict) -> dict[str, str]:
 @pytest.fixture
 def clip_map() -> dict[str, str]:
     if not BEHAVIOR_JSON.exists():
-        pytest.skip("compiled behavior.json missing — run nomabot build-assets")
+        pytest.skip("compiled behavior.json missing - run just assets")
     data = json.loads(BEHAVIOR_JSON.read_text(encoding="utf-8"))
     return _load_clip_map(data)
 
 
-def test_typing_maps_to_coding(clip_map: dict[str, str]) -> None:
-    assert clip_map["typing"] == "coding"
+def test_idle_maps_to_idle(clip_map: dict[str, str]) -> None:
+    assert clip_map["idle"] == "idle"
 
 
-def test_read_maps_to_think(clip_map: dict[str, str]) -> None:
-    assert clip_map["read"] == "think"
-
-
-def test_think_maps_to_think(clip_map: dict[str, str]) -> None:
-    assert clip_map["think"] == "think"
-
-
-def test_blink_not_stuck_on_idle(clip_map: dict[str, str]) -> None:
+def test_blink_maps_to_blink(clip_map: dict[str, str]) -> None:
     assert clip_map["blink"] == "blink"
 
 
+def test_look_left_maps_to_clip(clip_map: dict[str, str]) -> None:
+    assert clip_map["look_l"] == "look_left"
+
+
+def test_look_right_maps_to_clip(clip_map: dict[str, str]) -> None:
+    assert clip_map["look_r"] == "look_right"
+
+
 def test_behavior_clips_override(clip_map: dict[str, str]) -> None:
-    assert clip_map["breathing"] == "idle"
+    assert clip_map["idle"] == "idle"

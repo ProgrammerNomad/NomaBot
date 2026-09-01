@@ -113,13 +113,19 @@ class MockTransport:
             return build_response(env.id, "set_state", data={"ok": True})
         if cmd == "set_activity" and env.params:
             self.last_activity = env.params.get("activity")
-            return build_response(env.id, "set_activity", data={"ok": True, "activity": self.last_activity})
+            return build_response(
+                env.id, "set_activity", data={"ok": True, "activity": self.last_activity}
+            )
         if cmd == "set_emotion" and env.params:
             self.last_emotion = env.params.get("emotion")
-            return build_response(env.id, "set_emotion", data={"ok": True, "emotion": self.last_emotion})
+            return build_response(
+                env.id, "set_emotion", data={"ok": True, "emotion": self.last_emotion}
+            )
         if cmd == "set_life_mode" and env.params:
             self.last_life_mode = env.params.get("mode")
-            return build_response(env.id, "set_life_mode", data={"ok": True, "mode": self.last_life_mode})
+            return build_response(
+                env.id, "set_life_mode", data={"ok": True, "mode": self.last_life_mode}
+            )
         if cmd == "trigger_habit" and env.params:
             return build_response(
                 env.id, "trigger_habit", data={"ok": True, "habit": env.params.get("habit")}

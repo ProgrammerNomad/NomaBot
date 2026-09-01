@@ -57,6 +57,18 @@ class SetSeasonParams(BaseModel):
     season: str
 
 
+class SetWeatherParams(BaseModel):
+    temp_c: float
+    condition: str = ""
+    icon: str = "cloud"
+    city: str = ""
+
+
+class SetClockParams(BaseModel):
+    time: str
+    date: str = ""
+
+
 class PingParams(BaseModel):
     pass
 
@@ -86,6 +98,8 @@ COMMAND_MODELS: dict[str, type[BaseModel]] = {
     "set_life_mode": SetLifeModeParams,
     "trigger_habit": TriggerHabitParams,
     "set_season": SetSeasonParams,
+    "set_weather": SetWeatherParams,
+    "set_clock": SetClockParams,
     "load_character": LoadCharacterParams,
     "diagnostics": DiagnosticsParams,
 }

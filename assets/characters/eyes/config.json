@@ -1,0 +1,30 @@
+{
+  "id": "eyes",
+  "display": {
+    "width": 320,
+    "height": 170,
+    "orientation": "landscape",
+    "profile": "lilygo_tdisplay_s3_landscape",
+    "default_background": "dark",
+    "display_mode": "eyes_only",
+    "pet_mode": true,
+    "hud": false
+  },
+  "anchors": {
+    "body": { "x": 160, "y": 55 },
+    "expression": { "dx": 0, "dy": 0 }
+  },
+  "default_animation": "idle",
+  "backgrounds": {
+    "dark": { "sprite": "bg_dark" }
+  },
+  "expressions": {
+    "neutral": "eyes_neutral",
+    "happy": "eyes_happy",
+    "excited": "eyes_happy",
+    "frustrated": "eyes_focus",
+    "sleepy": "eyes_sleepy",
+    "curious": "eyes_look_left",
+    "rainy": "eyes_rain"
+  }
+}

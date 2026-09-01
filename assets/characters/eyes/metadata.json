@@ -1,0 +1,12 @@
+{
+  "id": "eyes",
+  "uuid": "b7e2c9a1-5d4f-4e82-9c1b-3f8a6d2e4b0c",
+  "name": "Eyes Ambient",
+  "version": "0.1.0",
+  "author": "NomaBot Project",
+  "license": "MIT",
+  "description": "Landscape eyes-only desk pet with weather and clock ambient bar.",
+  "min_firmware": "0.5.3",
+  "min_desktop": "0.5.3",
+  "hardware_profiles": ["lilygo_tdisplay_s3_landscape"]
+}

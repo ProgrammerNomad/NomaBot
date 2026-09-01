@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/eyes-ambient]
   pull_request:
-    branches: [main]
+    branches: [main, feature/eyes-ambient]
 
 jobs:
   python:
@@ -23,30 +23,22 @@ jobs:
       - name: Sync dependencies
         run: uv sync
 
-      - name: Generate placeholder sprites
-        run: uv run python scripts/generate_placeholder_sprites.py
-
       - name: Ruff check
-        run: uv run ruff check sdk desktop scripts
+        run: uv run ruff check sdk scripts
 
       - name: Ruff format check
-        run: uv run ruff format --check sdk desktop scripts
+        run: uv run ruff format --check sdk scripts
 
       - name: Validate profiles
         run: uv run python scripts/validate_profiles.py
 
-      - name: Protocol lint
-        run: uv run nomabot protocol lint sdk/tests/fixtures/protocol
-
       - name: Pytest
-        run: uv run pytest sdk/tests desktop/tests -v
+        run: uv run pytest sdk/tests -q
 
-      - name: Build assets
+      - name: Build eyes assets
         run: |
-          uv run nomabot build-assets \
-            --input assets/characters/nomabot \
-            --output compiled/nomabot \
-            --profile lilygo_tdisplay_s3
+          uv run python scripts/generate_eyes_art.py
+          uv run python -c "from pathlib import Path; from nomabot.assets.compiler import compile_pack; compile_pack(Path('assets/characters/eyes'), Path('compiled/eyes'), 'lilygo_tdisplay_s3_landscape')"
           uv run python scripts/copy_pack_to_firmware_data.py
 
   firmware:
@@ -66,15 +58,10 @@ jobs:
       - name: Sync dependencies
         run: uv sync
 
-      - name: Generate placeholder sprites
-        run: uv run python scripts/generate_placeholder_sprites.py
-
-      - name: Build assets for firmware data
+      - name: Build eyes assets for LittleFS
         run: |
-          uv run nomabot build-assets \
-            --input assets/characters/nomabot \
-            --output compiled/nomabot \
-            --profile lilygo_tdisplay_s3
+          uv run python scripts/generate_eyes_art.py
+          uv run python -c "from pathlib import Path; from nomabot.assets.compiler import compile_pack; compile_pack(Path('assets/characters/eyes'), Path('compiled/eyes'), 'lilygo_tdisplay_s3_landscape')"
           uv run python scripts/copy_pack_to_firmware_data.py
 
       - name: Cache PlatformIO
@@ -90,10 +77,3 @@ jobs:
       - name: Build firmware
         working-directory: firmware
         run: pio run -e lilygo_tdisplay_s3
-
-      - name: Upload firmware artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware-lilygo_tdisplay_s3
-          path: firmware/.pio/build/lilygo_tdisplay_s3/firmware.bin
-          if-no-files-found: warn

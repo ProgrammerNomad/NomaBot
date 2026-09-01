@@ -1,60 +1,31 @@
-# NomaBot task runner - install: https://github.com/casey/just
+# Eyes Ambient task runner - install: https://github.com/casey/just
 
-# Sync dependencies
 sync:
-    uv sync
+    uv sync --all-packages
 
-# Run all tests
 test:
-    uv run pytest sdk/tests desktop/tests
+    uv run pytest sdk/tests -q
 
-# Lint
 lint:
-    uv run ruff check sdk desktop
-    uv run ruff format --check sdk desktop
+    uv run ruff check sdk scripts
+    uv run ruff format --check sdk scripts
 
-# Format
 format:
-    uv run ruff format sdk desktop
+    uv run ruff format sdk scripts
 
-# Protocol fixture lint
-protocol:
-    uv run nomabot protocol lint sdk/tests/fixtures/protocol
-
-# Validate device profiles
 profiles:
     uv run python scripts/validate_profiles.py
 
-# Build firmware
+assets:
+    uv run python scripts/generate_eyes_art.py
+    uv run python -c "from pathlib import Path; from nomabot.assets.compiler import compile_pack; compile_pack(Path('assets/characters/eyes'), Path('compiled/eyes'), 'lilygo_tdisplay_s3_landscape')"
+    uv run python scripts/copy_pack_to_firmware_data.py
+
 firmware:
     cd firmware && pio run -e lilygo_tdisplay_s3
 
-# Run desktop app
-desktop:
-    uv run python -m nomabot_desktop
-
-# Run with emulator window
-emulator:
-    uv run python -m nomabot_desktop --emulator
-
-# Mock device tests only
-mock:
-    uv run pytest sdk/tests -k mock
-
-# Asset compiler (stub / full)
-build-assets *ARGS:
-    uv run nomabot build-assets {{ARGS}}
-
-# Generate sprites, compile pack, copy to firmware LittleFS data
-assets:
-    uv run python scripts/generate_living_nomabot_art.py
-    uv run nomabot build-assets --input assets/characters/nomabot --output compiled/nomabot --profile lilygo_tdisplay_s3
-    uv run python scripts/copy_pack_to_firmware_data.py
-
-# Flash firmware + LittleFS filesystem
-flash-all:
+flash:
     just assets
-    cd firmware && pio run -e lilygo_tdisplay_s3 -t upload && pio run -e lilygo_tdisplay_s3 -t uploadfs
+    cd firmware && pio run -e lilygo_tdisplay_s3 -t upload -t uploadfs
 
-# Full CI check locally
-ci: lint test protocol profiles
+ci: lint test profiles assets firmware
