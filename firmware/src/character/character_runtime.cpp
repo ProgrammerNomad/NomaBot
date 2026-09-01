@@ -146,8 +146,14 @@ void CharacterRuntime::applyClip(const char *animationId) {
   if (!clip) {
     clip = _assets.getAnimation("idle");
   }
+  if (!clip) {
+    return;
+  }
+  if (_activeClipId == clip->id) {
+    return;
+  }
   _clipPlayer.setClip(clip);
-  _activeClipId = clip ? clip->id : "";
+  _activeClipId = clip->id;
 }
 
 void CharacterRuntime::syncClipFromBehavior() {

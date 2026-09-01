@@ -14,4 +14,5 @@ private:
 
   CharacterRuntime *_runtime = nullptr;
   unsigned long _lastFetchMs = 0;
+  bool _lastSuccess = false;
 };

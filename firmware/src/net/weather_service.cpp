@@ -16,6 +16,8 @@
 
 extern WifiService gWifiService;
 
+namespace {
+
 static const char *mapWeatherIcon(const char *iconCode) {
   if (!iconCode || !iconCode[0]) {
     return "cloud";
@@ -35,9 +37,38 @@ static const char *mapWeatherIcon(const char *iconCode) {
   return "cloud";
 }
 
+String normalizeCityQuery(const char *city) {
+  if (!city) {
+    return "";
+  }
+  String normalized = city;
+  normalized.replace(", ", ",");
+  normalized.replace(" ,", ",");
+  normalized.trim();
+  return normalized;
+}
+
+String urlEncodeCity(const char *city) {
+  String normalized = normalizeCityQuery(city);
+  String encoded;
+  encoded.reserve(normalized.length() + 8);
+  for (unsigned int i = 0; i < normalized.length(); ++i) {
+    const char c = normalized.charAt(i);
+    if (c == ' ') {
+      encoded += "%20";
+    } else {
+      encoded += c;
+    }
+  }
+  return encoded;
+}
+
+}  // namespace
+
 void WeatherService::begin(CharacterRuntime *runtime) {
   _runtime = runtime;
   _lastFetchMs = 0;
+  _lastSuccess = false;
 }
 
 bool WeatherService::fetchWeather() {
@@ -48,20 +79,24 @@ bool WeatherService::fetchWeather() {
     return false;
   }
 
+  const String cityQuery = urlEncodeCity(WEATHER_CITY);
   String url = "http://api.openweathermap.org/data/2.5/weather?q=";
-  url += WEATHER_CITY;
+  url += cityQuery;
   url += "&appid=";
   url += WEATHER_API_KEY;
   url += "&units=metric";
 
+  Serial.printf("Weather fetch: q=%s\n", cityQuery.c_str());
+
   HTTPClient http;
   http.setTimeout(15000);
   if (!http.begin(url)) {
+    Serial.println("Weather: http.begin failed");
     return false;
   }
   int code = http.GET();
   if (code != 200) {
-    Serial.printf("Weather HTTP %d\n", code);
+    Serial.printf("Weather HTTP %d (q=%s)\n", code, cityQuery.c_str());
     http.end();
     return false;
   }
@@ -70,6 +105,7 @@ bool WeatherService::fetchWeather() {
 
   JsonDocument doc;
   if (deserializeJson(doc, payload)) {
+    Serial.println("Weather: JSON parse failed");
     return false;
   }
 
@@ -83,8 +119,9 @@ bool WeatherService::fetchWeather() {
   char line2[48];
   snprintf(line2, sizeof(line2), "%s", condition);
 
-  _runtime->setWeatherDisplay(icon, line1, line2, WEATHER_CITY);
-  Serial.printf("Weather: %s %s %s\n", line1, line2, WEATHER_CITY);
+  const String displayCity = normalizeCityQuery(WEATHER_CITY);
+  _runtime->setWeatherDisplay(icon, line1, line2, displayCity.c_str());
+  Serial.printf("Weather: %s %s %s\n", line1, line2, displayCity.c_str());
   return true;
 }
 
@@ -93,9 +130,10 @@ void WeatherService::tick() {
     return;
   }
   unsigned long now = millis();
-  if (_lastFetchMs != 0 && now - _lastFetchMs < 900000UL) {
+  const unsigned long interval = _lastSuccess ? 900000UL : 30000UL;
+  if (_lastFetchMs != 0 && now - _lastFetchMs < interval) {
     return;
   }
   _lastFetchMs = now;
-  fetchWeather();
+  _lastSuccess = fetchWeather();
 }
