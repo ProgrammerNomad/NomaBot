@@ -6,7 +6,7 @@ namespace {
 
 const char *sceneIdFromBackground(const char *bgSpriteId) {
   if (!bgSpriteId || !bgSpriteId[0]) {
-    return "office";
+    return "dark";
   }
   if (strncmp(bgSpriteId, "bg_", 3) == 0) {
     return bgSpriteId + 3;
@@ -57,6 +57,7 @@ void applyDirtyFlags(Scene &scene, DirtyFlags dirty) {
 Scene SceneBuilder::build(const RenderState &state, PackLoader &loader, DirtyFlags dirty) {
   Scene scene;
   const bool eyesOnly = loader.eyesOnlyMode();
+  scene.ambientMode = state.ambientMode;
 
   const char *bgSprite = state.backgroundSpriteId;
   if (!bgSprite || !bgSprite[0]) {
@@ -76,18 +77,31 @@ Scene SceneBuilder::build(const RenderState &state, PackLoader &loader, DirtyFla
   scene.background.z = kSceneZBackground;
   scene.background.visible = bgSprite && bgSprite[0];
 
-  const char *clockText = state.clockText ? state.clockText : "";
-  const char *weatherText = state.weatherText ? state.weatherText : "";
-  scene.ambientBar.id = clockText;
-  scene.ambientBar.spriteId = state.weatherIcon ? state.weatherIcon : "";
-  scene.ambientBar.text = weatherText;
-  scene.ambientBar.x = 4;
-  scene.ambientBar.y = 6;
-  scene.ambientBar.z = kSceneZAmbient;
-  scene.ambientBar.visible = eyesOnly && (clockText[0] != '\0' || weatherText[0] != '\0');
+  scene.hud.visible = false;
+  scene.speechBubble.visible = false;
+  scene.ambientBar.visible = false;
+  scene.character.visible = false;
+
+  if (eyesOnly && state.ambientMode == AmbientDisplayMode::ClockScreen) {
+    scene.largeLine1 = state.clockText;
+    scene.largeLine2 = state.clockDateText;
+    scene.expression.visible = false;
+    applyDirtyFlags(scene, dirty);
+    scene.nodeCount = sceneVisibleNodeCount(scene);
+    return scene;
+  }
+
+  if (eyesOnly && state.ambientMode == AmbientDisplayMode::WeatherScreen) {
+    scene.largeLine1 = state.weatherText;
+    scene.largeLine2 = state.weatherConditionText;
+    scene.largeLine3 = state.weatherCityText;
+    scene.expression.visible = false;
+    applyDirtyFlags(scene, dirty);
+    scene.nodeCount = sceneVisibleNodeCount(scene);
+    return scene;
+  }
 
   if (eyesOnly) {
-    scene.character.visible = false;
     scene.expression.id = bodySprite;
     scene.expression.spriteId = bodySprite;
     scene.expression.x = 0;
@@ -110,23 +124,23 @@ Scene SceneBuilder::build(const RenderState &state, PackLoader &loader, DirtyFla
     scene.expression.y = loader.expressionAnchorY();
     scene.expression.z = kSceneZExpression;
     scene.expression.visible = faceSprite && faceSprite[0];
+
+    const char *label = state.behaviorLabel ? state.behaviorLabel : "";
+    scene.hud.id = "hud";
+    scene.hud.text = label;
+    scene.hud.x = 4;
+    scene.hud.y = 8;
+    scene.hud.z = kSceneZHud;
+    scene.hud.visible = label[0] != '\0' && loader.hudEnabled();
+
+    const char *overlay = state.overlayText ? state.overlayText : "";
+    scene.speechBubble.id = overlay[0] ? "overlay" : "speech_bubble";
+    scene.speechBubble.text = overlay;
+    scene.speechBubble.x = 4;
+    scene.speechBubble.y = 0;
+    scene.speechBubble.z = kSceneZSpeechBubble;
+    scene.speechBubble.visible = overlay[0] != '\0';
   }
-
-  const char *label = state.behaviorLabel ? state.behaviorLabel : "";
-  scene.hud.id = "hud";
-  scene.hud.text = label;
-  scene.hud.x = 4;
-  scene.hud.y = 8;
-  scene.hud.z = kSceneZHud;
-  scene.hud.visible = label[0] != '\0' && loader.hudEnabled();
-
-  const char *overlay = state.overlayText ? state.overlayText : "";
-  scene.speechBubble.id = overlay[0] ? "overlay" : "speech_bubble";
-  scene.speechBubble.text = overlay;
-  scene.speechBubble.x = 4;
-  scene.speechBubble.y = 0;
-  scene.speechBubble.z = kSceneZSpeechBubble;
-  scene.speechBubble.visible = overlay[0] != '\0';
 
   scene.nodeCount = sceneVisibleNodeCount(scene);
   applyDirtyFlags(scene, dirty);

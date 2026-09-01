@@ -5,6 +5,8 @@
 #include <FS.h>
 #include <LittleFS.h>
 
+#include "ambient/display_mode.h"
+
 const char *characterLoadErrorLabel(CharacterLoadError err) {
   switch (err) {
   case CharacterLoadError::Graph:
@@ -249,22 +251,34 @@ void CharacterRuntime::setBackground(const char *backgroundKey) {
 }
 
 void CharacterRuntime::setWeather(const char *icon, const char *text) {
-  noteCommandSource("protocol");
-  _weatherIcon = icon ? icon : "";
-  _weatherText = text ? text : "";
-  if (_weatherIcon == "rain" || _weatherIcon == "storm") {
-    _brain.setEmotion("sleepy");
-  } else if (_weatherIcon == "sun") {
-    _brain.setEmotion("happy");
-  }
-  syncClipFromBehavior();
-  _dirtyTracker.forceDirty(DirtyBehavior | DirtyCharacter);
+  setWeatherDisplay(icon, text, "", "");
 }
 
-void CharacterRuntime::setClock(const char *timeText) {
-  noteCommandSource("protocol");
+void CharacterRuntime::setWeatherDisplay(const char *icon, const char *tempLine,
+                                         const char *conditionLine, const char *city) {
+  _weatherIcon = icon ? icon : "";
+  _weatherText = tempLine ? tempLine : "";
+  _weatherConditionText = conditionLine ? conditionLine : "";
+  _weatherCityText = city ? city : "";
+  if (_ambientMode == AmbientDisplayMode::WeatherScreen) {
+    _dirtyTracker.forceDirty(DirtyBehavior | DirtyCharacter | DirtyBackground);
+  }
+}
+
+void CharacterRuntime::setClock(const char *timeText, const char *dateText) {
   _clockText = timeText ? timeText : "";
-  _dirtyTracker.forceDirty(DirtyBehavior);
+  _clockDateText = dateText ? dateText : "";
+  if (_ambientMode == AmbientDisplayMode::ClockScreen) {
+    _dirtyTracker.forceDirty(DirtyBehavior | DirtyBackground);
+  }
+}
+
+void CharacterRuntime::setDisplayMode(AmbientDisplayMode mode) {
+  if (_ambientMode == mode) {
+    return;
+  }
+  _ambientMode = mode;
+  invalidateRender(DirtyFull);
 }
 
 RenderState CharacterRuntime::buildRenderState() const {
@@ -281,8 +295,13 @@ RenderState CharacterRuntime::buildRenderState() const {
   state.curiosity = _brain.curiosityActive();
   state.overlayText = _overlays.activeText();
   state.clockText = _clockText.empty() ? nullptr : _clockText.c_str();
+  state.clockDateText = _clockDateText.empty() ? nullptr : _clockDateText.c_str();
   state.weatherText = _weatherText.empty() ? nullptr : _weatherText.c_str();
+  state.weatherConditionText =
+      _weatherConditionText.empty() ? nullptr : _weatherConditionText.c_str();
+  state.weatherCityText = _weatherCityText.empty() ? nullptr : _weatherCityText.c_str();
   state.weatherIcon = _weatherIcon.empty() ? nullptr : _weatherIcon.c_str();
+  state.ambientMode = _ambientMode;
   state.backgroundSpriteId =
       _backgroundSprite.empty() ? nullptr : _backgroundSprite.c_str();
   state.bodySpriteId = _bodySpriteId.empty() ? nullptr : _bodySpriteId.c_str();

@@ -102,6 +102,14 @@ async def _connect_device(ctx: AppContext, device_id: str) -> None:
     ctx.device_manager.update_from_hello(device_id, hello)
     _persist_device(ctx, device_id, hello)
     fw_ok = log_firmware_issues(hello)
+    render_mode = str(hello.get("render_mode", ""))
+    character_id = str(hello.get("character_id", ""))
+    if render_mode == "eyes" or character_id == "eyes":
+        logger.info(
+            "Standalone eyes device connected — runs on WiFi (time/weather/animation). "
+            "No desktop control needed."
+        )
+        return
     if ctx.character_service and fw_ok:
         await ctx.character_service.activate(device_id, "eyes")
     elif ctx.character_service and not fw_ok:
@@ -299,6 +307,7 @@ def run_app(
 
     ctx = create_context()
     ctx.log_dir = log_dir
+    ctx.dispatcher.set_schedule(_schedule)
     ctx.character_service = CharacterService(ctx.runtime.assets, ctx.transport_manager)
 
     overlay = OverlayService(ctx.bus, ctx.queue, ctx.dispatcher, _schedule)

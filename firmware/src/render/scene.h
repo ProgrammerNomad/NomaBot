@@ -25,6 +25,10 @@ struct SceneNode {
 
 struct Scene {
   const char *sceneId = "office";
+  AmbientDisplayMode ambientMode = AmbientDisplayMode::EyesAnim;
+  const char *largeLine1 = nullptr;
+  const char *largeLine2 = nullptr;
+  const char *largeLine3 = nullptr;
   SceneNode background;
   SceneNode ambientBar;
   SceneNode character;

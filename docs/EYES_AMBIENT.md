@@ -1,66 +1,52 @@
-# Eyes Ambient Branch
+# Eyes Ambient — Standalone Desk Pet
 
-Landscape **eyes-only** desk pet inspired by [Desper](https://www.youtube.com/watch?v=DZxC5BGkKT8). Branch: `feature/eyes-ambient`.
+Landscape **eyes-only** pet inspired by [Desper](https://www.youtube.com/watch?v=DZxC5BGkKT8). Branch: `feature/eyes-ambient`.
 
-## Layout
+**No desktop app required.** The ESP32 connects to WiFi, fetches time (NTP) and weather (OpenWeatherMap), and animates eyes on its own.
 
-- **320×170 landscape** (rotated T-Display S3)
-- Horizontal eye pair sprites (`eyes_neutral`, `eyes_blink`, …)
-- Top ambient bar: clock (left) + weather (right)
-- Weather fetched on **desktop** via OpenWeatherMap
+## What you see
+
+Three screens **auto-rotate** (Eyes → Clock → Weather → Eyes):
+
+| Mode | LCD |
+|------|-----|
+| **Eyes** (boot default, ~45s) | Black background, cyan square eyes blink/look |
+| **Clock** (~8s) | Large centered time + date |
+| **Weather** (~8s) | Large temp, condition, city |
+
+**Press the user button (GPIO14)** to cycle modes immediately. Hold the board **landscape** (long edge horizontal).
+
+RST is hardware reset only. BOOT (GPIO0) is for flashing.
 
 ## Setup
 
-1. Generate art and compile pack:
+1. Copy WiFi and weather credentials:
+
+```powershell
+copy firmware\secrets.example.h firmware\secrets.h
+# Edit secrets.h — WIFI_SSID, WIFI_PASS, WEATHER_API_KEY, WEATHER_CITY
+```
+
+2. Generate art, compile pack, flash:
 
 ```powershell
 uv run python scripts/generate_eyes_art.py
-uv run nomabot build-assets --input assets/characters/eyes --output compiled/eyes --profile lilygo_tdisplay_s3_landscape
-uv run python scripts/copy_pack_to_firmware_data.py --compiled compiled/eyes --character-id eyes
-```
-
-2. Flash firmware + LittleFS:
-
-```powershell
+python -c "from pathlib import Path; from nomabot.assets.compiler import compile_pack; compile_pack(Path('assets/characters/eyes'), Path('compiled/eyes'), 'lilygo_tdisplay_s3_landscape')"
+python scripts/copy_pack_to_firmware_data.py
 cd firmware
 pio run -e lilygo_tdisplay_s3 -t upload -t uploadfs --upload-port COM3
 ```
 
-3. Run desktop (loads `eyes` character by default on this branch):
+3. Power from USB — device runs alone. Optional serial monitor at 115200 for debug logs.
 
-```powershell
-uv run python -m nomabot_desktop --port COM3 --dev
-```
+## Do NOT use nomabot_desktop for eyes
 
-**Hold the board landscape** — long edge horizontal, USB on the side — so the two eyes sit side-by-side. In portrait hold the eyes stack vertically (firmware uses rotation 1 for 320×170).
+The old desktop app was for the full-body nomabot robot. Eyes firmware is standalone. If you connect USB while desktop is open, it will detect eyes mode and **not** send control commands.
 
-If you see `PermissionError: Access is denied` on COM3, close serial monitors first:
-
-```powershell
-Get-Process python*, pio* -ErrorAction SilentlyContinue | Stop-Process -Force
-```
-
-Then retry with a single desktop instance.
-
-## OpenWeatherMap (optional)
-
-Set in desktop settings storage (SQLite `settings` table) or via config API:
-
-- `weather_api_key` — from [openweathermap.org](https://openweathermap.org/api)
-- `weather_city` — e.g. `Mumbai,IN`
-- `weather_enabled` — `true`
-
-Without a key, eyes + clock still work; weather bar stays empty until configured.
-
-## Switch characters
-
-- **Eyes (landscape):** `load_character` → `eyes`
-- **NomaBot (portrait):** `load_character` → `nomabot`
-
-Portrait restores rotation 0; eyes sets rotation 1.
+For the portrait nomabot robot, use the `main` branch and `nomabot_desktop` there.
 
 ## Tests
 
 ```powershell
-uv run pytest sdk/tests/test_eyes_render_mode.py sdk/tests/test_weather_command.py -q
+uv run pytest sdk/tests/test_eyes_render_mode.py -q
 ```

@@ -2,9 +2,13 @@
 #include <ArduinoJson.h>
 #include <FS.h>
 #include <LittleFS.h>
+#include "ambient/display_mode.h"
 #include "assets/pack_loader.h"
 #include "character/character_runtime.h"
 #include "debug/command_history.h"
+#include "net/clock_service.h"
+#include "net/weather_service.h"
+#include "net/wifi_service.h"
 #include "protocol/handler.h"
 #include "renderer/lilygo_renderer.h"
 
@@ -18,6 +22,11 @@ static bool bootOk = false;
 static const char *bootFsStatus = "FAIL";
 static const char *bootPackStatus = "FAIL";
 
+WifiService gWifiService;
+static ClockService gClockService;
+static WeatherService gWeatherService;
+static DisplayModeController gDisplayMode;
+
 static void emitLine(const std::string &line) { Serial.print(line.c_str()); }
 
 #define RECORD_CMD(name, detail) gCommandHistory.record(name, detail, millis())
@@ -25,8 +34,25 @@ static void emitLine(const std::string &line) { Serial.print(line.c_str()); }
 static void showBootError(const char *label) {
   renderer.fillScreen(0xF800);
   renderer.drawText(4, 20, label, 0xFFFF);
-  renderer.drawText(4, 36, "Reset or load_character", 0xFFFF);
-  renderer.drawText(4, 52, "via desktop USB", 0xFFFF);
+  renderer.drawText(4, 36, "Check pack / WiFi", 0xFFFF);
+  renderer.drawText(4, 52, "Press RST to retry", 0xFFFF);
+}
+
+static bool eyesStandalone() { return bootOk && packLoader.eyesOnlyMode(); }
+
+static ProtocolResponse makeOk(const std::string &id, const char *cmd) {
+  JsonDocument data;
+  data["ok"] = true;
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = cmd;
+  doc["ok"] = true;
+  doc["data"] = data;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
 }
 
 static void printBootBanner() {
@@ -108,19 +134,21 @@ static ProtocolResponse handleHello(const std::string &id, JsonObject params) {
   display["height"] = renderer.height();
   display["fps"] = characterRuntime.fps() > 0 ? characterRuntime.fps() : 20;
   JsonArray caps = data["caps"].to<JsonArray>();
-  caps.add("play_animation");
-  caps.add("show_message");
-  caps.add("set_background");
-  caps.add("set_state");
-  caps.add("set_activity");
-  caps.add("set_emotion");
-  caps.add("set_life_mode");
-  caps.add("trigger_habit");
-  caps.add("set_season");
-  caps.add("set_weather");
-  caps.add("set_clock");
-  caps.add("load_character");
   caps.add("diagnostics");
+  if (!eyesStandalone()) {
+    caps.add("play_animation");
+    caps.add("show_message");
+    caps.add("set_background");
+    caps.add("set_state");
+    caps.add("set_activity");
+    caps.add("set_emotion");
+    caps.add("set_life_mode");
+    caps.add("trigger_habit");
+    caps.add("set_season");
+    caps.add("set_weather");
+    caps.add("set_clock");
+    caps.add("load_character");
+  }
 
   const PackInfo *info = characterRuntime.packInfo();
   if (info) {
@@ -159,6 +187,9 @@ static ProtocolResponse handlePing(const std::string &id, JsonObject) {
 }
 
 static ProtocolResponse handlePlayAnimation(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "play_animation");
+  }
   const char *animation = params["animation"] | "idle";
   characterRuntime.playAnimation(animation);
   RECORD_CMD("play_animation", animation);
@@ -177,6 +208,9 @@ static ProtocolResponse handlePlayAnimation(const std::string &id, JsonObject pa
 }
 
 static ProtocolResponse handleShowMessage(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "show_message");
+  }
   const char *overlayId = params["id"] | "anonymous";
   const char *text = params["text"] | "";
   int priority = params["priority"] | 2;
@@ -198,6 +232,9 @@ static ProtocolResponse handleShowMessage(const std::string &id, JsonObject para
 }
 
 static ProtocolResponse handleSetState(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "set_state");
+  }
   const char *state = params["state"] | "idle";
   characterRuntime.applyActivityCommand(state);
   RECORD_CMD("set_state", state);
@@ -216,6 +253,9 @@ static ProtocolResponse handleSetState(const std::string &id, JsonObject params)
 }
 
 static ProtocolResponse handleSetActivity(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "set_activity");
+  }
   const char *activity = params["activity"] | "idle";
   characterRuntime.applyActivityCommand(activity);
   RECORD_CMD("set_activity", activity);
@@ -235,6 +275,9 @@ static ProtocolResponse handleSetActivity(const std::string &id, JsonObject para
 }
 
 static ProtocolResponse handleSetEmotion(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "set_emotion");
+  }
   const char *emotion = params["emotion"] | "neutral";
   characterRuntime.setEmotion(emotion);
   RECORD_CMD("set_emotion", emotion);
@@ -254,6 +297,9 @@ static ProtocolResponse handleSetEmotion(const std::string &id, JsonObject param
 }
 
 static ProtocolResponse handleSetLifeMode(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "set_life_mode");
+  }
   const char *mode = params["mode"] | "work";
   characterRuntime.setLifeMode(mode);
   RECORD_CMD("set_life_mode", mode);
@@ -273,6 +319,9 @@ static ProtocolResponse handleSetLifeMode(const std::string &id, JsonObject para
 }
 
 static ProtocolResponse handleTriggerHabit(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "trigger_habit");
+  }
   const char *habit = params["habit"] | "";
   characterRuntime.triggerHabit(habit);
   RECORD_CMD("trigger_habit", habit);
@@ -292,6 +341,9 @@ static ProtocolResponse handleTriggerHabit(const std::string &id, JsonObject par
 }
 
 static ProtocolResponse handleSetSeason(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "set_season");
+  }
   const char *season = params["season"] | "spring";
   characterRuntime.setSeason(season);
   RECORD_CMD("set_season", season);
@@ -311,6 +363,9 @@ static ProtocolResponse handleSetSeason(const std::string &id, JsonObject params
 }
 
 static ProtocolResponse handleSetWeather(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "set_weather");
+  }
   const char *icon = params["icon"] | "cloud";
   const char *condition = params["condition"] | "";
   float tempC = params["temp_c"] | 0.0f;
@@ -338,6 +393,9 @@ static ProtocolResponse handleSetWeather(const std::string &id, JsonObject param
 }
 
 static ProtocolResponse handleSetClock(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "set_clock");
+  }
   const char *timeText = params["time"] | "";
   characterRuntime.setClock(timeText);
   RECORD_CMD("set_clock", timeText);
@@ -356,6 +414,9 @@ static ProtocolResponse handleSetClock(const std::string &id, JsonObject params)
 }
 
 static ProtocolResponse handleSetBackground(const std::string &id, JsonObject params) {
+  if (eyesStandalone()) {
+    return makeOk(id, "set_background");
+  }
   const char *bg = params["background"] | "office";
   characterRuntime.setBackground(bg);
   RECORD_CMD("set_background", bg);
@@ -573,8 +634,12 @@ void setup() {
       bootOk = bootCharacter();
     }
     if (bootOk) {
-      characterRuntime.setLifeMode("work");
       characterRuntime.setActivity("idle");
+      gWifiService.begin();
+      gClockService.begin(&characterRuntime);
+      gWeatherService.begin(&characterRuntime);
+      gDisplayMode.begin();
+      characterRuntime.setDisplayMode(gDisplayMode.current());
       characterRuntime.present();
     } else {
       showBootError("EYES PACK FAIL");
@@ -587,7 +652,6 @@ void setup() {
   printBootBanner();
 }
 
-// v0.4.1 loop freeze — do not reorder without ADR.
 static void usbPoll() {
   while (Serial.available()) {
     char c = Serial.read();
@@ -600,18 +664,25 @@ static void usbPoll() {
   }
 }
 
-static void brainTick(unsigned long nowMs) { characterRuntime.tick(nowMs); }
-
-static void rendererPresent() { characterRuntime.present(); }
-
-static void sleepYield() { delay(1); }
-
 void loop() {
   unsigned long now = millis();
   usbPoll();
   if (bootOk) {
-    brainTick(now);
-    rendererPresent();
+    if (eyesStandalone()) {
+      gWifiService.tick();
+      gClockService.tick();
+      gWeatherService.tick();
+      gDisplayMode.tick(now);
+      if (gDisplayMode.consumeChanged()) {
+        characterRuntime.setDisplayMode(gDisplayMode.current());
+      }
+      if (gDisplayMode.isEyesMode()) {
+        characterRuntime.tick(now);
+      }
+    } else {
+      characterRuntime.tick(now);
+    }
+    characterRuntime.present();
   }
-  sleepYield();
+  delay(1);
 }

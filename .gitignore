@@ -39,3 +39,4 @@ logs/
 
 # Local config
 .env
+firmware/secrets.h

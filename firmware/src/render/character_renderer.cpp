@@ -1,5 +1,6 @@
 #include "character_renderer.h"
 
+#include "ambient/display_mode.h"
 #include "renderer/renderer.hpp"
 
 namespace {
@@ -124,9 +125,16 @@ void drawBackgroundNode(IRenderer &renderer, PackLoader &loader, SpriteCache &ca
   }
 
   renderer.blitRGB565(bgPixels, 0, 0, bgMeta->width, bgMeta->height);
-  captureFootprint(loader, cache, bgCache, node.spriteId, scene.character.x, scene.character.y,
-                   scene.character.spriteId, scene.expression.spriteId, scene.expression.x,
-                   scene.expression.y);
+  const char *bodySpriteId = scene.character.spriteId;
+  int bodyX = scene.character.x;
+  int bodyY = scene.character.y;
+  if ((!bodySpriteId || !bodySpriteId[0]) && scene.expression.visible) {
+    bodySpriteId = scene.expression.spriteId;
+    bodyX = scene.expression.x;
+    bodyY = scene.expression.y;
+  }
+  captureFootprint(loader, cache, bgCache, node.spriteId, bodyX, bodyY, bodySpriteId,
+                   scene.expression.spriteId, scene.expression.x, scene.expression.y);
 }
 
 void drawCharacterNode(IRenderer &renderer, PackLoader &loader, SpriteCache &cache,
@@ -235,11 +243,50 @@ void drawSpeechBubbleNode(IRenderer &renderer, PackLoader &loader, SpriteCache &
   renderer.drawText(bx + kBubblePadX, by + kBubblePadY + 8, node.text, kBubbleBorder);
 }
 
+void drawLargeCenteredText(IRenderer &renderer, const char *line1, const char *line2,
+                           const char *line3) {
+  renderer.fillScreen(kHudClearColor);
+  int w = renderer.width();
+  int h = renderer.height();
+  if (line1 && line1[0]) {
+    int tw = textWidthEstimate(line1) * 4;
+    int x = (w - tw) / 2;
+    if (x < 4) {
+      x = 4;
+    }
+    renderer.drawTextScale(x, h / 2 - 36, line1, 0x07FF, 4);
+  }
+  if (line2 && line2[0]) {
+    int tw = textWidthEstimate(line2) * 2;
+    int x = (w - tw) / 2;
+    if (x < 4) {
+      x = 4;
+    }
+    renderer.drawTextScale(x, h / 2 + 8, line2, kTextColor, 2);
+  }
+  if (line3 && line3[0]) {
+    int tw = textWidthEstimate(line3) * 2;
+    int x = (w - tw) / 2;
+    if (x < 4) {
+      x = 4;
+    }
+    renderer.drawTextScale(x, h / 2 + 32, line3, kTextColor, 2);
+  }
+}
+
 }  // namespace
 
 void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, DirtyFlags dirty,
                                   PackLoader &loader, SpriteCache &cache, Compositor &compositor,
                                   BackgroundCache &bgCache) {
+  if (scene.ambientMode == AmbientDisplayMode::ClockScreen ||
+      scene.ambientMode == AmbientDisplayMode::WeatherScreen) {
+    if (dirty == DirtyFull || hasDirty(dirty, DirtyBackground) || hasDirty(dirty, DirtyBehavior)) {
+      drawLargeCenteredText(renderer, scene.largeLine1, scene.largeLine2, scene.largeLine3);
+    }
+    return;
+  }
+
   if (dirty == DirtyFull) {
     drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background, scene);
     if (scene.ambientBar.visible) {
@@ -256,16 +303,20 @@ void CharacterRenderer::drawScene(IRenderer &renderer, const Scene &scene, Dirty
     return;
   }
 
+  bool fullScreenEyes = false;
+  if (scene.expression.visible && scene.expression.spriteId) {
+    const SpriteMeta *eyeMeta = loader.findSprite(scene.expression.spriteId);
+    fullScreenEyes = eyeMeta && eyeMeta->width >= renderer.width() - 2;
+  }
+
   if (scene.background.dirty) {
     drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background, scene);
+    if (fullScreenEyes && scene.expression.visible) {
+      drawExpressionNode(renderer, loader, cache, compositor, scene.expression);
+    }
   }
 
   if (scene.character.dirty || scene.expression.dirty) {
-    bool fullScreenEyes = false;
-    if (scene.expression.visible && scene.expression.spriteId) {
-      const SpriteMeta *eyeMeta = loader.findSprite(scene.expression.spriteId);
-      fullScreenEyes = eyeMeta && eyeMeta->width >= renderer.width() - 2;
-    }
     if (fullScreenEyes && scene.expression.dirty && !scene.background.dirty) {
       drawBackgroundNode(renderer, loader, cache, compositor, bgCache, scene.background, scene);
       drawExpressionNode(renderer, loader, cache, compositor, scene.expression);

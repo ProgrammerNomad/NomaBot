@@ -65,7 +65,11 @@ public:
   void setMessage(const char *id, const char *text, int priority, unsigned long durationMs = 5000);
   void setBackground(const char *backgroundKey);
   void setWeather(const char *icon, const char *text);
-  void setClock(const char *timeText);
+  void setWeatherDisplay(const char *icon, const char *tempLine, const char *conditionLine,
+                         const char *city);
+  void setClock(const char *timeText, const char *dateText = nullptr);
+  void setDisplayMode(AmbientDisplayMode mode);
+  AmbientDisplayMode displayMode() const { return _ambientMode; }
 
   void setRenderMode(RenderMode mode) { _renderMode = mode; }
   RenderMode renderMode() const { return _renderMode; }
@@ -116,8 +120,12 @@ private:
   std::string _activeClipId;
   std::string _bodySpriteId;
   std::string _clockText;
+  std::string _clockDateText;
   std::string _weatherText;
+  std::string _weatherConditionText;
+  std::string _weatherCityText;
   std::string _weatherIcon;
+  AmbientDisplayMode _ambientMode = AmbientDisplayMode::EyesAnim;
   unsigned long _lastFpsMs = 0;
   int _frameCount = 0;
   int _fps = 0;

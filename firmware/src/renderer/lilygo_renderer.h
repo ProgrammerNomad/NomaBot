@@ -13,6 +13,7 @@ public:
   void blitRGB565ColorKey(const uint16_t *pixels, int x, int y, int w, int h,
                           uint16_t colorKey) override;
   void drawText(int x, int y, const char *text, uint16_t color) override;
+  void drawTextScale(int x, int y, const char *text, uint16_t color, uint8_t scale) override;
   int width() const override;
   int height() const override;
   void setRotation(int rotation) override;

@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "ambient/display_mode.h"
+
 struct RenderState {
   const char *lifeMode = "work";
   const char *activity = "idle";
@@ -15,8 +17,12 @@ struct RenderState {
   bool curiosity = false;
   const char *overlayText = "";
   const char *clockText = "";
+  const char *clockDateText = "";
   const char *weatherText = "";
+  const char *weatherConditionText = "";
+  const char *weatherCityText = "";
   const char *weatherIcon = "";
+  AmbientDisplayMode ambientMode = AmbientDisplayMode::EyesAnim;
   const char *backgroundSpriteId = nullptr;
   const char *bodySpriteId = nullptr;
   int clipFrameIndex = 0;

@@ -48,10 +48,20 @@ DirtyFlags DirtyTracker::computeDiff(const RenderState &next) const {
       next.clipFrameIndex != _last.clipFrameIndex) {
     dirty = dirty | DirtyCharacter;
   }
-  if (strChanged(next.clockText, _last.clockText) ||
-      strChanged(next.weatherText, _last.weatherText) ||
-      strChanged(next.weatherIcon, _last.weatherIcon)) {
-    dirty = dirty | DirtyBehavior;
+  if (next.ambientMode != _last.ambientMode) {
+    dirty = dirty | DirtyBehavior | DirtyBackground | DirtyCharacter;
+  }
+  if (next.ambientMode == AmbientDisplayMode::ClockScreen &&
+      (strChanged(next.clockText, _last.clockText) ||
+       strChanged(next.clockDateText, _last.clockDateText))) {
+    dirty = dirty | DirtyBehavior | DirtyBackground;
+  }
+  if (next.ambientMode == AmbientDisplayMode::WeatherScreen &&
+      (strChanged(next.weatherText, _last.weatherText) ||
+       strChanged(next.weatherConditionText, _last.weatherConditionText) ||
+       strChanged(next.weatherCityText, _last.weatherCityText) ||
+       strChanged(next.weatherIcon, _last.weatherIcon))) {
+    dirty = dirty | DirtyBehavior | DirtyBackground | DirtyCharacter;
   }
   return dirty;
 }
