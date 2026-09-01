@@ -102,7 +102,7 @@ Verify behavior → clip → sprite on device:
 
 Watch `behavior`, `clip`, `body_sprite_id`, and `dirty_last` (should include `Character` when pose changes). See [READABILITY.md](./READABILITY.md).
 
-After clip wiring changes, also run `pio run -e lilygo_tdisplay_s3 -t upload` once. Close serial monitor before starting desktop (`--port COM3`) — one process per COM port.
+After clip wiring changes, also run `pio run -e lilygo_tdisplay_s3 -t upload` once. Close serial monitor before starting desktop (`--port COM3`) - one process per COM port.
 
 Official profile: `profiles/lilygo_tdisplay_s3.json` (170×320).
 

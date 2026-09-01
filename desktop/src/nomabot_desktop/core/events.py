@@ -27,7 +27,7 @@ class StateRequest:
 
 @dataclass(frozen=True)
 class OverlayShow:
-    """Ephemeral overlay speech/toast — routed to OverlayService, not Brain."""
+    """Ephemeral overlay speech/toast - routed to OverlayService, not Brain."""
 
     overlay_id: str
     text: str

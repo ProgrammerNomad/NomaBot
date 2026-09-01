@@ -1,4 +1,4 @@
-"""Overlay service — speech/toasts bypass world context."""
+"""Overlay service - speech/toasts bypass world context."""
 
 from __future__ import annotations
 

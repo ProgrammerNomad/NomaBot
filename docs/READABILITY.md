@@ -1,4 +1,4 @@
-# Readability Rules — First Living Character
+# Readability Rules - First Living Character
 
 > Design law for NomaBot at **170×320**. The physical LCD is the spec.
 
@@ -32,9 +32,9 @@ Animate in this order:
 2. Head angle
 3. Arm position
 4. Expression overlay
-5. Micro details (eyes, fingers) — last
+5. Micro details (eyes, fingers) - last
 
-Example — thinking reads from head tilt alone:
+Example - thinking reads from head tilt alone:
 
 ```text
 Idle          Thinking
@@ -54,7 +54,7 @@ After sprite or anchor changes, record **60 seconds** of autonomous behavior and
 - Did blink register?
 - Did thinking head tilt read?
 - Did typing feel different from idle?
-- One visor, one set of eyes — no black box around expression
+- One visor, one set of eyes - no black box around expression
 - Any moment of "why is he alive?" (good) vs "what is that glitch?" (bad)
 
 ## Device iteration loop

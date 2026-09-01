@@ -17,14 +17,14 @@ ANIM_DIR = PACK / "animations"
 
 CYAN = (0, 248, 255)
 BLACK = (0, 0, 0)
-EYE_SIZE = 56
-PUPIL_SIZE = 16
-PUPIL_OFFSET_X = 8
-PUPIL_OFFSET_Y = -8
+EYE_SIZE = 76
+PUPIL_SIZE = 20
+PUPIL_OFFSET_X = 10
+PUPIL_OFFSET_Y = -10
 
 
 def _eye_centers() -> tuple[tuple[int, int], tuple[int, int]]:
-    return (96, 85), (224, 85)
+    return (80, 85), (240, 85)
 
 
 def _draw_square_eye(
@@ -73,11 +73,12 @@ def _draw_pair(draw: ImageDraw.ImageDraw, variant: str) -> None:
         _draw_square_eye(draw, left[0], left[1], lid_close=1.0)
         _draw_square_eye(draw, right[0], right[1], lid_close=1.0)
     elif variant == "sleepy":
-        _draw_square_eye(draw, left[0], left[1], eye_height=28, lid_close=0.2)
-        _draw_square_eye(draw, right[0], right[1], eye_height=28, lid_close=0.2)
+        half_h = max(32, EYE_SIZE // 2)
+        _draw_square_eye(draw, left[0], left[1], eye_height=half_h, lid_close=0.2)
+        _draw_square_eye(draw, right[0], right[1], eye_height=half_h, lid_close=0.2)
     elif variant == "focus":
-        _draw_square_eye(draw, left[0], left[1], eye_height=40, pupil_dy=-2)
-        _draw_square_eye(draw, right[0], right[1], eye_height=40, pupil_dy=-2)
+        _draw_square_eye(draw, left[0], left[1], eye_height=56, pupil_dy=-2)
+        _draw_square_eye(draw, right[0], right[1], eye_height=56, pupil_dy=-2)
     elif variant == "happy":
         _draw_square_eye(draw, left[0], left[1], pupil_dy=-2)
         _draw_square_eye(draw, right[0], right[1], pupil_dy=-2)
@@ -101,7 +102,12 @@ def eyes_sprite(variant: str, name: str) -> None:
 def write_clips() -> None:
     ANIM_DIR.mkdir(parents=True, exist_ok=True)
     clips = {
-        "idle": [("eyes_neutral", 400), ("eyes_neutral", 400)],
+        "idle": [
+            ("eyes_neutral", 500),
+            ("eyes_look_left", 200),
+            ("eyes_neutral", 400),
+            ("eyes_look_right", 200),
+        ],
         "blink": [("eyes_blink", 120), ("eyes_neutral", 350)],
         "look_left": [("eyes_look_left", 350), ("eyes_neutral", 300)],
         "look_right": [("eyes_look_right", 350), ("eyes_neutral", 300)],

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-// RGB565 magenta — not used in NomaBot palette; marks transparent pixels in compiled sprites.
+// RGB565 magenta - not used in NomaBot palette; marks transparent pixels in compiled sprites.
 constexpr uint16_t kSpriteColorKey = 0xF81F;
 
 class IRenderer {

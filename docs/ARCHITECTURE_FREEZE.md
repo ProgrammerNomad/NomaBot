@@ -1,6 +1,6 @@
 # Architecture Freeze (v0.5.1)
 
-> After this release, **ship features — do not redesign subsystems** unless fixing a fundamental flaw (requires ADR in `docs/adr/`).
+> After this release, **ship features - do not redesign subsystems** unless fixing a fundamental flaw (requires ADR in `docs/adr/`).
 
 See also [SCENE_SPEC.md](./SCENE_SPEC.md) for the Tiny World Renderer contract (M5+).
 
@@ -14,7 +14,7 @@ See also [SCENE_SPEC.md](./SCENE_SPEC.md) for the Tiny World Renderer contract (
 | **Context** | `ContextArbitrator`, `CommandSource` | Desktop world context |
 | **Protocol v1** | `sdk/src/nomabot/protocol/` | NDJSON envelope `"v": 1` |
 | **CommandRouter** | `desktop/.../command_router.py` | Context / Overlay / Renderer |
-| **OverlayQueue** | `OverlayManager`, `OverlayService` | IDs, priority, expiry — not Brain state |
+| **OverlayQueue** | `OverlayManager`, `OverlayService` | IDs, priority, expiry - not Brain state |
 | **DirtyTracker** | `firmware/src/render/dirty_tracker.*` | Pending + Forced masks |
 | **RenderScheduler** | `firmware/src/render/render_scheduler.*` | Band scheduling; sprite path → SceneBuilder → CharacterRenderer |
 | **SceneBuilder + Scene** | `firmware/src/render/scene_builder.*`, `scene.h` | RenderState → scene graph (frozen API M5+) |
@@ -24,7 +24,7 @@ See also [SCENE_SPEC.md](./SCENE_SPEC.md) for the Tiny World Renderer contract (
 ## Allowed without ADR
 
 - YAML / behavior tuning
-- **Character Renderer** swap (M5+) — text → sprites → SVG/OLED/ePaper; pipeline: `RenderScheduler → SceneBuilder → CharacterRenderer → SpriteCache`
+- **Character Renderer** swap (M5+) - text → sprites → SVG/OLED/ePaper; pipeline: `RenderScheduler → SceneBuilder → CharacterRenderer → SpriteCache`
 - New protocol commands routed through **CommandRouter**
 - Character packs and asset compiler output
 - Plugin **context** injection (not behavior picking)
@@ -44,7 +44,7 @@ Do not reorder without an ADR.
 
 **Context** (Brain inputs): activity, emotion, life_mode, season, habits.
 
-**Overlay** (ephemeral UI): speech bubbles, build toasts, welcome messages — via `show_message` with `id`, never via `StateManager.message_active`.
+**Overlay** (ephemeral UI): speech bubbles, build toasts, welcome messages - via `show_message` with `id`, never via `StateManager.message_active`.
 
 ## Timestamp convention
 

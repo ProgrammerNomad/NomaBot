@@ -1,4 +1,4 @@
-"""Build event service — emotion via context, speech via overlay."""
+"""Build event service - emotion via context, speech via overlay."""
 
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ class BuildEventService:
                 "overlay.show",
                 OverlayShow(
                     overlay_id="build_failed",
-                    text=payload.message or "Oof — build broke",
+                    text=payload.message or "Oof - build broke",
                     priority=Priority.HIGH,
                 ),
             )

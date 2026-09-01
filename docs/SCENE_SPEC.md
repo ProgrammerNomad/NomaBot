@@ -1,6 +1,6 @@
 # Scene Specification (M5+)
 
-> Contract for the Tiny World Renderer — scene graph, draw order, dirty rules, and RenderState mapping.
+> Contract for the Tiny World Renderer - scene graph, draw order, dirty rules, and RenderState mapping.
 > Linked from [ARCHITECTURE_FREEZE.md](./ARCHITECTURE_FREEZE.md) and [10_ROADMAP.md](./10_ROADMAP.md).
 
 ## Vision
@@ -46,7 +46,7 @@ struct SceneNode {
 
 Lowest z first: Background (0) → Character (10) → Props (20, future) → HUD (30) → SpeechBubble (40).
 
-## Dirty rules (M5 — coarse flags only)
+## Dirty rules (M5 - coarse flags only)
 
 | Dirty flag | Scene nodes redrawn |
 |------------|---------------------|
@@ -60,10 +60,10 @@ M5 uses **`DirtyCharacter`** for the whole character entity. Do not split per-pa
 
 ### Reserved DirtyFlags (M6+, not implemented)
 
-Document only — same enum bits, no new logic in M5:
+Document only - same enum bits, no new logic in M5:
 
-- `DirtyBody`, `DirtyEyes`, `DirtyAccessory` — fold under `DirtyCharacter` until M6
-- `DirtyBubble`, `DirtyHud` — fold under `DirtyMessage` / `DirtyBehavior` until needed
+- `DirtyBody`, `DirtyEyes`, `DirtyAccessory` - fold under `DirtyCharacter` until M6
+- `DirtyBubble`, `DirtyHud` - fold under `DirtyMessage` / `DirtyBehavior` until needed
 
 ## RenderState → Scene mapping
 
@@ -76,7 +76,7 @@ Document only — same enum bits, no new logic in M5:
 | `overlayText` | `speechBubble.text`, visible when non-empty |
 | Pack anchor | `character.x`, `character.y` from `PackLoader` |
 
-SceneBuilder does **not** include Brain types — only `RenderState` + pack defaults.
+SceneBuilder does **not** include Brain types - only `RenderState` + pack defaults.
 
 ## BackgroundCache
 

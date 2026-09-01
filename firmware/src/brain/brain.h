@@ -5,6 +5,7 @@
 #include "behavior/behavior_defaults.h"
 #include "behavior/condition_eval.h"
 #include "behavior/emotion_state.h"
+#include "behavior/pack_behavior_table.h"
 #include "behavior/pack_clip_map.h"
 
 enum class BrainPickMode { Weighted, Sequence };
@@ -40,6 +41,8 @@ public:
   const char *clipForBehavior() const;
   const char *clipForBehaviorId(const char *behaviorId) const;
   bool loadClipMapFromJsonText(const std::string &text);
+  bool loadPackBehaviorsFromJsonText(const std::string &text);
+  bool hasPackBehaviors() const { return _packBehaviorTable.hasActivities(); }
   int timeInBehaviorSec(unsigned long nowMs) const;
   int lastCoffeeMinAgo(unsigned long nowMs) const;
 
@@ -56,6 +59,7 @@ private:
   PersonalityTraits _personality;
   RuntimeContext _runtime;
   PackClipMap _clipMap;
+  PackBehaviorTable _packBehaviorTable;
 
   int _energy = 80;
   int _boredom = 0;
@@ -76,7 +80,10 @@ private:
   unsigned long _dayStartMs = 0;
 
   void pickBehavior(unsigned long nowMs, bool force);
+  void pickBehaviorFromPack(const std::vector<PackBehaviorEntry> &table, unsigned long nowMs,
+                            bool force);
   void pickNextPreview();
+  void pickNextPreviewFromPack(const std::vector<PackBehaviorEntry> &table);
   void enterSequence(const char **steps, size_t len, const char *goalName);
   void advanceSequence(unsigned long nowMs);
   void updateGoal(unsigned long nowMs);
@@ -84,6 +91,7 @@ private:
   void updateCuriosity(unsigned long nowMs);
   void maybeStartDream(unsigned long nowMs);
   unsigned long randomDurationMs(const BehaviorDef &def) const;
+  unsigned long randomDurationMs(const PackBehaviorEntry &entry) const;
   void applyBehaviorId(const char *id, unsigned long nowMs);
   const char *labelForId(const char *id) const;
   void recordShortMemory(unsigned long nowMs);

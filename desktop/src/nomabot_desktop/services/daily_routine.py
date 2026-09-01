@@ -1,4 +1,4 @@
-"""Daily routine — trigger habits at scheduled times."""
+"""Daily routine - trigger habits at scheduled times."""
 
 from __future__ import annotations
 

@@ -113,7 +113,7 @@ class CharacterService:
         render_mode = data.get("render_mode", "eyes" if pack_id == "eyes" else "sprite")
         if pack_id == "eyes" and render_mode != "eyes":
             logger.error(
-                "Device render_mode=%s after load_character eyes — "
+                "Device render_mode=%s after load_character eyes - "
                 "re-flash firmware with upload target, not uploadfs only",
                 render_mode,
             )

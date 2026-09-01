@@ -167,7 +167,7 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 
 ## Milestone 4 - Companion Brain
 
-**Goal:** Unified Brain OS on firmware — personality, emotion decay, energy, boredom, curiosity, goals with progress, habits, dreams, daily routine, friendship (long memory on desktop). Text renderer only.
+**Goal:** Unified Brain OS on firmware - personality, emotion decay, energy, boredom, curiosity, goals with progress, habits, dreams, daily routine, friendship (long memory on desktop). Text renderer only.
 
 | Deliverable | Details |
 |-------------|---------|
@@ -184,7 +184,7 @@ If starting code tomorrow, follow this sequence (maps to milestones):
 - [ ] Build fail → frustrated → recover sequence
 - [ ] Day 100 welcome message from SQLite long memory
 
-**Target version:** `0.4.0` (dev-sync in 0.4.0; context/overlay split + architecture freeze in **0.4.1** — see [Architecture Freeze](./ARCHITECTURE_FREEZE.md))
+**Target version:** `0.4.0` (dev-sync in 0.4.0; context/overlay split + architecture freeze in **0.4.1** - see [Architecture Freeze](./ARCHITECTURE_FREEZE.md))
 
 ---
 
@@ -200,7 +200,7 @@ Pipeline: `RenderScheduler → SceneBuilder → CharacterRenderer → SpriteCach
 
 ## Milestone 5.1 - First Living Character
 
-**Goal:** Make NomaBot feel alive on the 170×320 LCD — Prototype Pack v0 first, Character Bible after on-device validation. **Brain frozen.**
+**Goal:** Make NomaBot feel alive on the 170×320 LCD - Prototype Pack v0 first, Character Bible after on-device validation. **Brain frozen.**
 
 See [READABILITY.md](./READABILITY.md), [STYLE_GUIDE.md](./STYLE_GUIDE.md), [LORE.md](./LORE.md), [LIVING_NOMA_SPEC.md](./LIVING_NOMA_SPEC.md).
 
@@ -216,7 +216,7 @@ See [READABILITY.md](./READABILITY.md), [STYLE_GUIDE.md](./STYLE_GUIDE.md), [LOR
 
 ## Milestone 7 - Animation Studio / Tiny Worlds
 
-Animation tooling plus travel, night, rain worlds — **after** Character Packs (M6).
+Animation tooling plus travel, night, rain worlds - **after** Character Packs (M6).
 
 **Target version:** `0.7.0`
 

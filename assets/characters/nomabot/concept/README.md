@@ -1,4 +1,4 @@
-# NomaBot — Character Design Package
+# NomaBot - Character Design Package
 
 Phase 1 art deliverables. **Approve this package before Phase 2 (apartment production).**
 

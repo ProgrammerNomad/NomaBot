@@ -10,7 +10,7 @@ from typing import Any
 
 import yaml
 
-from nomabot.behavior import BehaviorEngine, Personality  # noqa: F401 — re-export
+from nomabot.behavior import BehaviorEngine, Personality  # noqa: F401 - re-export
 
 
 @dataclass

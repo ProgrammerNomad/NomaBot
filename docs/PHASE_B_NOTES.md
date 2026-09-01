@@ -1,12 +1,12 @@
-# Phase B — Device Iteration Notes
+# Phase B - Device Iteration Notes
 
 > LCD-first tuning log for Prototype Pack v0. Source for Phase C Character Bible.
 
 **Device:** LILYGO T-Display S3 (170×320), COM3  
-**Pack:** pruned v0 — 7 body, 4 face, 4 clips  
+**Pack:** pruned v0 - 7 body, 4 face, 4 clips  
 **Version target:** 0.5.3 after 3+ desk days pass exit gate
 
-## Final constants (Phase B pass — 2026-06-28)
+## Final constants (Phase B pass - 2026-06-28)
 
 | Parameter | Value | File |
 |-----------|-------|------|
@@ -23,7 +23,7 @@
 
 ---
 
-## P0 fix — sprite render mode (2026-06-28)
+## P0 fix - sprite render mode (2026-06-28)
 
 **Bug:** `character_runtime.cpp` used `StaticJsonDocument<256>` for ~6KB `behavior.json` → parse fail → **text mode only** → no visible animations/emotes.
 
@@ -37,9 +37,9 @@ After flash, confirm diagnostics **`render_mode`: `sprite`** before Phase B art 
 
 1. Close desktop, flash firmware + LittleFS (COM3)
 2. `uv run python -m nomabot_desktop --port COM3 --dev`
-3. Work in Cursor — activity should follow coding/idle
-4. Dev panel: force idle ↔ coding — pose must change
-5. Trigger build success/fail (dev panel) — excited/frustrated + overlay message
+3. Work in Cursor - activity should follow coding/idle
+4. Dev panel: force idle ↔ coding - pose must change
+5. Trigger build success/fail (dev panel) - excited/frustrated + overlay message
 6. Record 60s video; log pass/fail below
 
 ---
@@ -59,7 +59,7 @@ Experimental **`feature/eyes-ambient`**: landscape 320×170 eyes-only character 
 | Pet mode | `display.pet_mode: true`, `hud: false` | Character-only view on LCD |
 | Soft bg | Wall gradient + desk band y=198–210 | Reads “at desk”, not debug panel |
 
-**Expression alignment (unchanged after polish pass):** `dy=24`, `cy=11` — pending on-device confirm.
+**Expression alignment (unchanged after polish pass):** `dy=24`, `cy=11` - pending on-device confirm.
 
 ---
 
@@ -86,7 +86,7 @@ Experimental **`feature/eyes-ambient`**: landscape 320×170 eyes-only character 
 ## Readability QA (repeat until pass)
 
 - [ ] **1-meter test:** standing vs typing vs thinking vs blink distinct
-- [ ] **HUD-hidden test:** cover behavior label — pose communicates
+- [ ] **HUD-hidden test:** cover behavior label - pose communicates
 - [ ] **Home position:** returns to standing at (85, 80)
 - [ ] **60s video:** blink, think tilt, typing ≠ idle; no glitches
 
@@ -107,7 +107,7 @@ Experimental **`feature/eyes-ambient`**: landscape 320×170 eyes-only character 
    - Did blink register?
    - Did thinking head tilt read?
    - Did typing feel different from idle?
-   - One visor, one eyes — no expression black box?
+   - One visor, one eyes - no expression black box?
    - Any "why is he alive?" vs "what is that glitch?" moments
 4. Log pass/fail in iteration table above.
 

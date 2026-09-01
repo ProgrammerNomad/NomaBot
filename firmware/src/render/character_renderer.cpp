@@ -25,6 +25,43 @@ int textWidthEstimate(const char *text) {
   return len * 6;
 }
 
+uint8_t fitTextScale(const char *text, int maxWidth, uint8_t preferredScale) {
+  if (!text || !text[0] || maxWidth <= 16) {
+    return 1;
+  }
+  int len = 0;
+  while (text[len]) {
+    len++;
+  }
+  if (len <= 0) {
+    return 1;
+  }
+  int maxScale = (maxWidth - 16) / (len * 6);
+  if (maxScale < 1) {
+    return 1;
+  }
+  if (maxScale > 255) {
+    maxScale = 255;
+  }
+  if (preferredScale > static_cast<uint8_t>(maxScale)) {
+    return static_cast<uint8_t>(maxScale);
+  }
+  return preferredScale > 0 ? preferredScale : 1;
+}
+
+int centeredTextX(IRenderer &renderer, const char *text, uint8_t scale) {
+  int tw = textWidthEstimate(text) * scale;
+  int x = (renderer.width() - tw) / 2;
+  return x < 4 ? 4 : x;
+}
+
+void drawScaledLine(IRenderer &renderer, const char *text, int y, uint16_t color, uint8_t scale) {
+  if (!text || !text[0]) {
+    return;
+  }
+  renderer.drawTextScale(centeredTextX(renderer, text, scale), y, text, color, scale);
+}
+
 void fillRoundedRect(IRenderer &renderer, int x, int y, int w, int h, int r, uint16_t color) {
   if (w <= 0 || h <= 0) {
     return;
@@ -248,29 +285,29 @@ void drawLargeCenteredText(IRenderer &renderer, const char *line1, const char *l
   renderer.fillScreen(kHudClearColor);
   int w = renderer.width();
   int h = renderer.height();
+  const bool threeLines = line3 && line3[0];
+
   if (line1 && line1[0]) {
-    int tw = textWidthEstimate(line1) * 4;
-    int x = (w - tw) / 2;
-    if (x < 4) {
-      x = 4;
+    uint8_t scale1 = fitTextScale(line1, w, threeLines ? 7 : 8);
+    int lineH1 = 8 * scale1;
+    int y1 = threeLines ? h / 6 : static_cast<int>(h * 0.28f);
+    drawScaledLine(renderer, line1, y1, 0x07FF, scale1);
+    if (line2 && line2[0]) {
+      uint8_t scale2 = fitTextScale(line2, w, threeLines ? 3 : 3);
+      int y2 = threeLines ? y1 + lineH1 + 8 : static_cast<int>(h * 0.62f);
+      drawScaledLine(renderer, line2, y2, kTextColor, scale2);
     }
-    renderer.drawTextScale(x, h / 2 - 36, line1, 0x07FF, 4);
+    if (line3 && line3[0]) {
+      uint8_t scale3 = fitTextScale(line3, w, 2);
+      int y3 = static_cast<int>(h * 0.72f);
+      drawScaledLine(renderer, line3, y3, kTextColor, scale3);
+    }
+    return;
   }
+
   if (line2 && line2[0]) {
-    int tw = textWidthEstimate(line2) * 2;
-    int x = (w - tw) / 2;
-    if (x < 4) {
-      x = 4;
-    }
-    renderer.drawTextScale(x, h / 2 + 8, line2, kTextColor, 2);
-  }
-  if (line3 && line3[0]) {
-    int tw = textWidthEstimate(line3) * 2;
-    int x = (w - tw) / 2;
-    if (x < 4) {
-      x = 4;
-    }
-    renderer.drawTextScale(x, h / 2 + 32, line3, kTextColor, 2);
+    uint8_t scale2 = fitTextScale(line2, w, 3);
+    drawScaledLine(renderer, line2, h / 2 - 12, kTextColor, scale2);
   }
 }
 

@@ -1,4 +1,4 @@
-"""Life mode service — desktop world context from time of day."""
+"""Life mode service - desktop world context from time of day."""
 
 from __future__ import annotations
 

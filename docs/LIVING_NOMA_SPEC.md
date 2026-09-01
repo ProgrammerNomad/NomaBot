@@ -1,19 +1,19 @@
-# Living NomaBot — Production Spec (M5.1 First Living Character)
+# Living NomaBot - Production Spec (M5.1 First Living Character)
 
 > Canvas, anchors, clips, export paths. See [READABILITY.md](./READABILITY.md), [STYLE_GUIDE.md](./STYLE_GUIDE.md), [LORE.md](./LORE.md).
 
 ## Canvas
 
 - Display: **170×320** (LILYGO T-Display S3)
-- **Body anchor**: `(85, 80)` — all behaviors return here
-- **Expression anchor**: relative to body — `{ "dx": 0, "dy": 24 }` in `config.json` (Phase B tuned)
+- **Body anchor**: `(85, 80)` - all behaviors return here
+- **Expression anchor**: relative to body - `{ "dx": 0, "dy": 24 }` in `config.json` (Phase B tuned)
 - Hands anchor: `(85, 200)`
 
 ## Layer model (permanent)
 
 | Layer | Contents | Notes |
 |-------|----------|-------|
-| **Body** | Helmet, visor, neck, torso, hands | One visor only — drawn per pose clip |
+| **Body** | Helmet, visor, neck, torso, hands | One visor only - drawn per pose clip |
 | **Expression** | Eyes, eyebrows, mouth | Swaps on emotion; no helmet or visor |
 
 Sprite ids remain `face_*` in the pack; source PNGs live in `sprites/face/`. Expression blit uses RGB565 colorkey `0xF81F` (alpha → colorkey at compile time; LovyanGFX keyed draw at runtime).
@@ -90,4 +90,4 @@ Standing (`idle`), blink, typing (`coding`), thinking (`think`) only. See trimme
 
 - Expression overlay z=11 (`DirtyCharacter` + emotion change)
 - Styled speech bubble z=40
-- No prop Scene layers in v1 — apartment baked into `bg_office`
+- No prop Scene layers in v1 - apartment baked into `bg_office`

@@ -1,4 +1,4 @@
-# Eyes Ambient — Standalone Desk Pet
+# Eyes Ambient - Standalone Desk Pet
 
 Landscape **eyes-only** pet inspired by [Desper](https://www.youtube.com/watch?v=DZxC5BGkKT8). Branch: `feature/eyes-ambient`.
 
@@ -14,7 +14,11 @@ Three screens **auto-rotate** (Eyes → Clock → Weather → Eyes):
 | **Clock** (~8s) | Large centered time + date |
 | **Weather** (~8s) | Large temp, condition, city |
 
-**Press the user button (GPIO14)** to cycle modes immediately. Hold the board **landscape** (long edge horizontal).
+**Press the user button (GPIO14)** to cycle modes immediately.
+
+> **Important - hold landscape:** Turn the board so the **long edge is horizontal** (USB cable to the left or right, LILYGO logo on the left or right edge). If you hold it portrait (logo at top), the eyes will stack vertically and look wrong.
+
+Eyes are large cyan squares that **blink and look around every few seconds** on their own. Clock and weather screens use **large text** that fills the 320×170 canvas.
 
 RST is hardware reset only. BOOT (GPIO0) is for flashing.
 
@@ -24,7 +28,7 @@ RST is hardware reset only. BOOT (GPIO0) is for flashing.
 
 ```powershell
 copy firmware\secrets.example.h firmware\secrets.h
-# Edit secrets.h — WIFI_SSID, WIFI_PASS, WEATHER_API_KEY, WEATHER_CITY
+# Edit secrets.h - WIFI_SSID, WIFI_PASS, WEATHER_API_KEY, WEATHER_CITY
 ```
 
 2. Generate art, compile pack, flash:
@@ -37,7 +41,7 @@ cd firmware
 pio run -e lilygo_tdisplay_s3 -t upload -t uploadfs --upload-port COM3
 ```
 
-3. Power from USB — device runs alone. Optional serial monitor at 115200 for debug logs.
+3. Power from USB - device runs alone. Optional serial monitor at 115200 for debug logs.
 
 ## Do NOT use nomabot_desktop for eyes
 

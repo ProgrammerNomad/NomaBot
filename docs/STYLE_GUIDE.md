@@ -21,7 +21,7 @@ If the helmet is not obvious at 32px, redesign before production sprites.
 - **Allowed:** straight front, 3/4 front only
 - **Never:** side profile in-game, top-down, isometric, random perspective mix
 
-## Color palette (24 colors — do not add new colors in production)
+## Color palette (24 colors - do not add new colors in production)
 
 | Name | Hex | Use |
 |------|-----|-----|
@@ -63,9 +63,9 @@ If the helmet is not obvious at 32px, redesign before production sprites.
 
 ## Resolution workflow
 
-1. Large concept (1024) — design exploration only
+1. Large concept (1024) - design exploration only
 2. **Redraw at 170×320** for apartment and in-game assets
-3. Poses and frames from simplified 170×320 style — **never** downscale AI noise to production
+3. Poses and frames from simplified 170×320 style - **never** downscale AI noise to production
 
 ## Signature accessories
 
@@ -81,7 +81,7 @@ If the helmet is not obvious at 32px, redesign before production sprites.
 
 Neutral, Smile, Happy, Laugh, Thinking, Confused, Sleepy, Yawning, Angry, Embarrassed, Surprised, Proud.
 
-Face-only overlays — same body, swap `sprites/face/`.
+Face-only overlays - same body, swap `sprites/face/`.
 
 ## Related docs
 

@@ -54,5 +54,6 @@ bool brainLoadFromJson(Brain &brain, const char *jsonPath) {
   }
 
   brain.loadClipMapFromJsonText(text);
+  brain.loadPackBehaviorsFromJsonText(text);
   return true;
 }

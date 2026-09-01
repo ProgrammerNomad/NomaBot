@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate NomaBot art at 170x320 — Prototype Pack v0 and full character pack."""
+"""Generate NomaBot art at 170x320 - Prototype Pack v0 and full character pack."""
 
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ C = {
 
 
 def _draw_apartment_minimal(draw: ImageDraw.ImageDraw) -> None:
-    """Phase A placeholder — soft wall gradient + desk hint."""
+    """Phase A placeholder - soft wall gradient + desk hint."""
     for y in range(H):
         t = y / max(H - 1, 1)
         r = int(C["wall"][0] + (C["wall2"][0] - C["wall"][0]) * t * 0.35)
@@ -61,7 +61,7 @@ def _draw_apartment_minimal(draw: ImageDraw.ImageDraw) -> None:
 
 
 def _draw_apartment_v1(draw: ImageDraw.ImageDraw) -> None:
-    """Phase D — six props: window, desk, plant, laptop, coffee, shelf."""
+    """Phase D - six props: window, desk, plant, laptop, coffee, shelf."""
     draw.rectangle([0, 0, W, H], fill=C["wall2"])
     draw.rectangle([0, 0, W, 48], fill=C["wall"])
     # Window
@@ -118,7 +118,7 @@ def _draw_robot_body(draw: ImageDraw.ImageDraw, ox: int, oy: int, pose: str) -> 
 
     arm_y = oy + 24 + body_shift
     if pose in ("typing", "coding"):
-        # Phase B: arms forward/down — clearly distinct from standing at 1m
+        # Phase B: arms forward/down - clearly distinct from standing at 1m
         draw.line([ox - 18, oy + 20, ox - 36, oy + 42], fill=C["body_d"], width=5)
         draw.line([ox + 18, oy + 20, ox + 36, oy + 42], fill=C["body_d"], width=5)
         draw.line([ox - 36, oy + 42, ox - 30, oy + 46], fill=C["outline"], width=2)
@@ -153,7 +153,7 @@ def _draw_robot_body(draw: ImageDraw.ImageDraw, ox: int, oy: int, pose: str) -> 
         draw.line([ox - 18, arm_y + 2, ox - 27, oy + 44], fill=C["body_d"], width=4)
         draw.line([ox + 18, arm_y + 2, ox + 27, oy + 44], fill=C["body_d"], width=4)
     else:
-        # Standing / idle — arms hang lower than typing
+        # Standing / idle - arms hang lower than typing
         draw.line([ox - 18, arm_y, ox - 28, oy + 42], fill=C["body_d"], width=4)
         draw.line([ox + 18, arm_y, ox + 28, oy + 42], fill=C["body_d"], width=4)
 
@@ -171,7 +171,7 @@ def body_sprite(pose: str, name: str) -> None:
 
 
 def _draw_expression(draw: ImageDraw.ImageDraw, expression: str) -> None:
-    """Expression layer — eyes, eyebrows, mouth only (no visor/helmet)."""
+    """Expression layer - eyes, eyebrows, mouth only (no visor/helmet)."""
     # Phase B: cy aligns eye row to visor center when dy=24 (body top anchor draw)
     cx, cy = 14, 11
     if expression in ("angry", "frustrated"):
@@ -281,7 +281,7 @@ def copy_prototype_refs() -> None:
 
 
 def generate_prototype_v0() -> None:
-    """Prototype Pack v0 — seven assets, four clips, minimal bg."""
+    """Prototype Pack v0 - seven assets, four clips, minimal bg."""
     keep_bodies = {
         "body_stand",
         "body_idle_01",
@@ -331,7 +331,7 @@ def generate_prototype_v0() -> None:
 
 
 def generate_full() -> None:
-    """Phase D+E — apartment v1, expanded poses, six core expressions + extras."""
+    """Phase D+E - apartment v1, expanded poses, six core expressions + extras."""
     BODY_DIR.mkdir(parents=True, exist_ok=True)
     FACE_DIR.mkdir(parents=True, exist_ok=True)
     BG_DIR.mkdir(parents=True, exist_ok=True)

@@ -1,4 +1,4 @@
-"""Friendship service — long memory welcome messages on connect."""
+"""Friendship service - long memory welcome messages on connect."""
 
 from __future__ import annotations
 

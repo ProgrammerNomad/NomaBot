@@ -4,11 +4,19 @@
   "frames": [
     {
       "sprite": "eyes_neutral",
-      "duration_ms": 400
+      "duration_ms": 500
+    },
+    {
+      "sprite": "eyes_look_left",
+      "duration_ms": 200
     },
     {
       "sprite": "eyes_neutral",
       "duration_ms": 400
+    },
+    {
+      "sprite": "eyes_look_right",
+      "duration_ms": 200
     }
   ]
 }

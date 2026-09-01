@@ -10,7 +10,7 @@ logger = logging.getLogger("noma.ambient")
 
 
 class AmbientDisplayService:
-    """Placeholder rotator — weather glance timing handled by WeatherService interval."""
+    """Placeholder rotator - weather glance timing handled by WeatherService interval."""
 
     def __init__(self) -> None:
         self._timer = QTimer()

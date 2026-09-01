@@ -69,7 +69,7 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
   }
 
   if (!graphOk) {
-    Serial.println("Animation graph load failed — using idle/coding defaults");
+    Serial.println("Animation graph load failed - using idle/coding defaults");
     _graph.applyDefaults();
   }
 
@@ -90,7 +90,7 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
     StaticJsonDocument<8192> behaviorDoc;
     DeserializationError err = deserializeJson(behaviorDoc, behaviorText);
     if (err) {
-      Serial.printf("behavior.json parse failed (%s) — defaulting to text mode\n", err.c_str());
+      Serial.printf("behavior.json parse failed (%s) - defaulting to text mode\n", err.c_str());
     } else {
       const char *mode = behaviorDoc["render_mode"] | "text";
       if (strcmp(mode, "sprite") == 0) {
@@ -104,7 +104,7 @@ bool CharacterRuntime::loadCharacter(PackLoader &loader, const char *characterId
       }
     }
   } else {
-    Serial.println("behavior.json missing — defaulting to text mode");
+    Serial.println("behavior.json missing - defaulting to text mode");
   }
   if (_renderer) {
     _renderer->setRotation(loader.landscapeOrientation() ? 1 : 0);
@@ -354,10 +354,14 @@ void CharacterRuntime::tick(unsigned long nowMs) {
     }
   }
   if (_loader && !textModeActive()) {
+    const char *prevSprite = _bodySpriteId.c_str();
     _clipPlayer.tick(nowMs);
     const char *sprite = _clipPlayer.currentSpriteId();
     if (sprite) {
-      _bodySpriteId = sprite;
+      if (_bodySpriteId != sprite) {
+        _bodySpriteId = sprite;
+        _dirtyTracker.forceDirty(DirtyCharacter);
+      }
     }
   }
   updateFps(nowMs);

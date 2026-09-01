@@ -66,7 +66,7 @@ class NomaRuntime:
             cb(self._state)
 
     async def submit(self, request: RenderRequest) -> list[Envelope]:
-        """Context commands only — arbitrator already filtered sources."""
+        """Context commands only - arbitrator already filtered sources."""
         commands: list[Envelope] = []
         s = self._state
 

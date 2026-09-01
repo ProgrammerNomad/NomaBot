@@ -1,9 +1,9 @@
-# Character Bible (Phase C — draft)
+# Character Bible (Phase C - draft)
 
 Frozen from LCD-tested constants after Phase B exit gate. Do not expand until
 [`docs/PHASE_B_NOTES.md`](../../../docs/PHASE_B_NOTES.md) readability QA passes for 3+ desk days.
 
-## Proportions (Phase B — 2026-06-28)
+## Proportions (Phase B - 2026-06-28)
 
 | Parameter | Value |
 |-----------|-------|
@@ -28,7 +28,7 @@ Frozen from LCD-tested constants after Phase B exit gate. Do not expand until
 
 ## Expressions (v0)
 
-neutral, happy, thinking, blink — map in `config.json`.
+neutral, happy, thinking, blink - map in `config.json`.
 
 ## Alive pet test
 

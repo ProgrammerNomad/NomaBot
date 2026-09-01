@@ -106,7 +106,7 @@ async def _connect_device(ctx: AppContext, device_id: str) -> None:
     character_id = str(hello.get("character_id", ""))
     if render_mode == "eyes" or character_id == "eyes":
         logger.info(
-            "Standalone eyes device connected — runs on WiFi (time/weather/animation). "
+            "Standalone eyes device connected - runs on WiFi (time/weather/animation). "
             "No desktop control needed."
         )
         return
@@ -116,7 +116,7 @@ async def _connect_device(ctx: AppContext, device_id: str) -> None:
         logger.error(
             "Skipping load_character until firmware is 0.3.0+ with load_character cap. "
             "Run: cd firmware && pio run -e lilygo_tdisplay_s3 -t upload && "
-            "pio run -e lilygo_tdisplay_s3 -t uploadfs — then RESET the board."
+            "pio run -e lilygo_tdisplay_s3 -t uploadfs - then RESET the board."
         )
 
 
@@ -333,7 +333,7 @@ def run_app(
                 "Cannot open %s (%s).\n"
                 "  1. Close PlatformIO serial monitor, Arduino IDE serial, and any other NomaBot instance.\n"
                 "  2. PowerShell: Get-Process python*, pio* -ErrorAction SilentlyContinue | Stop-Process -Force\n"
-                "  3. Unplug USB, wait 3s, replug — then run only ONE desktop instance.\n"
+                "  3. Unplug USB, wait 3s, replug - then run only ONE desktop instance.\n"
                 "  4. If still denied, check Device Manager for the correct COM port.",
                 port,
                 exc,

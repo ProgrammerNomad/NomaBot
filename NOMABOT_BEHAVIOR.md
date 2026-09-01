@@ -1,6 +1,6 @@
 # NomaBot Behavior Specification
 
-> Milestone 4 (v0.4.0) — Companion Brain. Desktop sends world context only; firmware Brain picks behaviors, goals, habits, and dreams.
+> Milestone 4 (v0.4.0) - Companion Brain. Desktop sends world context only; firmware Brain picks behaviors, goals, habits, and dreams.
 
 ## Core formula
 

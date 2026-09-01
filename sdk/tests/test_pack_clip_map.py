@@ -1,4 +1,4 @@
-"""Pack clip map tests — behavior.json clip resolution."""
+"""Pack clip map tests - behavior.json clip resolution."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def _load_clip_map(data: dict) -> dict[str, str]:
 @pytest.fixture
 def clip_map() -> dict[str, str]:
     if not BEHAVIOR_JSON.exists():
-        pytest.skip("compiled behavior.json missing — run nomabot build-assets")
+        pytest.skip("compiled behavior.json missing - run nomabot build-assets")
     data = json.loads(BEHAVIOR_JSON.read_text(encoding="utf-8"))
     return _load_clip_map(data)
 

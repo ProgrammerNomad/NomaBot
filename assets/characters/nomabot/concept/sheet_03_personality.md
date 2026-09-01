@@ -1,4 +1,4 @@
-# Sheet 3 — Personality
+# Sheet 3 - Personality
 
 Guides animation and behavior choices. See [docs/LORE.md](../../../../docs/LORE.md).
 

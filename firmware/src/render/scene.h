@@ -8,7 +8,7 @@ static constexpr int kSceneZBackground = 0;
 static constexpr int kSceneZAmbient = 5;
 static constexpr int kSceneZCharacter = 10;
 static constexpr int kSceneZExpression = 11;
-static constexpr int kSceneZProp = 20;  // reserved — baked into bg in M5.1
+static constexpr int kSceneZProp = 20;  // reserved - baked into bg in M5.1
 static constexpr int kSceneZHud = 30;
 static constexpr int kSceneZSpeechBubble = 40;
 

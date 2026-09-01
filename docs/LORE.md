@@ -1,4 +1,4 @@
-# NomaBot — Character Lore
+# NomaBot - Character Lore
 
 > For artists and developers. Not shown to end users directly.
 
@@ -32,20 +32,20 @@ Not "a robot that codes." Adventure, coffee, rain, mountains, and the desk apart
 - Orange backpack
 - Compass badge on helmet
 
-## Personality — Likes
+## Personality - Likes
 
 Coffee, coding, adventure, mountains, meditation, photography, plants, rain at the window, lo-fi music.
 
-## Personality — Dislikes
+## Personality - Dislikes
 
 Battery low, compiler errors, overheating, being ignored for too long.
 
-## Personality — Habits
+## Personality - Habits
 
 Checks laptop, looks out the window, drinks coffee, stretches, looks around the room.
 
 ## Home
 
-A **tiny apartment** on the desk — window, desk, shelf, plant, lamp, charging dock, helmet hook, backpack spot. Not a generic wallpaper.
+A **tiny apartment** on the desk - window, desk, shelf, plant, lamp, charging dock, helmet hook, backpack spot. Not a generic wallpaper.
 
 See [STYLE_GUIDE.md](./STYLE_GUIDE.md) and [LIVING_NOMA_SPEC.md](./LIVING_NOMA_SPEC.md).

@@ -42,6 +42,7 @@ void Brain::useDefaults() {
   _sequenceIndex = 0;
   _emotion.setEmotion("neutral");
   _dayStartMs = millis();
+  _packBehaviorTable.clear();
 }
 
 bool Brain::loadFromPackPath(const char *rootPath) {
@@ -132,6 +133,12 @@ void Brain::noteBuildResult(const char *result) {
 }
 
 const char *Brain::labelForId(const char *id) const {
+  if (const PackBehaviorEntry *packEntry = _packBehaviorTable.findBehavior(id)) {
+    if (!packEntry->label.empty()) {
+      return packEntry->label.c_str();
+    }
+    return id;
+  }
   const BehaviorDef *def = BehaviorDefaults::findBehaviorClip(id);
   if (def && def->label) {
     return def->label;
@@ -154,12 +161,18 @@ void Brain::applyBehaviorId(const char *id, unsigned long nowMs) {
     _boredom = max(0, _boredom - 8);
   }
   _behaviorId = id;
-  _behaviorLabel = labelForId(id);
-  const BehaviorDef *def = BehaviorDefaults::findBehaviorClip(id);
-  if (def) {
-    _behaviorDurationMs = randomDurationMs(*def);
+  const PackBehaviorEntry *packEntry = _packBehaviorTable.findBehavior(id);
+  if (packEntry) {
+    _behaviorLabel = packEntry->label.empty() ? id : packEntry->label;
+    _behaviorDurationMs = randomDurationMs(*packEntry);
   } else {
-    _behaviorDurationMs = 5000;
+    _behaviorLabel = labelForId(id);
+    const BehaviorDef *def = BehaviorDefaults::findBehaviorClip(id);
+    if (def) {
+      _behaviorDurationMs = randomDurationMs(*def);
+    } else {
+      _behaviorDurationMs = 5000;
+    }
   }
   _behaviorStartMs = nowMs;
   recordShortMemory(nowMs);
@@ -265,6 +278,15 @@ unsigned long Brain::randomDurationMs(const BehaviorDef &def) const {
   return static_cast<unsigned long>(pick) * 1000UL;
 }
 
+unsigned long Brain::randomDurationMs(const PackBehaviorEntry &entry) const {
+  if (entry.durationMaxSec <= entry.durationMinSec) {
+    return static_cast<unsigned long>(entry.durationMinSec) * 1000UL;
+  }
+  uint16_t span = entry.durationMaxSec - entry.durationMinSec;
+  uint16_t pick = entry.durationMinSec + (esp_random() % (span + 1));
+  return static_cast<unsigned long>(pick) * 1000UL;
+}
+
 void Brain::recordShortMemory(unsigned long nowMs) {
   if (_behaviorId == "coffee") {
     _lastCoffeeMs = nowMs;
@@ -274,8 +296,45 @@ void Brain::recordShortMemory(unsigned long nowMs) {
   }
 }
 
+void Brain::pickBehaviorFromPack(const std::vector<PackBehaviorEntry> &table, unsigned long nowMs,
+                                 bool force) {
+  if (table.empty()) {
+    return;
+  }
+
+  int totalWeight = 0;
+  for (const auto &entry : table) {
+    if (force && entry.id == _behaviorId && table.size() > 1) {
+      continue;
+    }
+    totalWeight += entry.weight;
+  }
+  if (totalWeight <= 0) {
+    applyBehaviorId(table[0].id.c_str(), nowMs);
+    return;
+  }
+
+  int roll = static_cast<int>(esp_random() % static_cast<uint32_t>(totalWeight));
+  for (const auto &entry : table) {
+    if (force && entry.id == _behaviorId && table.size() > 1) {
+      continue;
+    }
+    roll -= entry.weight;
+    if (roll < 0) {
+      applyBehaviorId(entry.id.c_str(), nowMs);
+      return;
+    }
+  }
+}
+
 void Brain::pickBehavior(unsigned long nowMs, bool force) {
   if (!force && _behaviorStartMs > 0 && nowMs - _behaviorStartMs < _behaviorDurationMs) {
+    return;
+  }
+
+  if (const std::vector<PackBehaviorEntry> *packTable =
+          _packBehaviorTable.behaviorsForActivity(_activity.c_str())) {
+    pickBehaviorFromPack(*packTable, nowMs, force);
     return;
   }
 
@@ -314,7 +373,38 @@ void Brain::pickBehavior(unsigned long nowMs, bool force) {
   }
 }
 
+void Brain::pickNextPreviewFromPack(const std::vector<PackBehaviorEntry> &table) {
+  int totalWeight = 0;
+  for (const auto &entry : table) {
+    if (entry.id != _behaviorId) {
+      totalWeight += entry.weight;
+    }
+  }
+  if (totalWeight <= 0) {
+    _nextBehaviorId = _behaviorId;
+    return;
+  }
+  int roll = static_cast<int>(esp_random() % static_cast<uint32_t>(totalWeight));
+  for (const auto &entry : table) {
+    if (entry.id == _behaviorId) {
+      continue;
+    }
+    roll -= entry.weight;
+    if (roll < 0) {
+      _nextBehaviorId = entry.id;
+      return;
+    }
+  }
+  _nextBehaviorId = table[0].id;
+}
+
 void Brain::pickNextPreview() {
+  if (const std::vector<PackBehaviorEntry> *packTable =
+          _packBehaviorTable.behaviorsForActivity(_activity.c_str())) {
+    pickNextPreviewFromPack(*packTable);
+    return;
+  }
+
   size_t count = 0;
   const BehaviorDef *table = activeTable(&count);
   if (!table || count == 0) {
@@ -431,7 +521,16 @@ bool Brain::loadClipMapFromJsonText(const std::string &text) {
   return _clipMap.loadFromJsonText(text);
 }
 
+bool Brain::loadPackBehaviorsFromJsonText(const std::string &text) {
+  return _packBehaviorTable.loadFromJsonText(text);
+}
+
 const char *Brain::clipForBehaviorId(const char *behaviorId) const {
+  if (const PackBehaviorEntry *packEntry = _packBehaviorTable.findBehavior(behaviorId)) {
+    if (!packEntry->clip.empty()) {
+      return packEntry->clip.c_str();
+    }
+  }
   if (const char *packClip = _clipMap.clipForBehavior(behaviorId)) {
     return packClip;
   }
