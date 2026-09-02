@@ -173,8 +173,13 @@ void CharacterRuntime::setWeatherDisplay(const char *icon, const char *tempLine,
 }
 
 void CharacterRuntime::setClock(const char *timeText, const char *dateText) {
-  _clockText = timeText ? timeText : "";
-  _clockDateText = dateText ? dateText : "";
+  const char *t = timeText ? timeText : "";
+  const char *d = dateText ? dateText : "";
+  if (_clockText == t && _clockDateText == d) {
+    return;
+  }
+  _clockText = t;
+  _clockDateText = d;
   if (_ambientMode == AmbientDisplayMode::ClockScreen) {
     _dirtyTracker.forceDirty(DirtyBehavior | DirtyBackground);
   }
@@ -190,6 +195,9 @@ void CharacterRuntime::setDisplayMode(AmbientDisplayMode mode) {
 }
 
 void CharacterRuntime::setPomodoro(unsigned long remainingSec, unsigned long totalSec) {
+  if (_pomodoroRemainingSec == remainingSec && _pomodoroTotalSec == totalSec) {
+    return;
+  }
   _pomodoroRemainingSec = remainingSec;
   _pomodoroTotalSec = totalSec;
   if (_ambientMode == AmbientDisplayMode::PomodoroScreen) {
@@ -199,6 +207,9 @@ void CharacterRuntime::setPomodoro(unsigned long remainingSec, unsigned long tot
 
 void CharacterRuntime::setStats(unsigned long uptimeSec, unsigned long heapFree, int wifiRssi,
                                 const char *firmwareVersion) {
+  if (_uptimeSec == uptimeSec && _heapFree == heapFree && _wifiRssi == wifiRssi) {
+    return;
+  }
   _uptimeSec = uptimeSec;
   _heapFree = heapFree;
   _wifiRssi = wifiRssi;
@@ -209,11 +220,19 @@ void CharacterRuntime::setStats(unsigned long uptimeSec, unsigned long heapFree,
 }
 
 void CharacterRuntime::setCalendarText(const char *text) {
-  _calendarText = text ? text : "";
+  const char *t = text ? text : "";
+  if (_calendarText == t) {
+    return;
+  }
+  _calendarText = t;
 }
 
 void CharacterRuntime::setMinigameText(const char *text) {
-  _minigameText = text ? text : "";
+  const char *t = text ? text : "";
+  if (_minigameText == t) {
+    return;
+  }
+  _minigameText = t;
   _dirtyTracker.forceDirty(DirtyBehavior);
 }
 
@@ -227,9 +246,7 @@ void CharacterRuntime::setTransitionAlpha(uint8_t alpha) {
     return;
   }
   _transitionAlpha = alpha;
-  if (alpha > 0) {
-    _dirtyTracker.forceDirty(DirtyFull);
-  }
+  _dirtyTracker.forceDirty(DirtyFull);
 }
 
 void CharacterRuntime::setEyeTint(uint16_t rgb565) {
@@ -284,7 +301,9 @@ void CharacterRuntime::render(const RenderState &state, DirtyFlags dirty) {
   }
 
   unsigned long renderStart = millis();
+  _renderer->startFrame();
   _scheduler.render(state, dirty);
+  _renderer->endFrame();
   _dirtyTracker.commitRendered(state);
   _lastClipFrame = state.clipFrameIndex;
   _lastDirtyFlags = dirty;

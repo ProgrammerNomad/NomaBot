@@ -250,11 +250,18 @@ static void usbPoll() {
 }
 
 static uint8_t gTransitionAlpha = 0;
+static unsigned long gLastTransitionMs = 0;
 
 static void updateTransition() {
   if (gTransitionAlpha == 0) {
     return;
   }
+  unsigned long now = millis();
+  // Rate-limit to ~30fps for smooth fade without hammering redraws.
+  if (now - gLastTransitionMs < 33) {
+    return;
+  }
+  gLastTransitionMs = now;
   gTransitionAlpha = gTransitionAlpha > 32 ? gTransitionAlpha - 32 : 0;
   characterRuntime.setTransitionAlpha(gTransitionAlpha);
 }
