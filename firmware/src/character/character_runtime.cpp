@@ -270,8 +270,7 @@ RenderState CharacterRuntime::buildRenderState() const {
   return state;
 }
 
-DirtyFlags CharacterRuntime::collectDirtyFlags() {
-  RenderState state = buildRenderState();
+DirtyFlags CharacterRuntime::collectDirtyFlags(const RenderState &state) {
   DirtyFlags dirty = _dirtyTracker.collectDirtyFlags(state);
   if (_loader && _lastClipFrame >= 0 && state.clipFrameIndex != _lastClipFrame) {
     dirty = dirty | DirtyCharacter;
@@ -279,13 +278,12 @@ DirtyFlags CharacterRuntime::collectDirtyFlags() {
   return dirty;
 }
 
-void CharacterRuntime::render(DirtyFlags dirty) {
+void CharacterRuntime::render(const RenderState &state, DirtyFlags dirty) {
   if (!anyDirty(dirty) || !_renderer || !_loader) {
     return;
   }
 
   unsigned long renderStart = millis();
-  RenderState state = buildRenderState();
   _scheduler.render(state, dirty);
   _dirtyTracker.commitRendered(state);
   _lastClipFrame = state.clipFrameIndex;
@@ -296,9 +294,10 @@ void CharacterRuntime::render(DirtyFlags dirty) {
 }
 
 void CharacterRuntime::present() {
-  DirtyFlags dirty = collectDirtyFlags();
+  RenderState state = buildRenderState();
+  DirtyFlags dirty = collectDirtyFlags(state);
   if (anyDirty(dirty)) {
-    render(dirty);
+    render(state, dirty);
   }
 }
 

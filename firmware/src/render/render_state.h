@@ -6,17 +6,9 @@
 #include "net/service_status.h"
 
 struct RenderState {
-  const char *lifeMode = "work";
   const char *activity = "idle";
-  const char *emotion = "neutral";
-  const char *goal = "none";
-  int goalProgress = 0;
   const char *behaviorId = "breathing";
   const char *behaviorLabel = "Breathing...";
-  int energy = 80;
-  int displayEnergy = 80;
-  bool curiosity = false;
-  const char *overlayText = "";
   const char *clockText = "";
   const char *clockDateText = "";
   const char *weatherText = "";
@@ -80,12 +72,3 @@ inline bool hasDirty(DirtyFlags flags, DirtyFlags bit) {
   return (static_cast<uint8_t>(flags) & static_cast<uint8_t>(bit)) != 0;
 }
 
-inline int quantizeEnergy(int energy) {
-  if (energy <= 0) {
-    return 0;
-  }
-  if (energy >= 100) {
-    return 100;
-  }
-  return ((energy + 2) / 5) * 5;
-}

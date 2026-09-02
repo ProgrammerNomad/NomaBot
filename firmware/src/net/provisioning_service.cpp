@@ -14,8 +14,8 @@ static WebServer portalServer(80);
 
 static const char *kPortalHtml = R"HTML(
 <!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Eyes Setup</title></head><body style="font-family:sans-serif;max-width:420px;margin:2em auto">
-<h2>Eyes Ambient Setup</h2>
+<title>NomaBot Setup</title></head><body style="font-family:sans-serif;max-width:420px;margin:2em auto">
+<h2>NomaBot Setup</h2>
 <form method="POST" action="/save">
 <label>WiFi SSID<br><input name="ssid" required style="width:100%"></label><br><br>
 <label>WiFi Password<br><input name="pass" type="password" style="width:100%"></label><br><br>
@@ -23,7 +23,9 @@ static const char *kPortalHtml = R"HTML(
 <label>City (City,CC)<br><input name="city" value="Mumbai,IN" style="width:100%"></label><br><br>
 <label>Timezone<br><input name="tz" value="IST-5:30" style="width:100%"></label><br><br>
 <button type="submit">Save &amp; Reboot</button></form>
-<p><a href="/status">Status</a></p></body></html>
+<p><a href="/status">Status</a></p>
+<p style="margin-top:2em;font-size:0.85em;color:#666">Powered by: NomadProgrammer</p>
+</body></html>
 )HTML";
 
 static void handleRoot() {
@@ -78,7 +80,7 @@ bool ProvisioningService::needsSetup() const {
 
 bool ProvisioningService::startPortal() {
   WiFi.mode(WIFI_AP);
-  WiFi.softAP("EyesSetup", "eyes1234");
+  WiFi.softAP("NomaBot", "eyes1234");
   dnsServer.start(53, "*", WiFi.softAPIP());
   portalServer.on("/", HTTP_GET, handleRoot);
   portalServer.on("/save", HTTP_POST, handleSave);
@@ -86,7 +88,7 @@ bool ProvisioningService::startPortal() {
   portalServer.onNotFound(handleCaptive);
   portalServer.begin();
   _active = true;
-  Serial.printf("Setup portal: http://%s\n", WiFi.softAPIP().toString().c_str());
+  Serial.printf("NomaBot setup portal: http://%s\n", WiFi.softAPIP().toString().c_str());
   return true;
 }
 
