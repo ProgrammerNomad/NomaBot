@@ -60,7 +60,9 @@ public:
 };
 
 static LGFX _gfx;
+static LGFX_Sprite _sprite(&_gfx);
 static constexpr int PIN_POWER_ON = 15;
+static bool _spriteReady = false;
 
 bool LilygoRenderer::begin() {
   pinMode(PIN_POWER_ON, OUTPUT);
@@ -71,16 +73,33 @@ bool LilygoRenderer::begin() {
   _gfx.setRotation(0);
   _gfx.setBrightness(255);
   _gfx.fillScreen(0x0000);
+
+  _sprite.setColorDepth(16);
+  _spriteReady = _sprite.createSprite(_gfx.width(), _gfx.height()) != nullptr;
+  if (_spriteReady) {
+    _sprite.fillScreen(0x0000);
+  }
+
   return true;
 }
 
-void LilygoRenderer::fillScreen(uint16_t color) { _gfx.fillScreen(color); }
+void LilygoRenderer::fillScreen(uint16_t color) {
+  if (_spriteReady) {
+    _sprite.fillScreen(color);
+  } else {
+    _gfx.fillScreen(color);
+  }
+}
 
 void LilygoRenderer::blitRGB565(const uint16_t *pixels, int x, int y, int w, int h) {
   if (!pixels || w <= 0 || h <= 0) {
     return;
   }
-  _gfx.pushImage(x, y, w, h, pixels);
+  if (_spriteReady) {
+    _sprite.pushImage(x, y, w, h, pixels);
+  } else {
+    _gfx.pushImage(x, y, w, h, pixels);
+  }
 }
 
 void LilygoRenderer::blitRGB565ColorKey(const uint16_t *pixels, int x, int y, int w, int h,
@@ -88,25 +107,35 @@ void LilygoRenderer::blitRGB565ColorKey(const uint16_t *pixels, int x, int y, in
   if (!pixels || w <= 0 || h <= 0) {
     return;
   }
-  _gfx.pushImage(x, y, w, h, pixels, colorKey);
+  if (_spriteReady) {
+    _sprite.pushImage(x, y, w, h, pixels, colorKey);
+  } else {
+    _gfx.pushImage(x, y, w, h, pixels, colorKey);
+  }
 }
 
 void LilygoRenderer::fillRect(int x, int y, int w, int h, uint16_t color) {
-  _gfx.fillRect(x, y, w, h, color);
+  if (_spriteReady) {
+    _sprite.fillRect(x, y, w, h, color);
+  } else {
+    _gfx.fillRect(x, y, w, h, color);
+  }
 }
 
 void LilygoRenderer::drawText(int x, int y, const char *text, uint16_t color) {
-  _gfx.setTextColor(color);
-  _gfx.setTextSize(1);
-  _gfx.setCursor(x, y);
-  _gfx.print(text);
+  auto &target = _spriteReady ? (LovyanGFX &)_sprite : (LovyanGFX &)_gfx;
+  target.setTextColor(color);
+  target.setTextSize(1);
+  target.setCursor(x, y);
+  target.print(text);
 }
 
 void LilygoRenderer::drawTextScale(int x, int y, const char *text, uint16_t color, uint8_t scale) {
-  _gfx.setTextColor(color);
-  _gfx.setTextSize(scale > 0 ? scale : 1);
-  _gfx.setCursor(x, y);
-  _gfx.print(text);
+  auto &target = _spriteReady ? (LovyanGFX &)_sprite : (LovyanGFX &)_gfx;
+  target.setTextColor(color);
+  target.setTextSize(scale > 0 ? scale : 1);
+  target.setCursor(x, y);
+  target.print(text);
 }
 
 int LilygoRenderer::width() const { return _gfx.width(); }
@@ -115,8 +144,21 @@ int LilygoRenderer::height() const { return _gfx.height(); }
 
 void LilygoRenderer::setRotation(int rotation) {
   _gfx.setRotation(rotation & 3);
+  if (_spriteReady) {
+    _sprite.deleteSprite();
+    _spriteReady = _sprite.createSprite(_gfx.width(), _gfx.height()) != nullptr;
+  }
+}
+
+void LilygoRenderer::startFrame() {}
+
+void LilygoRenderer::endFrame() {
+  if (_spriteReady) {
+    _sprite.pushSprite(0, 0);
+  }
 }
 
 void LilygoRenderer::setBrightness(uint8_t level) {
   _gfx.setBrightness(level);
 }
+

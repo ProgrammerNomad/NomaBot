@@ -17,5 +17,7 @@ public:
   int width() const override;
   int height() const override;
   void setRotation(int rotation) override;
+  void startFrame() override;
+  void endFrame() override;
   void setBrightness(uint8_t level);
 };

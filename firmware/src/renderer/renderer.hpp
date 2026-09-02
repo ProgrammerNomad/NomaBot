@@ -22,4 +22,6 @@ public:
   virtual int width() const = 0;
   virtual int height() const = 0;
   virtual void setRotation(int rotation) { (void)rotation; }
+  virtual void startFrame() {}
+  virtual void endFrame() {}
 };
