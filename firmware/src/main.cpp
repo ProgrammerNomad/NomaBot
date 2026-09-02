@@ -281,8 +281,6 @@ static void handlePomodoroInput(const DisplayModeInput &input, unsigned long now
 void setup() {
   Serial.begin(115200);
   delay(500);
-  DeviceConfig cfg;
-  deviceConfigLoad(cfg);
   renderer.begin();
   characterRuntime.begin(&renderer);
   registerProtocolHandlers();
@@ -290,6 +288,13 @@ void setup() {
 
   if (packLoader.mountFilesystem()) {
     bootFsStatus = "OK";
+    deviceConfigReload();
+    const DeviceConfig &cfg = deviceConfig();
+    Serial.printf("Config loaded: ssid=%s city=%s tz=%s nvs=%s wifi.json=%s valid=%s\n",
+                  cfg.wifiSsid, cfg.weatherCity, cfg.timezone,
+                  deviceConfigHasNvsWifi() ? "yes" : "no",
+                  deviceConfigHasWifiFile() ? "yes" : "no",
+                  deviceConfigHasValidWifi() ? "yes" : "no");
     if (gProvisioning.needsSetup()) {
       gProvisioning.startPortal();
       showSetupScreen();
