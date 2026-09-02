@@ -20,7 +20,7 @@ const char *packLoadErrorLabel(PackLoadError err) {
 
 bool PackLoader::mountFilesystem() {
   // Partition name in partitions.csv is "littlefs" (not Arduino default "spiffs")
-  if (!LittleFS.begin(true, "/littlefs", 10, "littlefs")) {
+  if (!LittleFS.begin(false, "/littlefs", 10, "littlefs")) {
     Serial.println("LittleFS mount failed (label=littlefs)");
     return false;
   }

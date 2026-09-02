@@ -45,11 +45,11 @@ Corner dots show service health: WiFi, clock, weather (green = OK, orange = stal
 
 ### Option A - Captive portal (recommended)
 
-1. Flash firmware + LittleFS (`just flash`).
-2. On first boot with no `wifi.json`, device opens WiFi AP **`EyesSetup`** (password `eyes1234`).
-3. Connect phone/laptop, open any URL → setup form.
+1. Flash firmware + LittleFS (`just flash` or manual `pio upload` + `uploadfs`).
+2. On first boot with no saved WiFi, device shows a **black setup screen** and opens WiFi AP **`NomaBot`** (password `eyes1234`).
+3. Connect phone/laptop to **NomaBot**, open **`http://192.168.4.1`** (captive redirect may appear automatically).
 4. Enter WiFi, OpenWeatherMap key, city (`City,CC`), timezone (e.g. `IST-5:30`).
-5. Device saves to LittleFS and reboots.
+5. Tap **Save & Reboot** - device saves credentials to **NVS flash** (and mirrors to `wifi.json`) then restarts into eyes mode.
 
 ### Option B - Compile-time secrets (developers)
 
@@ -95,7 +95,10 @@ Device advertises mDNS hostname **`eyes-ambient.local`**.
 | Eyes frozen | Reflash (`just flash`) |
 | Weather blank | Check city format, API key, serial log |
 | Weather HTTP 401 | Invalid or new API key (wait ~10 min after creation) |
-| Red boot "WIFI SETUP" | Use captive portal or fill `secrets.h` |
+| Black setup screen "NomaBot Setup" | Normal first boot - join WiFi **NomaBot**, open **http://192.168.4.1** |
+| Setup screen loops after Save & Reboot | Stay on **NomaBot** WiFi until "Saved" shows your SSID; check serial for `valid=yes` |
+| Setup says "SSID not received" | Reload the portal page, fill SSID again, submit while still on **NomaBot** AP |
+| Red boot error screen | Real failure (pack/FS) - reflash or check serial log |
 | Port busy on flash | Close serial monitor |
 
 ### Serial monitor
@@ -105,7 +108,9 @@ cd firmware
 pio device monitor -b 115200
 ```
 
-Look for: `WiFi OK`, `Weather: 28C Clear Ghaziabad,IN`, `mDNS: eyes-ambient.local`.
+Look for: `Config loaded: ... valid=yes`, `WiFi OK`, `Weather: 28C Clear Ghaziabad,IN`, `mDNS: eyes-ambient.local`.
+
+> **Note:** WiFi credentials live in NVS and survive `pio upload`. Running `uploadfs` / `just flash` still wipes the LittleFS character pack partition but **not** NVS WiFi settings.
 
 ## Project layout
 

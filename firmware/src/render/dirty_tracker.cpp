@@ -18,28 +18,15 @@ bool DirtyTracker::strChanged(const char *a, const char *b) {
 DirtyFlags DirtyTracker::computeDiff(const RenderState &next) const {
   DirtyFlags dirty = DirtyNone;
 
-  if (strChanged(next.lifeMode, _last.lifeMode) || strChanged(next.activity, _last.activity)) {
+  if (strChanged(next.activity, _last.activity)) {
     dirty = dirty | DirtyHeader;
   }
-  if (strChanged(next.emotion, _last.emotion) || strChanged(next.goal, _last.goal) ||
-      next.goalProgress != _last.goalProgress) {
-    dirty = dirty | DirtyMeta;
-    if (strChanged(next.emotion, _last.emotion)) {
-      dirty = dirty | DirtyCharacter;
-    }
-  }
-  if (next.displayEnergy != _last.displayEnergy) {
-    dirty = dirty | DirtyEnergy;
-  }
   if (strChanged(next.behaviorId, _last.behaviorId) ||
-      strChanged(next.behaviorLabel, _last.behaviorLabel) || next.curiosity != _last.curiosity) {
+      strChanged(next.behaviorLabel, _last.behaviorLabel)) {
     dirty = dirty | DirtyBehavior;
     if (strChanged(next.behaviorId, _last.behaviorId)) {
       dirty = dirty | DirtyCharacter;
     }
-  }
-  if (strChanged(next.overlayText, _last.overlayText)) {
-    dirty = dirty | DirtyMessage;
   }
   if (strChanged(next.backgroundSpriteId, _last.backgroundSpriteId)) {
     dirty = dirty | DirtyBackground;

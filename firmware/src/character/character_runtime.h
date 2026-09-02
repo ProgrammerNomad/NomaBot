@@ -129,6 +129,6 @@ private:
   void syncSpriteContext();
   void updateFps(unsigned long nowMs);
   RenderState buildRenderState() const;
-  DirtyFlags collectDirtyFlags();
-  void render(DirtyFlags dirty);
+  DirtyFlags collectDirtyFlags(const RenderState &state);
+  void render(const RenderState &state, DirtyFlags dirty);
 };

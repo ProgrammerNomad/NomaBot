@@ -64,6 +64,15 @@ static void showBootError(const char *label) {
   renderer.drawText(4, 52, "Press RST to retry", 0xFFFF);
 }
 
+static void showSetupScreen() {
+  renderer.fillScreen(0x0000);
+  renderer.drawText(4, 20, "NomaBot Setup", 0x07FF);
+  renderer.drawText(4, 36, "Join WiFi: NomaBot", 0xFFFF);
+  renderer.drawText(4, 52, "Open 192.168.4.1", 0xFFFF);
+  renderer.drawText(4, 68, "Pwd: eyes1234", 0x8410);
+  renderer.drawText(4, renderer.height() - 12, "Powered by: NomadProgrammer", 0x8410);
+}
+
 static void printBootBanner() {
   Serial.printf("Eyes Ambient FW %s | FS: %s | Pack: %s | render_mode=%s\n",
                 NOMA_FIRMWARE_VERSION, bootFsStatus, bootPackStatus,
@@ -205,12 +214,26 @@ static ProtocolResponse handleDiagnostics(const std::string &id, JsonObject) {
   return {out + "\n", true};
 }
 
+static ProtocolResponse handleStartGame(const std::string &id, JsonObject) {
+  gMinigame.onButtonPress(millis());
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["id"] = id;
+  doc["type"] = "response";
+  doc["cmd"] = "start_game";
+  doc["ok"] = true;
+  std::string out;
+  serializeJson(doc, out);
+  return {out + "\n", true};
+}
+
 static void registerProtocolHandlers() {
   protocol.registerCommand("hello", handleHello);
   protocol.registerCommand("ping", handlePing);
   protocol.registerCommand("notify", handleNotify);
   protocol.registerCommand("get_status", handleGetStatus);
   protocol.registerCommand("diagnostics", handleDiagnostics);
+  protocol.registerCommand("start_game", handleStartGame);
 }
 
 static void usbPoll() {
@@ -258,8 +281,6 @@ static void handlePomodoroInput(const DisplayModeInput &input, unsigned long now
 void setup() {
   Serial.begin(115200);
   delay(500);
-  DeviceConfig cfg;
-  deviceConfigLoad(cfg);
   renderer.begin();
   characterRuntime.begin(&renderer);
   registerProtocolHandlers();
@@ -267,10 +288,16 @@ void setup() {
 
   if (packLoader.mountFilesystem()) {
     bootFsStatus = "OK";
+    deviceConfigReload();
+    const DeviceConfig &cfg = deviceConfig();
+    Serial.printf("Config loaded: ssid=%s city=%s tz=%s nvs=%s wifi.json=%s valid=%s\n",
+                  cfg.wifiSsid, cfg.weatherCity, cfg.timezone,
+                  deviceConfigHasNvsWifi() ? "yes" : "no",
+                  deviceConfigHasWifiFile() ? "yes" : "no",
+                  deviceConfigHasValidWifi() ? "yes" : "no");
     if (gProvisioning.needsSetup()) {
       gProvisioning.startPortal();
-      showBootError("WIFI SETUP");
-      renderer.drawText(4, 68, "Join EyesSetup", 0xFFFF);
+      showSetupScreen();
       printBootBanner();
       return;
     }
@@ -317,6 +344,10 @@ void loop() {
   if (bootOk) {
     DisplayModeInput input = gDisplayMode.tick(now);
     handlePomodoroInput(input, now);
+    if (input.shortPress && gMinigame.statusText() != nullptr) {
+      // Minigame is in an active phase - route press to it instead of mode advance.
+      gMinigame.onButtonPress(now);
+    }
 
     gWifiService.tick();
     if (gWifiService.connected()) {
